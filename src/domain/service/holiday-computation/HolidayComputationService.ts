@@ -64,8 +64,8 @@ const easterComputationSpecificationPlus =
         const L = (2 * t + 2 * b - e - d + 32) % 7;
         const h = Math.trunc((n + 11 * e + 22 * L) / 451);
         const m = Math.trunc((e + L - 7 * h + 114) / 31);
-        const j = 1 + ((e + L - 7 * h + 114) % 31);
-        return LocalDate.of(year, m, j + dayShift);
+        const j = (e + L - 7 * h + 114) % 31;
+        return LocalDate.of(year, m, j).plusDays(dayShift);
       })
       .has(localDate);
 
@@ -85,7 +85,7 @@ export class HolidayComputationService {
 
   private computeFrIdfDates(period: Period): Set<LocalDate> {
     const numberOfDays = period.start.until(period.end, ChronoUnit.DAYS);
-    const daysInPeriod = Array(numberOfDays)
+    const daysInPeriod = Array.from(new Array(numberOfDays))
       .map((_, index) => index)
       .map(num => period.start.plusDays(num));
     const yearsInPeriod = Set<Year>(
@@ -103,8 +103,10 @@ export class HolidayComputationService {
       easterComputationSpecificationPlus(1, yearsInPeriod),
       easterComputationSpecificationPlus(39, yearsInPeriod),
     ];
-    return Set<LocalDate>(
-      daysInPeriod.filter(date => specs.some(matches => matches(date)))
+    const collection = daysInPeriod.filter(date =>
+      specs.some(matches => matches(date))
     );
+    console.log(collection);
+    return Set<LocalDate>(collection);
   }
 }
