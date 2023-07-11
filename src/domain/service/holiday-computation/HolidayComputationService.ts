@@ -50,35 +50,45 @@ const easterComputationSpecificationPlus =
   (dayShift: number, years: Set<Year>) => (localDate: LocalDate) =>
     years
       .map(year => year.value())
-      .map(year => {
-        const n = year % 19;
-        const c = Math.trunc(year / 100);
-        const u = year % 100;
-        const s = Math.trunc(c / 4);
-        const t = c % 4;
-        const p = Math.trunc((c + 8) / 25);
-        const q = Math.trunc((c - p + 1) / 3);
-        const e = (19 * n + c - s - q + 15) % 30;
-        const b = Math.trunc(u / 4);
-        const d = u % 4;
-        const L = (2 * t + 2 * b - e - d + 32) % 7;
-        const h = Math.trunc((n + 11 * e + 22 * L) / 451);
-        const m = Math.trunc((e + L - 7 * h + 114) / 31);
-        const j = (e + L - 7 * h + 114) % 31;
-        return LocalDate.of(year, m, j).plusDays(dayShift);
+      .map(y => {
+        const g = (y % 19) + 1;
+        const c = ~~(y / 100) + 1;
+        const l = ~~((3 * c) / 4) - 12;
+        let m = 3;
+        let e = (11 * g + 20 + ~~((8 * c + 5) / 25) - 5 - l) % 30;
+        let d;
+        if (e < 0) {
+          e += 30;
+        }
+        if ((e === 25 && g > 11) || e === 24) {
+          e++;
+        }
+        d = 44 - e;
+        if (d < 21) {
+          d += 30;
+        }
+        if ((d += 7 - ((~~((5 * y) / 4) - l - 10 + d) % 7)) > 31) {
+          d -= 31;
+          m = 4;
+        }
+        return LocalDate.of(y, m, d).plusDays(dayShift);
       })
       .has(localDate);
 
+const supportedCodes = Array.from(new Array(95))
+  .map((_, index) => `FR-${index}`)
+  .filter(code => !['FR-57', 'FR-67', 'FR-68'].includes(code));
+
 export class HolidayComputationService {
   computeHolidaysForLocale(
-    subdivisionCode: string,
+    iso31662Code: string,
     period: Period
   ): E.Either<IllegalArgumentError, Set<LocalDate>> {
-    return subdivisionCode === 'FR-IDF'
+    return supportedCodes.includes(iso31662Code)
       ? E.right(this.computeFrIdfDates(period))
       : E.left(
           new IllegalArgumentError(
-            'Cannot compute holidays for other locales than FR-IDF'
+            `Cannot compute holidays for ISO 3166-2 code ${iso31662Code}. Supported codes are ${supportedCodes}.`
           )
         );
   }
@@ -100,13 +110,12 @@ export class HolidayComputationService {
       monthDaySpecification(of(NOVEMBER, 1)),
       monthDaySpecification(of(NOVEMBER, 11)),
       monthDaySpecification(of(DECEMBER, 25)),
-      easterComputationSpecificationPlus(1, yearsInPeriod),
+      easterComputationSpecificationPlus(0, yearsInPeriod),
       easterComputationSpecificationPlus(39, yearsInPeriod),
     ];
     const collection = daysInPeriod.filter(date =>
       specs.some(matches => matches(date))
     );
-    console.log(collection);
     return Set<LocalDate>(collection);
   }
 }

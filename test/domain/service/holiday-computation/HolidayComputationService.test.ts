@@ -12,52 +12,57 @@ const {JANUARY, APRIL, MAY, JULY, AUGUST, OCTOBER, NOVEMBER, DECEMBER} = Month;
 
 const forceRight = <L, R>(eit: E.Either<L, R>) => (eit as E.Right<R>).right;
 const easterMondays = [
-  "2000-04-23",
-  "2001-04-15",
-  "2002-03-31",
-  "2003-04-20",
-  "2004-04-11",
-  "2005-03-27",
-  "2006-04-16",
-  "2007-04-08",
-  "2008-03-23",
-  "2009-04-12",
-  "2010-04-04",
-  "2011-04-24",
-  "2012-04-08",
-  "2013-03-31",
-  "2014-04-20",
-  "2015-04-05",
-  "2016-03-27",
-  "2017-04-16",
-  "2018-04-01",
-  "2019-04-21",
-  "2020-04-12",
-  "2021-04-04",
-  "2022-04-17",
-  "2023-04-09",
-  "2024-03-31",
-  "2025-04-20",
-  "2026-04-05",
-  "2027-03-28",
-  "2028-04-16",
-  "2029-04-01",
-  "2030-04-21",
-  "2031-04-13",
-  "2032-03-28",
-  "2033-04-17",
-  "2034-04-09",
-  "2035-03-25",
-  "2036-04-13",
-  "2037-04-05",
-  "2038-04-25",
-  "2039-04-10",
-  "2040-04-01",
-]
+  '2000-04-23',
+  '2001-04-15',
+  '2002-03-31',
+  '2003-04-20',
+  '2004-04-11',
+  '2005-03-27',
+  '2006-04-16',
+  '2007-04-08',
+  '2008-03-23',
+  '2009-04-12',
+  '2010-04-04',
+  '2011-04-24',
+  '2012-04-08',
+  '2013-03-31',
+  '2014-04-20',
+  '2015-04-05',
+  '2016-03-27',
+  '2017-04-16',
+  '2018-04-01',
+  '2019-04-21',
+  '2020-04-12',
+  '2021-04-04',
+  '2022-04-17',
+  '2023-04-09',
+  '2024-03-31',
+  '2025-04-20',
+  '2026-04-05',
+  '2027-03-28',
+  '2028-04-16',
+  '2029-04-01',
+  '2030-04-21',
+  '2031-04-13',
+  '2032-03-28',
+  '2033-04-17',
+  '2034-04-09',
+  '2035-03-25',
+  '2036-04-13',
+  '2037-04-05',
+  '2038-04-25',
+  '2039-04-10',
+  '2040-04-01',
+];
+
+const ascensionThursdays = easterMondays.map(d =>
+  LocalDate.parse(d).plusDays(39).toString()
+);
+
 const periodOf = (start: LocalDate, end: LocalDate) =>
   forceRight(
     new HolidayComputationService().computeHolidaysForLocale(
-      'FR-IDF',
+      'FR-75',
       forceRight(Period.of(start, end))
     )
   );
@@ -85,7 +90,7 @@ const expectPeriodToContainOnly = (
 
 describe('HolidayComputationService', () => {
   describe('happy path', () => {
-    describe('when provided with FR_IDF code', () => {
+    describe('when provided with FR-75 code', () => {
       it('returns an empty set if no holiday is found within period', () => {
         expectPeriodToBeEmpty(of(2023, JANUARY, 2), of(2023, JANUARY, 10));
       });
@@ -154,12 +159,53 @@ describe('HolidayComputationService', () => {
         );
       });
 
-      it('contains Easter mondays', () => {
-        easterMondays.map(date => LocalDate.parse(date)).forEach(easterMonday => {
-          const start = LocalDate.of(easterMonday.year(), JANUARY, 1);
-          const end = LocalDate.of(easterMonday.year() + 1, JANUARY, 1);
-          expectPeriodToContain(start, end, easterMonday)
-        })
+      it('contains Easter Mondays', () => {
+        easterMondays
+          .map(date => LocalDate.parse(date))
+          .forEach(easterMonday => {
+            const start = of(easterMonday.year(), JANUARY, 1);
+            const end = of(easterMonday.year() + 1, JANUARY, 1);
+            expectPeriodToContain(start, end, easterMonday);
+          });
+      });
+
+      it('contains Ascension Thursdays', () => {
+        ascensionThursdays
+          .map(date => LocalDate.parse(date))
+          .forEach(ascensionThursdays => {
+            const start = of(ascensionThursdays.year(), JANUARY, 1);
+            const end = of(ascensionThursdays.year() + 1, JANUARY, 1);
+            expectPeriodToContain(start, end, ascensionThursdays);
+          });
+      });
+
+      it('contains 2023 holidays', () => {
+        periodOf(of(2023, JANUARY, 1), of(2024, JANUARY, 1)).equals(
+          Set<LocalDate>([
+            of(2023, JANUARY, 1),
+            of(2023, APRIL, 10),
+            of(2023, MAY, 1),
+            of(2023, MAY, 8),
+            of(2023, MAY, 18),
+            of(2023, JULY, 14),
+            of(2023, AUGUST, 15),
+            of(2023, NOVEMBER, 1),
+            of(2023, NOVEMBER, 11),
+            of(2023, DECEMBER, 25),
+          ])
+        );
+      });
+    });
+  });
+
+  describe('unsupported code', () => {
+    describe('when provided with FR-57 code', () => {
+      it('returns a Left<IllegalArgumentError>', () => {
+        const result = new HolidayComputationService().computeHolidaysForLocale(
+          'FR-57',
+          forceRight(Period.of(of(2023, JANUARY, 1), of(2024, JANUARY, 1)))
+        );
+        expect(E.isLeft(result)).toBe(true);
       });
     });
   });
