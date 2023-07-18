@@ -92,5 +92,33 @@ describe('divideIntoPeriods', () => {
         expect(actual.equals(expected)).toBe(true);
       });
     });
+
+    describe('one 10-day contract from thursday to monday', () => {
+      it('returns two periods (4, 7)', () => {
+        const _10DaysContract = clone(_1WeekContract, {
+          startDate: _1WeekContract.startDate.minusDays(4),
+        });
+        const actual = divideIntoPeriods(
+          List<EmploymentContract>([_10DaysContract]),
+          _10DaysContract.startDate,
+          forceSome(_10DaysContract.endDate)
+        );
+        const expected = List<WorkingPeriod>([
+          WorkingPeriod.build({
+            employeeId: _10DaysContract.employeeId,
+            employmentContractId: _10DaysContract.id,
+            startDate: _10DaysContract.startDate,
+            endDate: _1WeekContract.startDate,
+          }),
+          WorkingPeriod.build({
+            employeeId: _10DaysContract.employeeId,
+            employmentContractId: _10DaysContract.id,
+            startDate: _1WeekContract.startDate,
+            endDate: forceSome(_1WeekContract.endDate),
+          }),
+        ]);
+        expect(actual.equals(expected)).toBe(true);
+      });
+    });
   });
 });
