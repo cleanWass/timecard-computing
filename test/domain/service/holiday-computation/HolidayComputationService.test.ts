@@ -6,11 +6,11 @@ import {
   HolidayComputationService,
   Period,
 } from '../../../../src/domain/service/holiday-computation/HolidayComputationService';
+import forceRight from '../../../~shared/util/forceRight';
 
 const {of} = LocalDate;
 const {JANUARY, APRIL, MAY, JULY, AUGUST, OCTOBER, NOVEMBER, DECEMBER} = Month;
 
-const forceRight = <L, R>(eit: E.Either<L, R>) => (eit as E.Right<R>).right;
 const easterMondays = [
   '2000-04-23',
   '2001-04-15',
