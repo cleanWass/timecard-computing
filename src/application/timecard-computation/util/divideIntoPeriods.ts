@@ -11,28 +11,46 @@ import {WorkingPeriod} from '../../../domain/models/time-card-computation/workin
 const {DAYS} = ChronoUnit;
 const {MONDAY} = DayOfWeek;
 
-export default (
-  {employeeId, id}: EmploymentContract,
+const divideContractIntoPeriods = (
+  {employeeId, id, overtimeAveragingPeriod}: EmploymentContract,
   startDate: LocalDate,
   endDate: LocalDate
 ) => {
-  const makePeriod = (start: LocalDate, end: LocalDate) =>
-    new WorkingPeriod(employeeId, id, start, end);
+  const makePeriod = (startDate: LocalDate, endDate: LocalDate) =>
+    WorkingPeriod.build({
+      employeeId,
+      employmentContractId: id,
+      startDate,
+      endDate,
+    });
   const earliestMonday = startDate.with(TemporalAdjusters.nextOrSame(MONDAY));
   const lastMonday = endDate.with(TemporalAdjusters.previousOrSame(MONDAY));
-  const numberOfWeeks = earliestMonday.until(lastMonday, DAYS) / 7;
-  const fullWeeks = Array.from(new Array(numberOfWeeks))
-    .map(index => earliestMonday.plusDays(index * 7))
-    .map(monday => makePeriod(monday, monday.plusWeeks(1)));
-  const firstWeekPortion = startDate.isBefore(earliestMonday)
+  const overtimeAveragingPeriodInDays = overtimeAveragingPeriod.toDays();
+  const numberOfPeriods =
+    earliestMonday.until(lastMonday, DAYS) / overtimeAveragingPeriodInDays;
+  const fullPeriods = Array.from(new Array(numberOfPeriods))
+    .map((_, index) =>
+      earliestMonday.plusDays(index * overtimeAveragingPeriodInDays)
+    )
+    .map(monday =>
+      makePeriod(monday, monday.plusDays(overtimeAveragingPeriodInDays))
+    );
+  const firstPeriodPortion = startDate.isBefore(earliestMonday)
     ? [makePeriod(startDate, earliestMonday)]
     : [];
-  const lastWeekPortion = endDate.isAfter(lastMonday)
+  const lastPeriodPortion = endDate.isAfter(lastMonday)
     ? [makePeriod(lastMonday, endDate)]
     : [];
   return List<WorkingPeriod>([
-    ...firstWeekPortion,
-    ...fullWeeks,
-    ...lastWeekPortion,
+    ...firstPeriodPortion,
+    ...fullPeriods,
+    ...lastPeriodPortion,
   ]);
 };
+
+export default (
+  contracts: List<EmploymentContract>,
+  startDate: LocalDate,
+  endDate: LocalDate
+) =>
+  contracts.flatMap(ect => divideContractIntoPeriods(ect, startDate, endDate));

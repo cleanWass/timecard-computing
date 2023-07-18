@@ -5,30 +5,44 @@ import {EmploymentContractId} from '../../employment-contract-management/employm
 import {EmployeeId} from '../../employee-registration/employee/EmployeeId';
 
 export class WorkingPeriod implements ValueObject {
-  private static buildValueObject(wp: WorkingPeriod) {
-    return Map<string, ValueObject | string>()
-      .set('cleanerId', wp.cleanerId)
-      .set('workContractId', wp.workContractId)
-      .set('startDate', wp.startDate)
-      .set('endDate', wp.endDate);
+  public static build(params: {
+    employeeId: EmployeeId;
+    employmentContractId: EmploymentContractId;
+    startDate: LocalDate;
+    endDate: LocalDate;
+  }) {
+    return new WorkingPeriod(
+      params.employeeId,
+      params.employmentContractId,
+      params.startDate,
+      params.endDate
+    );
   }
 
-  private valueObject: ValueObject;
+  private _vo: Map<string, ValueObject | string | number | boolean>;
 
-  constructor(
-    public readonly cleanerId: EmployeeId,
-    public readonly workContractId: EmploymentContractId,
+  private constructor(
+    public readonly employeeId: EmployeeId,
+    public readonly employmentContractId: EmploymentContractId,
     public readonly startDate: LocalDate,
     public readonly endDate: LocalDate
   ) {
-    this.valueObject = WorkingPeriod.buildValueObject(this);
+    this._vo = Map<string, ValueObject | string | number | boolean>()
+      .set('cleanerId', this.employeeId)
+      .set('employmentContractId', this.employmentContractId)
+      .set('startDate', this.startDate)
+      .set('endDate', this.endDate);
   }
 
   equals(other: unknown): boolean {
-    return this.valueObject.equals((other as WorkingPeriod)?.valueObject);
+    return this._vo.equals((other as WorkingPeriod)?._vo);
   }
 
   hashCode(): number {
-    return this.valueObject.hashCode();
+    return this._vo.hashCode();
+  }
+
+  toString(): string {
+    return JSON.stringify(this._vo.toJSON());
   }
 }
