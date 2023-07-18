@@ -1,11 +1,12 @@
+import {pipe} from 'fp-ts/function';
 import * as O from 'fp-ts/lib/Option';
 import {List, Set} from 'immutable';
 import {DayOfWeek, Duration, LocalDate} from '@js-joda/core';
-import divideIntoPeriods from '../../../../src/application/timecard-computation/util/divideIntoPeriods';
-import {EmploymentContract} from '../../../../src/domain/models/employment-contract-management/employment-contract/EmploymentContract';
-import forceSome from '../../../~shared/util/forceSome';
-import {WorkingPeriod} from '../../../../src/domain/models/time-card-computation/working-period/WorkingPeriod';
-import {pipe} from 'fp-ts/function';
+
+import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/EmploymentContract';
+import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';
+import divideIntoPeriods from '@application/timecard-computation/util/divideIntoPeriods';
+import forceSome from '@test/~shared/util/forceSome';
 
 const {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY} = DayOfWeek;
 

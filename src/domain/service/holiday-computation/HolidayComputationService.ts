@@ -2,7 +2,7 @@ import * as E from 'fp-ts/lib/Either';
 import {Map, Set, ValueObject} from 'immutable';
 import {ChronoUnit, LocalDate, Month, MonthDay, Year} from '@js-joda/core';
 
-import {IllegalArgumentError} from '../../~shared/error/IllegalArgumentError';
+import {IllegalArgumentError} from '@domain/~shared/error/IllegalArgumentError';
 
 const {JANUARY, MAY, JULY, AUGUST, NOVEMBER, DECEMBER} = Month;
 const {of} = MonthDay;

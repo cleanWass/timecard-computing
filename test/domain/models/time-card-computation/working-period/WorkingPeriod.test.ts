@@ -1,5 +1,6 @@
 import {LocalDate} from '@js-joda/core';
-import {WorkingPeriod} from '../../../../../src/domain/models/time-card-computation/working-period/WorkingPeriod';
+
+import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';
 
 const employeeId = 'ezafkze';
 const employmentContractId = 'pz^rgkz';

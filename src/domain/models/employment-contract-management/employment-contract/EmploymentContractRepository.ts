@@ -1,11 +1,12 @@
-import {EmploymentContractId} from './EmploymentContractId';
 import {TaskEither} from 'fp-ts/TaskEither';
-import {EmploymentContract} from './EmploymentContract';
-import {EmployeeId} from '../../employee-registration/employee/EmployeeId';
-import {PersistenceError} from '../../../~shared/error/PersistenceError';
-import {ExpectedAggregateNotFoundError} from '../../../~shared/error/ExpectedAggregateNotFoundError';
-import {LocalDate} from '@js-joda/core';
 import {List} from 'immutable';
+import {LocalDate} from '@js-joda/core';
+
+import {PersistenceError} from '@domain/~shared/error/PersistenceError';
+import {ExpectedAggregateNotFoundError} from '@domain/~shared/error/ExpectedAggregateNotFoundError';
+import {EmployeeId} from '@domain/models/employee-registration/employee/EmployeeId';
+import {EmploymentContractId} from './EmploymentContractId';
+import {EmploymentContract} from './EmploymentContract';
 
 export interface EmploymentContractRepository {
   find(

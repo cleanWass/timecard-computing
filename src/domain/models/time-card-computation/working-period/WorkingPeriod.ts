@@ -1,8 +1,8 @@
 import {Map, ValueObject} from 'immutable';
 import {LocalDate} from '@js-joda/core';
 
-import {EmploymentContractId} from '../../employment-contract-management/employment-contract/EmploymentContractId';
-import {EmployeeId} from '../../employee-registration/employee/EmployeeId';
+import {EmploymentContractId} from '@domain/models/employment-contract-management/employment-contract/EmploymentContractId';
+import {EmployeeId} from '@domain/models/employee-registration/employee/EmployeeId';
 
 export class WorkingPeriod implements ValueObject {
   public static build(params: {

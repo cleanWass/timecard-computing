@@ -5,8 +5,8 @@ import {
   LocalDate,
   TemporalAdjusters,
 } from '@js-joda/core';
-import {EmploymentContract} from '../../../domain/models/employment-contract-management/employment-contract/EmploymentContract';
-import {WorkingPeriod} from '../../../domain/models/time-card-computation/working-period/WorkingPeriod';
+import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/EmploymentContract';
+import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';
 
 const {DAYS} = ChronoUnit;
 const {MONDAY} = DayOfWeek;
