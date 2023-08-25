@@ -1,10 +1,9 @@
-import {pipe} from 'fp-ts/function';
+import { EmployeeId } from '@domain/models/employee-registration/employee/EmployeeId';
+import { DayOfWeek, Duration, LocalDate } from '@js-joda/core';
+import { pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
-import {Map, Set, ValueObject} from 'immutable';
-import {DayOfWeek, Duration, LocalDate} from '@js-joda/core';
-
-import {EmployeeId} from '@domain/models/employee-registration/employee/EmployeeId';
-import {EmploymentContractId} from './EmploymentContractId';
+import { Map, Set, ValueObject } from 'immutable';
+import { EmploymentContractId } from './EmploymentContractId';
 
 export class EmploymentContract implements ValueObject {
   public static build(params: {

@@ -178,20 +178,38 @@ describe('HolidayComputationService', () => {
             expectPeriodToContain(start, end, ascensionThursdays);
           });
       });
+      it('contains 2024 holidays', () => {
+        const year = 2024;
+        periodOf(of(year, JANUARY, 1), of(year + 1, JANUARY, 1)).equals(
+          Set<LocalDate>([
+            of(year, JANUARY, 1),
+            of(year, APRIL, 1),
+            of(year, MAY, 1),
+            of(year, MAY, 9),
+            of(year, MAY, 20),
+            of(year, JULY, 14),
+            of(year, AUGUST, 15),
+            of(year, NOVEMBER, 1),
+            of(year, NOVEMBER, 11),
+            of(year, DECEMBER, 25),
+          ])
+        );
+      });
 
       it('contains 2023 holidays', () => {
-        periodOf(of(2023, JANUARY, 1), of(2024, JANUARY, 1)).equals(
+        const year = 2023;
+        periodOf(of(year, JANUARY, 1), of(2024, JANUARY, 1)).equals(
           Set<LocalDate>([
-            of(2023, JANUARY, 1),
-            of(2023, APRIL, 10),
-            of(2023, MAY, 1),
-            of(2023, MAY, 8),
-            of(2023, MAY, 18),
-            of(2023, JULY, 14),
-            of(2023, AUGUST, 15),
-            of(2023, NOVEMBER, 1),
-            of(2023, NOVEMBER, 11),
-            of(2023, DECEMBER, 25),
+            of(year, JANUARY, 1),
+            of(year, APRIL, 10),
+            of(year, MAY, 1),
+            of(year, MAY, 8),
+            of(year, MAY, 18),
+            of(year, JULY, 14),
+            of(year, AUGUST, 15),
+            of(year, NOVEMBER, 1),
+            of(year, NOVEMBER, 11),
+            of(year, DECEMBER, 25),
           ])
         );
       });

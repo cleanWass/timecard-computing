@@ -9,4 +9,5 @@ export type Leave = {
   reason: LeaveReason;
   startTime: LocalDateTime;
   duration: O.Option<Duration>;
+  comment: O.Option<string>;
 };

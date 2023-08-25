@@ -1,3 +1,4 @@
+import { Period } from '@domain/models/period';
 import * as E from 'fp-ts/lib/Either';
 import {Map, Set, ValueObject} from 'immutable';
 import {ChronoUnit, LocalDate, Month, MonthDay, Year} from '@js-joda/core';
@@ -8,40 +9,6 @@ const {JANUARY, MAY, JULY, AUGUST, NOVEMBER, DECEMBER} = Month;
 const {of} = MonthDay;
 
 type HolidaySpecification = (d: LocalDate) => boolean;
-
-export class Period implements ValueObject {
-  public static of(
-    start: LocalDate,
-    end: LocalDate
-  ): E.Either<IllegalArgumentError, Period> {
-    return end.isAfter(start)
-      ? E.right(new Period(start, end))
-      : E.left(
-          new IllegalArgumentError(
-            `Start (${start}) must be before End (${end}).`
-          )
-        );
-  }
-
-  private readonly valueObject: ValueObject;
-
-  constructor(
-    public readonly start: LocalDate,
-    public readonly end: LocalDate
-  ) {
-    this.valueObject = Map<string, LocalDate>()
-      .set('start', this.start)
-      .set('end', this.end);
-  }
-
-  equals(other: unknown): boolean {
-    return this.valueObject.equals((other as Period)?.valueObject);
-  }
-
-  hashCode(): number {
-    return this.valueObject.hashCode();
-  }
-}
 
 const monthDaySpecification = (monthDay: MonthDay) => (localDate: LocalDate) =>
   monthDay.equals(MonthDay.of(localDate.month(), localDate.dayOfMonth()));

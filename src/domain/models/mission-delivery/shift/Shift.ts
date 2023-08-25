@@ -1,3 +1,5 @@
+import { EmployeeId } from '@domain/models/employee-registration/employee/EmployeeId';
+import { ClientId } from '@domain/models/sales-contract-management/client/ClientId';
 import {Duration, LocalDateTime} from '@js-joda/core';
 
 import {ServiceContractId} from '@domain/models/sales-contract-management/service-contract/ServiceContractId';
@@ -10,4 +12,7 @@ export type Shift = {
   requirementIds: RequirementId[];
   startTime: LocalDateTime;
   duration: Duration;
+  clientId: ClientId;
+  employeeId: EmployeeId;
+  replacedShiftId?: ShiftId;
 };
