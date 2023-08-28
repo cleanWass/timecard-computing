@@ -1,11 +1,13 @@
+import {LocalDateRange} from '@domain/models/localDateRange';
+import {LocalTimeSlot} from '@domain/models/localTimeSlot';
 import {pipe} from 'fp-ts/function';
 import * as O from 'fp-ts/lib/Option';
-import {List, Set} from 'immutable';
-import {DayOfWeek, Duration, LocalDate} from '@js-joda/core';
+import {List, Map, Set} from 'immutable';
+import {DayOfWeek, Duration, LocalDate, LocalTime} from '@js-joda/core';
 
 import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/EmploymentContract';
 import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';
-import divideIntoPeriods from '@application/timecard-computation/util/divideIntoPeriods';
+import {divideContractsIntoPeriods} from '@application/timecard-computation/util/divideIntoPeriods';
 import forceSome from '@test/~shared/util/forceSome';
 import {EmployeeId} from '@domain/models/employee-registration/employee/EmployeeId';
 import {EmploymentContractId} from '@domain/models/employment-contract-management/employment-contract/EmploymentContractId';
@@ -21,9 +23,10 @@ const consecutivePeriods =
       WorkingPeriod.build({
         employeeId,
         employmentContractId,
-        startDate: start,
-        endDate:
-          index === startDates.length - 1 ? endDate : startDates[index + 1],
+        period: new LocalDateRange(
+          start,
+          index === startDates.length - 1 ? endDate : startDates[index + 1]
+        ),
       })
     );
 
@@ -43,6 +46,7 @@ const clone = (
       params?.weeklyTotalWorkedHours ?? base.weeklyTotalWorkedHours,
     weeklyNightShiftHours:
       params?.weeklyNightShiftHours ?? base.weeklyNightShiftHours,
+    weeklyPlanning: params?.weeklyPlanning ?? base.weeklyPlanning,
   });
 
 const _1WeekContract = EmploymentContract.build({
@@ -54,6 +58,18 @@ const _1WeekContract = EmploymentContract.build({
   weeklyNightShiftHours: Duration.ofHours(0),
   weeklyTotalWorkedHours: Duration.ofHours(35),
   workedDays: mondayToFriday,
+  weeklyPlanning: DayOfWeek.values()
+    .reduce(
+      (acc, day) => acc.set(day, Set<LocalTimeSlot>()),
+      Map<DayOfWeek, Set<LocalTimeSlot>>()
+    )
+    .set(
+      MONDAY,
+      Set([
+        new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)),
+        new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0)),
+      ])
+    ),
 });
 
 describe('divideIntoPeriods', () => {
@@ -70,7 +86,7 @@ describe('divideIntoPeriods', () => {
 
       describe('one single 1-week contract from monday to monday', () => {
         it('returns a single 1-week period', () => {
-          const actual = divideIntoPeriods(
+          const actual = divideContractsIntoPeriods(
             List<EmploymentContract>([_1WeekContract]),
             _1WeekContract.startDate,
             forceSome(_1WeekContract.endDate)
@@ -91,7 +107,7 @@ describe('divideIntoPeriods', () => {
               O.map(d => d.plusDays(3))
             ),
           });
-          const actual = divideIntoPeriods(
+          const actual = divideContractsIntoPeriods(
             List<EmploymentContract>([_10DaysContract]),
             _10DaysContract.startDate,
             forceSome(_10DaysContract.endDate)
@@ -109,7 +125,7 @@ describe('divideIntoPeriods', () => {
           const _11DaysContract = clone(_1WeekContract, {
             startDate: _1WeekContract.startDate.minusDays(4),
           });
-          const actual = divideIntoPeriods(
+          const actual = divideContractsIntoPeriods(
             List<EmploymentContract>([_11DaysContract]),
             _11DaysContract.startDate,
             forceSome(_11DaysContract.endDate)
@@ -131,7 +147,7 @@ describe('divideIntoPeriods', () => {
               O.map(d => d.plusDays(3))
             ),
           });
-          const actual = divideIntoPeriods(
+          const actual = divideContractsIntoPeriods(
             List<EmploymentContract>([_14DaysContract]),
             _14DaysContract.startDate,
             forceSome(_14DaysContract.endDate)
@@ -157,7 +173,7 @@ describe('divideIntoPeriods', () => {
               O.map(d => d.plusDays(14 + 3))
             ),
           });
-          const actual = divideIntoPeriods(
+          const actual = divideContractsIntoPeriods(
             List<EmploymentContract>([_28DaysContract]),
             _28DaysContract.startDate,
             forceSome(_28DaysContract.endDate)

@@ -1,17 +1,18 @@
-import {List} from 'immutable';
+import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/EmploymentContract';
+import {LocalDateRange} from '@domain/models/localDateRange';
+import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';
 import {
   ChronoUnit,
   DayOfWeek,
   LocalDate,
   TemporalAdjusters,
 } from '@js-joda/core';
-import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/EmploymentContract';
-import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';
+import {List} from 'immutable';
 
 const {DAYS} = ChronoUnit;
 const {MONDAY} = DayOfWeek;
 
-const divideContractIntoPeriods = (
+export const divideIntoPeriods = (
   {employeeId, id, overtimeAveragingPeriod}: EmploymentContract,
   startDate: LocalDate,
   endDate: LocalDate
@@ -20,8 +21,7 @@ const divideContractIntoPeriods = (
     WorkingPeriod.build({
       employeeId,
       employmentContractId: id,
-      startDate,
-      endDate,
+      period: new LocalDateRange(startDate, endDate),
     });
   const earliestMonday = startDate.with(TemporalAdjusters.nextOrSame(MONDAY));
   const lastMonday = endDate.with(TemporalAdjusters.previousOrSame(MONDAY));
@@ -48,9 +48,8 @@ const divideContractIntoPeriods = (
   ]);
 };
 
-export default (
+export const divideContractsIntoPeriods = (
   contracts: List<EmploymentContract>,
   startDate: LocalDate,
   endDate: LocalDate
-) =>
-  contracts.flatMap(ect => divideContractIntoPeriods(ect, startDate, endDate));
+) => contracts.flatMap(ect => divideIntoPeriods(ect, startDate, endDate));

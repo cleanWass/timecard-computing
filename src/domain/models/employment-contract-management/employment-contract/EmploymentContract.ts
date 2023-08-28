@@ -1,6 +1,8 @@
 import { EmployeeId } from '@domain/models/employee-registration/employee/EmployeeId';
+import { LocalDateRange } from '@domain/models/localDateRange';
+import { LocalTimeSlot } from '@domain/models/localTimeSlot';
 import { DayOfWeek, Duration, LocalDate } from '@js-joda/core';
-import { pipe } from 'fp-ts/function';
+import { identity, pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import { Map, Set, ValueObject } from 'immutable';
 import { EmploymentContractId } from './EmploymentContractId';
@@ -15,6 +17,7 @@ export class EmploymentContract implements ValueObject {
     weeklyTotalWorkedHours: Duration;
     weeklyNightShiftHours: Duration;
     workedDays: Set<DayOfWeek>;
+    weeklyPlanning: Map<DayOfWeek, Set<LocalTimeSlot>>
   }) {
     return new EmploymentContract(
       params.id,
@@ -24,7 +27,8 @@ export class EmploymentContract implements ValueObject {
       params.overtimeAveragingPeriod,
       params.weeklyTotalWorkedHours,
       params.weeklyNightShiftHours,
-      params.workedDays
+      params.workedDays,
+      params.weeklyPlanning
     );
   }
 
@@ -38,8 +42,10 @@ export class EmploymentContract implements ValueObject {
     public readonly overtimeAveragingPeriod: Duration,
     public readonly weeklyTotalWorkedHours: Duration,
     public readonly weeklyNightShiftHours: Duration,
-    public readonly workedDays: Set<DayOfWeek>
-  ) {
+    public readonly workedDays: Set<DayOfWeek>,
+    public readonly weeklyPlanning: Map<DayOfWeek, Set<LocalTimeSlot>>
+
+) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
       .set('id', this.id)
       .set('employeeId', this.employeeId)
@@ -55,7 +61,8 @@ export class EmploymentContract implements ValueObject {
       .set('overtimeAveragingPeriod', this.overtimeAveragingPeriod.toString())
       .set('weeklyTotalWorkedHours', this.weeklyTotalWorkedHours.toString())
       .set('weeklyNightShiftHours', this.weeklyNightShiftHours.toString())
-      .set('workedDays', this.workedDays);
+      .set('workedDays', this.workedDays)
+      .set('weeklyPlanning', this.weeklyPlanning)
   }
 
   equals(other: unknown): boolean {
@@ -65,4 +72,10 @@ export class EmploymentContract implements ValueObject {
   hashCode(): number {
     return this._vo.hashCode();
   }
+  period(defaultEndDate: LocalDate): LocalDateRange {
+    return new LocalDateRange(this.startDate, pipe(
+      this.endDate,
+      O.match(() => defaultEndDate, identity)
+    )
+  )}
 }

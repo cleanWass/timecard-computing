@@ -1,10 +1,10 @@
+import { LocalDateRange } from '@domain/models/localDateRange';
 import * as E from 'fp-ts/lib/Either';
 import {Set} from 'immutable';
 import {LocalDate, Month} from '@js-joda/core';
 
 import {
   HolidayComputationService,
-  Period,
 } from '../../../../src/domain/service/holiday-computation/HolidayComputationService';
 import forceRight from '../../../~shared/util/forceRight';
 
@@ -63,7 +63,7 @@ const periodOf = (start: LocalDate, end: LocalDate) =>
   forceRight(
     new HolidayComputationService().computeHolidaysForLocale(
       'FR-75',
-      forceRight(Period.of(start, end))
+      forceRight(LocalDateRange.of(start, end))
     )
   );
 const expectPeriodToBeEmpty = (start: LocalDate, end: LocalDate) => {
@@ -221,7 +221,7 @@ describe('HolidayComputationService', () => {
       it('returns a Left<IllegalArgumentError>', () => {
         const result = new HolidayComputationService().computeHolidaysForLocale(
           'FR-57',
-          forceRight(Period.of(of(2023, JANUARY, 1), of(2024, JANUARY, 1)))
+          forceRight(LocalDateRange.of(of(2023, JANUARY, 1), of(2024, JANUARY, 1)))
         );
         expect(E.isLeft(result)).toBe(true);
       });

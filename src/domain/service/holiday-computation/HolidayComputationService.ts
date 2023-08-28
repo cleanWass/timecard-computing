@@ -1,9 +1,9 @@
-import { Period } from '@domain/models/period';
-import * as E from 'fp-ts/lib/Either';
-import {Map, Set, ValueObject} from 'immutable';
-import {ChronoUnit, LocalDate, Month, MonthDay, Year} from '@js-joda/core';
+import { LocalDateRange } from '@domain/models/localDateRange';
 
-import {IllegalArgumentError} from '@domain/~shared/error/IllegalArgumentError';
+import { IllegalArgumentError } from '@domain/~shared/error/IllegalArgumentError';
+import { ChronoUnit, LocalDate, Month, MonthDay, Year } from '@js-joda/core';
+import * as E from 'fp-ts/lib/Either';
+import { Set } from 'immutable';
 
 const {JANUARY, MAY, JULY, AUGUST, NOVEMBER, DECEMBER} = Month;
 const {of} = MonthDay;
@@ -49,7 +49,7 @@ const supportedCodes = Array.from(new Array(95))
 export class HolidayComputationService {
   computeHolidaysForLocale(
     iso31662Code: string,
-    period: Period
+    period: LocalDateRange
   ): E.Either<IllegalArgumentError, Set<LocalDate>> {
     return supportedCodes.includes(iso31662Code)
       ? E.right(this.computeFrIdfDates(period))
@@ -60,7 +60,7 @@ export class HolidayComputationService {
         );
   }
 
-  private computeFrIdfDates(period: Period): Set<LocalDate> {
+  private computeFrIdfDates(period: LocalDateRange): Set<LocalDate> {
     const numberOfDays = period.start.until(period.end, ChronoUnit.DAYS);
     const daysInPeriod = Array.from(new Array(numberOfDays))
       .map((_, index) => index)
