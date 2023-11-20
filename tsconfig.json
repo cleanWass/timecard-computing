@@ -4,25 +4,14 @@
     "rootDir": ".",
     "outDir": "build",
     "paths": {
-      "@application/*": [
-        "./src/application/*"
-      ],
-      "@domain/*": [
-        "./src/domain/*"
-      ],
-      "@infrastructure/*": [
-        "./src/infrastructure/*"
-      ],
-      "@shared/*": [
-        "./src/~shared/*"
-      ],
-      "@test/*": [
-        "./test/*"
-      ]
-    }
+      "@application/*": ["./src/application/*"],
+      "@domain/*": ["./src/domain/*"],
+      "@infrastructure/*": ["./src/infrastructure/*"],
+      "@shared/*": ["./src/~shared/*"],
+      "@test/*": ["./test/*"]
+    },
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
   },
-  "include": [
-    "src/**/*.ts",
-    "test/**/*.ts"
-  ]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }

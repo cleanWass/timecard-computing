@@ -29,20 +29,25 @@ const filterContractsForPeriod =
     contracts.filter(contract => contract.period(period.end).overlaps(period));
 
 const getPeriods =
-  (period: LocalDateRange) => (contracts: List<EmploymentContract>) =>
-    contracts.reduce(
-      (list, contract) =>
-        list.concat(
-          divideIntoPeriods(
-            contract,
-            period.start,
-            period.end.isBefore(contract.period(period.end).end)
-              ? period.end
-              : contract.period(period.end).end
-          )
+  (period: LocalDateRange) => (contracts: List<EmploymentContract>) => {
+    let list1 = contracts.reduce((list, contract) => {
+      const commonRange = contract.period(period.end).commonRange(period);
+      if (!commonRange)
+        return List<WorkingPeriod>();
+      return list.concat(
+        pipe(
+        divideIntoPeriods(
+          contract,
+          commonRange.start,
+          commonRange.end
         ),
-      List<WorkingPeriod>()
-    );
+          E.match((e) => List(), (wps) => wps)
+        )
+      );
+    }, List<WorkingPeriod>());
+    console.log({list1: list1.toJS()});
+    return list1;
+  };
 // divideIntoPeriods(contracts, period.start, period.end);
 
 export const dividePeriodAndGroupByContract: (

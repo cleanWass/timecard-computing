@@ -1,3 +1,4 @@
+import {LocalDateRange} from '@domain/models/localDateRange';
 import {LocalDate} from '@js-joda/core';
 
 import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';
@@ -13,15 +14,16 @@ const clone = (
     employeeId: params?.employeeId ?? base.employeeId,
     employmentContractId:
       params?.employmentContractId ?? base.employmentContractId,
-    startDate: params?.startDate ?? base.startDate,
-    endDate: params?.endDate ?? base.endDate,
+    period: params?.period ?? base.period,
   });
 
 const firstWeekOf2023 = WorkingPeriod.build({
   employeeId,
   employmentContractId,
-  startDate: LocalDate.parse('2023-01-02'),
-  endDate: LocalDate.parse('2023-01-09'),
+  period: new LocalDateRange(
+    LocalDate.parse('2023-01-02'),
+    LocalDate.parse('2023-01-09')
+  ),
 });
 
 describe('WorkingPeriod', () => {
@@ -37,7 +39,11 @@ describe('WorkingPeriod', () => {
     it('returns false with different objects', () => {
       expect(
         firstWeekOf2023.equals(
-          clone(firstWeekOf2023, {endDate: firstWeekOf2023.endDate.plusDays(1)})
+          clone(firstWeekOf2023, {
+            period: firstWeekOf2023.period.with({
+              end: firstWeekOf2023.period.end.plusDays(1),
+            }),
+          })
         )
       ).toBe(false);
     });

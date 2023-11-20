@@ -1,7 +1,7 @@
-import { IllegalArgumentError } from '@domain/~shared/error/IllegalArgumentError';
-import { ChronoUnit, LocalDate } from '@js-joda/core';
+import {IllegalArgumentError} from '@domain/~shared/error/IllegalArgumentError';
+import {ChronoUnit, DateTimeFormatter, LocalDate} from '@js-joda/core';
 import * as E from 'fp-ts/Either';
-import { Map, ValueObject } from 'immutable';
+import {Map, ValueObject} from 'immutable';
 
 export class LocalDateRange implements ValueObject {
   public static of(
@@ -11,10 +11,10 @@ export class LocalDateRange implements ValueObject {
     return end.isAfter(start)
       ? E.right(new LocalDateRange(start, end))
       : E.left(
-        new IllegalArgumentError(
-          `Start (${start}) must be before End (${end}).`
-        )
-      );
+          new IllegalArgumentError(
+            `Start (${start}) must be before End (${end}).`
+          )
+        );
   }
 
   private readonly valueObject: ValueObject;
@@ -37,12 +37,15 @@ export class LocalDateRange implements ValueObject {
   }
 
   toFormattedString() {
-    return `${this.start.toString()}->${this.end.toString()}`;
+    return `${this.start.format(
+      DateTimeFormatter.ofPattern('dd/MM/yy')
+    )} -> ${this.end.format(DateTimeFormatter.ofPattern('dd/MM/yy'))}`;
   }
 
   includesDate(date: LocalDate): boolean {
     return (
-      ((this.start.equals(date) || this.start.isBefore(date)) && this.end.isAfter(date)) ||
+      ((this.start.equals(date) || this.start.isBefore(date)) &&
+        this.end.isAfter(date)) ||
       this.end.isEqual(date)
     );
   }
@@ -60,7 +63,9 @@ export class LocalDateRange implements ValueObject {
   }
 
   toLocalDateArray(): Array<LocalDate> {
-    return Array.from([...Array(this.numberOfDays() || 0)].keys()).map((current) => this.start.plusDays(current));
+    return Array.from([...Array(this.numberOfDays() || 0)].keys()).map(
+      current => this.start.plusDays(current)
+    );
   }
 
   startOverlaps(addend: LocalDateRange) {
@@ -70,9 +75,24 @@ export class LocalDateRange implements ValueObject {
   overlaps(rangeToTest: LocalDateRange) {
     return (
       Math.min(this.end.toEpochDay(), rangeToTest.end.toEpochDay()) -
-      Math.max(this.start.toEpochDay(), rangeToTest.start.toEpochDay()) >=
+        Math.max(this.start.toEpochDay(), rangeToTest.start.toEpochDay()) >=
       0
     );
+  }
+
+  commonRange(rangeToTest: LocalDateRange) {
+    if (!this.overlaps(rangeToTest)) return null;
+    const start = this.start.isBefore(rangeToTest.start)
+      ? rangeToTest.start
+      : this.start;
+    const end = this.end.isBefore(rangeToTest.end) ? this.end : rangeToTest.end;
+    return new LocalDateRange(start, end);
+  }
+
+  with({start, end}:{start?: LocalDate, end?: LocalDate}) {
+    const newStart = start ?? this.start;
+    const newEnd = end ?? this.end;
+    return new LocalDateRange(newStart, newEnd);
   }
 
   private includesAddendEnd(addend: LocalDateRange) {
@@ -83,4 +103,3 @@ export class LocalDateRange implements ValueObject {
     return addend.start.isAfter(this.start) && addend.start.isBefore(this.end);
   }
 }
-
