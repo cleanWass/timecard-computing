@@ -1,4 +1,4 @@
-import {IllegalArgumentError} from '@domain/~shared/error/IllegalArgumentError';
+import {IllegalArgumentError} from '@domain/~shared/error/illegal-argument-error';
 import {Duration, LocalTime} from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import {Map, Set, ValueObject} from 'immutable';

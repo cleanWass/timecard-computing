@@ -1,12 +1,12 @@
 import * as O from 'fp-ts/Option';
 import {Duration, LocalDateTime} from '@js-joda/core';
 
-import {LeaveId} from './LeaveId';
-import {LeaveReason} from './LeaveReason';
+import {LeaveId} from './leave-id';
+import {LeaveReaso} from './leave-reason';
 
 export type Leave = {
   id: LeaveId;
-  reason: LeaveReason;
+  reason: LeaveReaso;
   startTime: LocalDateTime;
   duration: O.Option<Duration>;
   comment: O.Option<string>;

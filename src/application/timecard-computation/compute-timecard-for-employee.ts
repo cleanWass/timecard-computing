@@ -1,16 +1,14 @@
-import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/EmploymentContract';
-import {Leave} from '@domain/models/leave-recording/leave/Leave';
-import {LocalDateRange} from '@domain/models/localDateRange';
-import {Shift} from '@domain/models/mission-delivery/shift/Shift';
+import {divideIntoPeriods} from '@application/timecard-computation/util/divideIntoPeriods';
+import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/employment-contract';
+import {Leave} from '@domain/models/leave-recording/leave/leave';
+import {LocalDateRange} from '@domain/models/local-date-range';
+import {Shift} from '@domain/models/mission-delivery/shift/shift';
 import {TimeCard} from '@domain/models/time-card-computation/time-card/TimeCard';
 import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';
-import {Duration} from '@js-joda/core';
 import {TimecardComputationError} from '@shared/error/TimecardComputationError';
-import * as O from 'fp-ts/Option';
 import * as E from 'fp-ts/Either';
-import {identity, pipe} from 'fp-ts/function';
+import {pipe} from 'fp-ts/function';
 import {List, Map, Set} from 'immutable';
-import {divideIntoPeriods} from '@application/timecard-computation/util/divideIntoPeriods';
 
 type AffectationGroupedByPeriod = Map<
   LocalDateRange,
@@ -19,35 +17,50 @@ type AffectationGroupedByPeriod = Map<
   | Map<'contract', EmploymentContract>
 >;
 
-const throwLeftIfListIsEmpty = <T>(list: List<T>) =>
+const throwIfNoContract = <T>(list: List<T>) =>
   list.isEmpty()
-    ? E.left(new TimecardComputationError('No contract found'))
+    ? E.left(new TimecardComputationError('No contract matches this period'))
     : E.right(list);
 
 const filterContractsForPeriod =
   (period: LocalDateRange) => (contracts: List<EmploymentContract>) =>
     contracts.filter(contract => contract.period(period.end).overlaps(period));
 
-const getPeriods =
-  (period: LocalDateRange) => (contracts: List<EmploymentContract>) => {
-    let list1 = contracts.reduce((list, contract) => {
-      const commonRange = contract.period(period.end).commonRange(period);
-      if (!commonRange)
-        return List<WorkingPeriod>();
-      return list.concat(
-        pipe(
-        divideIntoPeriods(
-          contract,
-          commonRange.start,
-          commonRange.end
-        ),
-          E.match((e) => List(), (wps) => wps)
-        )
-      );
-    }, List<WorkingPeriod>());
-    console.log({list1: list1.toJS()});
-    return list1;
+const computeWorkingPeriods = (period: LocalDateRange) => {
+  return (contracts: List<EmploymentContract>) => {
+    return pipe(
+      contracts,
+      E.fromPredicate(
+        crts => !crts.isEmpty(),
+        () => new TimecardComputationError('No contract matches this period')
+      ),
+      E.map(crts =>
+        crts.reduce((wps, crt) => {
+          const commonRange = crt.period(period.end).commonRange(period);
+          return !!commonRange ? wps.concat(divideIntoPeriods(
+            crt,
+            commonRange.start,
+            commonRange.end
+          )) : wps;
+        }, List<WorkingPeriod>())
+      )
+    );
   };
+};
+
+// contracts.reduce((workingPeriods, contract) => {
+//   const commonRange = contract.period(period.end).commonRange(period);
+//   if (!commonRange) return workingPeriods;
+//   return workingPeriods.concat(
+//     pipe(
+//       divideIntoPeriods(contract, commonRange.start, commonRange.end),
+//       E.match(
+//         e => List(),
+//         wps => wps
+//       )
+//     )
+//   );
+// }, List<WorkingPeriod>());
 // divideIntoPeriods(contracts, period.start, period.end);
 
 export const dividePeriodAndGroupByContract: (
@@ -62,8 +75,8 @@ export const dividePeriodAndGroupByContract: (
   pipe(
     contracts,
     filterContractsForPeriod(period),
-    throwLeftIfListIsEmpty,
-    E.map(contracts => getPeriods(period)(contracts)),
+    throwIfNoContract,
+    E.map(contracts => computeWorkingPeriods(period)(contracts)),
     E.map(workingPeriods =>
       workingPeriods.reduce(
         (acc, workingPeriod) =>
@@ -109,11 +122,22 @@ export const dividePeriodAndGroupByContract: (
   return E.right(Map<EmploymentContract, Set<LocalDateRange>>());
 };
 
+export const splitPeriodIntoWorkingPeriods = (
+  contracts: List<EmploymentContract>,
+  period: LocalDateRange
+) =>
+  pipe(
+    contracts,
+    filterContractsForPeriod(period),
+    throwIfNoContract,
+    E.flatMap(computeWorkingPeriods(period))
+  );
+
 export const computeTimecardForEmployee: (
   employeeId: string,
   period: LocalDateRange,
-  shifts: Array<Shift>,
-  leaves: Array<Leave>,
+  shifts: List<Shift>,
+  leaves: List<Leave>,
   contracts: List<EmploymentContract>
 ) => E.Either<TimecardComputationError, TimeCard> = (
   employeeId,
@@ -122,6 +146,13 @@ export const computeTimecardForEmployee: (
   leaves,
   contracts
 ) => {
+  pipe(
+    E.Do,
+    E.bind('workingPeriods', () =>
+      splitPeriodIntoWorkingPeriods(contracts, period)
+    ),
+    E.bind('groupedShifts', ({workingPeriods}) => E.right(1))
+  );
   // const test = pipe(
   //   period,
   //   divideIntoPeriods(contracts),

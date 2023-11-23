@@ -1,16 +1,16 @@
-import {LocalDateRange} from '@domain/models/localDateRange';
-import {LocalTimeSlot} from '@domain/models/localTimeSlot';
+import {LocalDateRange} from '@domain/models/local-date-range';
+import {LocalTimeSlot} from '@domain/models/local-time-slot';
 import {pipe} from 'fp-ts/function';
 import * as O from 'fp-ts/lib/Option';
 import {List, Map, Set} from 'immutable';
 import {DayOfWeek, Duration, LocalDate, LocalTime} from '@js-joda/core';
 
-import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/EmploymentContract';
+import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/employment-contract';
 import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';
 import {divideContractsIntoPeriods} from '@application/timecard-computation/util/divideIntoPeriods';
 import forceSome from '@test/~shared/util/forceSome';
-import {EmployeeId} from '@domain/models/employee-registration/employee/EmployeeId';
-import {EmploymentContractId} from '@domain/models/employment-contract-management/employment-contract/EmploymentContractId';
+import {EmployeeId} from '@domain/models/employee-registration/employee/employee-id';
+import {EmploymentContractId} from '@domain/models/employment-contract-management/employment-contract/employment-contract-id';
 
 const {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY} = DayOfWeek;
 

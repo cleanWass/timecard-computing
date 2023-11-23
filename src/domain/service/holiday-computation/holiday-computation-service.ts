@@ -1,6 +1,6 @@
-import { LocalDateRange } from '@domain/models/localDateRange';
+import { LocalDateRange } from '@domain/models/local-date-range';
 
-import { IllegalArgumentError } from '@domain/~shared/error/IllegalArgumentError';
+import { IllegalArgumentError } from '@domain/~shared/error/illegal-argument-error';
 import { ChronoUnit, LocalDate, Month, MonthDay, Year } from '@js-joda/core';
 import * as E from 'fp-ts/lib/Either';
 import { Set } from 'immutable';

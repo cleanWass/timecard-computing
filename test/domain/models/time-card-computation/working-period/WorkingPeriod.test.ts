@@ -1,4 +1,4 @@
-import {LocalDateRange} from '@domain/models/localDateRange';
+import {LocalDateRange} from '@domain/models/local-date-range';
 import {LocalDate} from '@js-joda/core';
 
 import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';

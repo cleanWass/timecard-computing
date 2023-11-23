@@ -20,15 +20,13 @@ app.use(
 app.post("/timecard", async (req, res) => {
   const { body, params } = req;
  console.log("/timecard", {body: req.body, params: req.params})
-  const { cleanerId, period } = req.body;
-  console.log({ cleanerId, period })
+  const { cleanerId, period: {startDate, endDate} } = req.body;
+  console.log({ cleanerId, startDate, endDate })
   const data = await axios.post('http://localhost:3000/extract-cleaner-data-timecard', {
     cleanerId: cleanerId,
     period: {
-      startDate: '2022-05-01',
-      endDate: '2023-06-02',
-      // startDate: get(searchRangeAtom).from.toDateString(),
-      // endDate: get(searchRangeAtom).to.toDateString(),
+      startDate,
+      endDate,
     },
   });
   console.log({data: data.data})

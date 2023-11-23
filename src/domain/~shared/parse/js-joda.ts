@@ -3,7 +3,7 @@ import * as E from 'fp-ts/lib/Either';
 import * as O from 'fp-ts/lib/Option';
 import {Temporal} from '@js-joda/core';
 
-import {ParseError} from '../error/ParseError';
+import {ParseError} from '../error/parse-error';
 
 type Parser<T extends Temporal> = {parse: (s: string) => T};
 

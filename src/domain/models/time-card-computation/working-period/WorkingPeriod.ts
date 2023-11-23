@@ -1,8 +1,8 @@
-import {LocalDateRange} from '@domain/models/localDateRange';
+import {LocalDateRange} from '@domain/models/local-date-range';
 import {Map, ValueObject} from 'immutable';
 
-import {EmploymentContractId} from '@domain/models/employment-contract-management/employment-contract/EmploymentContractId';
-import {EmployeeId} from '@domain/models/employee-registration/employee/EmployeeId';
+import {EmploymentContractId} from '@domain/models/employment-contract-management/employment-contract/employment-contract-id';
+import {EmployeeId} from '@domain/models/employee-registration/employee/employee-id';
 
 export class WorkingPeriod implements ValueObject {
   public static build(params: {

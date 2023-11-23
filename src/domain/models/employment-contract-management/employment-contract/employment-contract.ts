@@ -1,11 +1,11 @@
-import { EmployeeId } from '@domain/models/employee-registration/employee/EmployeeId';
-import { LocalDateRange } from '@domain/models/localDateRange';
-import { LocalTimeSlot } from '@domain/models/localTimeSlot';
+import { EmployeeId } from '@domain/models/employee-registration/employee/employee-id';
+import { LocalDateRange } from '@domain/models/local-date-range';
+import { LocalTimeSlot } from '@domain/models/local-time-slot';
 import { DayOfWeek, Duration, LocalDate } from '@js-joda/core';
 import { identity, pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import { Map, Set, ValueObject } from 'immutable';
-import { EmploymentContractId } from './EmploymentContractId';
+import { EmploymentContractId } from './employment-contract-id';
 
 export class EmploymentContract implements ValueObject {
   public static build(params: {
