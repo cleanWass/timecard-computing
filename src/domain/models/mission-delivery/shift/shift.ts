@@ -8,8 +8,8 @@ import {ShiftId} from './shift-id';
 
 export type Shift = {
   id: ShiftId;
-  serviceContractId: ServiceContractId;
-  requirementIds: RequirementId[];
+  serviceContractId?: ServiceContractId;
+  requirementIds?: RequirementId[];
   startTime: LocalDateTime;
   duration: Duration;
   clientId: ClientId;
