@@ -17,7 +17,10 @@ import {List, Map} from 'immutable';
 const computeTotalHoursByWorkingPeriod = (groupedShifts: Map<WorkingPeriod, List<Shift>>) =>
   E.right(groupedShifts.map(gs => gs.reduce((acc, sh) => acc.plus(sh.duration), Duration.ZERO)));
 
-const computeTotalAdditionalHours = (contracts: List<EmploymentContract>, totalWeekly: Map<WorkingPeriod, Duration>) => {
+const computeTotalAdditionalHours = (
+  contracts: List<EmploymentContract>,
+  totalWeekly: Map<WorkingPeriod, Duration>
+) => {
   const totalAdditionalHoursMap = totalWeekly.reduce((acc, total, workingPeriod) => {
     const contract = contracts.find(c => c.id === workingPeriod.employmentContractId);
     return !contract ? acc : acc.set(workingPeriod, total.minus(contract.weeklyTotalWorkedHours));
@@ -43,15 +46,25 @@ export const computeTimecardForEmployee: (
     E.bind('workingPeriods', () => splitPeriodIntoWorkingPeriods(contracts, period)),
     E.bindW('groupedShifts', ({workingPeriods}) => groupShiftsByWorkingPeriods(shifts, workingPeriods)),
     E.bindW('groupedLeaves', () => E.right(Map<WorkingPeriod, List<Leave>>())),
-    E.bindW('TotalWeekly', ({groupedShifts}) => computeTotalHoursByWorkingPeriod(groupedShifts)),
-    E.map(({workingPeriods, groupedShifts, TotalWeekly}) => {
-      const totalAdditionalHours = computeTotalAdditionalHours(contracts, TotalWeekly);
+    E.bindW('totalWeekly', ({groupedShifts}) => computeTotalHoursByWorkingPeriod(groupedShifts)),
+    E.bindW('totalAdditionalHours', ({totalWeekly}) => computeTotalAdditionalHours(contracts, totalWeekly)),
+    E.map(({workingPeriods, groupedShifts, totalWeekly, totalAdditionalHours}) => {
+      console.log(
+        totalAdditionalHours
+          .map(
+            (total, wp) =>
+              `${wp.period.toFormattedString()} T: ${totalWeekly.get(wp)?.toHours()}h AH: ${total.toHours()}h${total.toHours() %60}`
+          ).valueSeq()
+          .toArray()
+          .join('\n')
+      );
       return {
         employeeId,
         period,
         workingPeriods,
         groupedShifts,
-        TotalWeekly,
+        totalWeekly,
+        totalAdditionalHours,
       };
     })
   );
