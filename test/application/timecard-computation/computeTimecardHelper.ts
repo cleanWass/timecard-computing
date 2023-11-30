@@ -1,23 +1,19 @@
-import {
-  dividePeriodAndGroupByContract,
-  splitPeriodIntoWorkingPeriods,
-} from '@application/timecard-computation/compute-timecard-for-employee';
+
 import {EmployeeId} from '@domain/models/employee-registration/employee/employee-id';
 
 import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/employment-contract';
-import {Leave} from '@domain/models/leave-recording/leave/leave';
-import {LocalDateRange} from '@domain/models/local-date-range';
 import {LocalTimeSlot} from '@domain/models/local-time-slot';
-import {Shift} from '@domain/models/mission-delivery/shift/Shift';
-import {ShiftId} from '@domain/models/mission-delivery/shift/shift-id';
 import {ClientId} from '@domain/models/sales-contract-management/client/client-id';
-import {RequirementId} from '@domain/models/sales-contract-management/requirement/requirement-id';
-import {ServiceContractId} from '@domain/models/sales-contract-management/service-contract/service-contract-id';
-import {DayOfWeek, Duration, LocalDate, LocalDateTime, LocalTime} from '@js-joda/core';
+import {
+  DayOfWeek,
+  Duration,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
+} from '@js-joda/core';
 import * as O from 'fp-ts/Option';
-import * as E from 'fp-ts/Either';
 
-import {List, Map, Set} from 'immutable';
+import {Map, Set} from 'immutable';
 
 const {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY} = DayOfWeek;
 const mondayToFriday = Set.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY);

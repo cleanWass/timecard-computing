@@ -5,7 +5,7 @@ import {WorkingPeriod} from '@domain/models/time-card-computation/working-period
 import {WorkingPeriodId} from '@domain/models/time-card-computation/working-period/WorkingPeriodId';
 import {Duration} from '@js-joda/core';
 import {List, Map, ValueObject, Record} from 'immutable';
-import {WorkedHoursRate} from './WorkedHoursRate';
+import { WorkedHoursRate, WorkedHoursResume } from './WorkedHoursRate';
 
 type WorkingPeriodTimecardId = string;
 
@@ -17,20 +17,22 @@ export interface WPTimecard {
   workedHours: Record<{[K in WorkedHoursRate]: Duration}>;
 }
 
+const test = new WorkedHoursResume()
+
 export class WorkingPeriodTimecard implements ValueObject, WPTimecard {
   private static count = 0;
   public static build(params: {
     employeeId: EmployeeId;
     contractId: EmploymentContractId;
     workingPeriod: WorkingPeriod;
-    workedHours: Record<{[K in WorkedHoursRate]: Duration}>;
+    workedHours?: typeof test;
   }) {
     return new WorkingPeriodTimecard(
       `${WorkingPeriodTimecard.count++}`,
       params.employeeId,
       params.contractId,
       params.workingPeriod,
-      params.workedHours
+      params.workedHours ?? new WorkedHoursResume(),
     );
   }
 
@@ -41,7 +43,7 @@ export class WorkingPeriodTimecard implements ValueObject, WPTimecard {
     public readonly employeeId: EmployeeId,
     public readonly contractId: EmploymentContractId,
     public readonly workingPeriod: WorkingPeriod,
-    public readonly workedHours: Record<{[K in WorkedHoursRate]: Duration}>
+    public readonly workedHours: typeof test
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
       .set('id', this.id)

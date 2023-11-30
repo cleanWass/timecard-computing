@@ -5,8 +5,8 @@ import {Map, ValueObject} from 'immutable';
 
 export class LocalDateRange implements ValueObject {
   public static of(
-    start: LocalDate,
-    end: LocalDate
+    start: LocalDate, // inclusive
+    end: LocalDate    // exclusive
   ): E.Either<IllegalArgumentError, LocalDateRange> {
     return end.isAfter(start)
       ? E.right(new LocalDateRange(start, end))

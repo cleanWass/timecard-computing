@@ -1,12 +1,11 @@
 import {
   computeTimecardForEmployee,
-  splitPeriodIntoWorkingPeriods,
 } from '@application/timecard-computation/compute-timecard-for-employee';
 
 import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/employment-contract';
 import {Leave} from '@domain/models/leave-recording/leave/leave';
 import {LocalDateRange} from '@domain/models/local-date-range';
-import {Shift} from '@domain/models/mission-delivery/shift/Shift';
+import {Shift} from '@domain/models/mission-delivery/shift/shift';
 import {Duration, LocalDate, LocalDateTime} from '@js-joda/core';
 import {buildShift, contracts} from '@test/application/timecard-computation/computeTimecardHelper';
 import * as E from 'fp-ts/Either';
@@ -37,7 +36,7 @@ describe('computeTimecardForEmployee', () => {
         ]);
 
         const shifts = baseShifts.concat(baseShifts.map(s => ({...s, startTime: s.startTime.plusDays(7)})).concat(
-          shiftBuilder(LocalDateTime.of(2023, 1, 13, 21), Duration.ofHours(2))
+          shiftBuilder(LocalDateTime.of(2023, 1, 13, 21), Duration.ofHours(12))
         ));
         const test = computeTimecardForEmployee(
           'gms',
@@ -50,7 +49,7 @@ describe('computeTimecardForEmployee', () => {
           test,
           E.match(
             e => console.log(e),
-            t => t.map(w => console.log(w.employmentContractId + ' ' + w.period.toFormattedString()))
+            t => t.map(w => console.log(w.contractId + ' ' + w.workingPeriod.period.toFormattedString()))
           )
         );
         expect(true).toBe(true);
