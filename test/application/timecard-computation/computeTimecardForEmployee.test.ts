@@ -36,7 +36,9 @@ describe('computeTimecardForEmployee', () => {
           shiftBuilder(LocalDateTime.of(2023, 1, 6, 17), Duration.ofHours(4)),
         ]);
 
-        const shifts = baseShifts.concat(baseShifts.map(s => ({...s, startTime: s.startTime.plusDays(7)})));
+        const shifts = baseShifts.concat(baseShifts.map(s => ({...s, startTime: s.startTime.plusDays(7)})).concat(
+          shiftBuilder(LocalDateTime.of(2023, 1, 13, 21), Duration.ofHours(2))
+        ));
         const test = computeTimecardForEmployee(
           'gms',
           new LocalDateRange(LocalDate.parse('2023-01-01'), LocalDate.parse('2023-02-10')),

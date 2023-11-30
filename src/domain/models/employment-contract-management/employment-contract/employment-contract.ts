@@ -78,4 +78,8 @@ export class EmploymentContract implements ValueObject {
       O.match(() => defaultEndDate, identity)
     )
   )}
+
+  isFullTime(): boolean {
+    return this.weeklyTotalWorkedHours.equals(Duration.ofHours(35));
+  }
 }
