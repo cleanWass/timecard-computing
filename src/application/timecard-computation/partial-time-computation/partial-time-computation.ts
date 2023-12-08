@@ -1,6 +1,6 @@
 import {Duration} from '@js-joda/core';
 import {EmploymentContract} from '../../../domain/models/employment-contract-management/employment-contract/employment-contract';
-import {WorkingPeriodTimecard} from '../../../domain/models/time-card-computation/time-card/WorkingPeriodTimecard';
+import {WorkingPeriodTimecard} from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
 
 export const computeComplementaryHours = (contract: EmploymentContract) => (timecard: WorkingPeriodTimecard) =>
   contract?.isFullTime()

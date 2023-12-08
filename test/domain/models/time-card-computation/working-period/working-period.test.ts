@@ -1,7 +1,7 @@
 import { Duration, LocalDate } from '@js-joda/core';
 import { EmploymentContract } from '../../../../../src/domain/models/employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../../../../../src/domain/models/local-date-range';
-import { WorkingPeriod } from '../../../../../src/domain/models/time-card-computation/working-period/WorkingPeriod';
+import { WorkingPeriod } from '../../../../../src/domain/models/time-card-computation/working-period/working-period';
 
 const employeeId = 'ezafkze';
 const employmentContractId = 'pz^rgkz';

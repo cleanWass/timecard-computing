@@ -37,4 +37,13 @@ export class WorkingPeriod implements ValueObject {
   isComplete({ overtimeAveragingPeriod }: EmploymentContract) {
     return this.period.duration().equals(overtimeAveragingPeriod);
   }
+
+  with(params: Partial<WorkingPeriod>): WorkingPeriod {
+    return new WorkingPeriod(
+      params.employeeId ?? this.employeeId,
+      params.employmentContractId ?? this.employmentContractId,
+      params.period ?? this.period
+    );
+  }
+
 }

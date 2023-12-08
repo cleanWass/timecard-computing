@@ -6,8 +6,8 @@ import {List, Map} from 'immutable';
 import {EmploymentContract} from '../../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import {Leave} from '../../../domain/models/leave-recording/leave/leave';
 import {Shift} from '../../../domain/models/mission-delivery/shift/shift';
-import {WorkingPeriodTimecard} from '../../../domain/models/time-card-computation/time-card/WorkingPeriodTimecard';
-import {WorkingPeriod} from '../../../domain/models/time-card-computation/working-period/WorkingPeriod';
+import {WorkingPeriodTimecard} from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
+import {WorkingPeriod} from '../../../domain/models/time-card-computation/working-period/working-period';
 import {TimecardComputationError} from '../../../~shared/error/TimecardComputationError';
 
 export const computeTotalHoursByWorkingPeriod = (groupedShifts: Map<WorkingPeriod, List<Shift>>) =>

@@ -36,6 +36,10 @@ export class LocalDateRange implements ValueObject {
       .format(DateTimeFormatter.ofPattern('dd/MM/yy'))}`;
   }
 
+  contains(date: LocalDate): boolean {
+    return (this.start.isBefore(date) || this.start.isEqual(date)) && this.end.isAfter(date);
+  }
+
   includesDate(date: LocalDate): boolean {
     return ((this.start.equals(date) || this.start.isBefore(date)) && this.end.isAfter(date)) || this.end.isEqual(date);
   }

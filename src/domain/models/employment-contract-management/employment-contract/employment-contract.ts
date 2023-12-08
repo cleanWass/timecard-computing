@@ -3,23 +3,14 @@ import {DayOfWeek, Duration, LocalDate} from '@js-joda/core';
 import {identity, pipe} from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import {Map, Set, ValueObject} from 'immutable';
+import { ClassAttributes } from '../../../../~shared/util/types';
 import { EmployeeId } from '../../employee-registration/employee/employee-id';
 import { LocalDateRange } from '../../local-date-range';
 import { LocalTimeSlot } from '../../local-time-slot';
 import {EmploymentContractId} from './employment-contract-id';
 
 export class EmploymentContract implements ValueObject {
-  public static build(params: {
-    id: EmploymentContractId;
-    employeeId: EmployeeId;
-    startDate: LocalDate;
-    endDate: O.Option<LocalDate>;
-    overtimeAveragingPeriod: Duration;
-    weeklyTotalWorkedHours: Duration;
-    weeklyNightShiftHours: Duration;
-    workedDays: Set<DayOfWeek>;
-    weeklyPlanning: Map<DayOfWeek, Set<LocalTimeSlot>>;
-  }) {
+  public static build(params: ClassAttributes<EmploymentContract>) {
     return new EmploymentContract(
       params.id,
       params.employeeId,
@@ -101,5 +92,9 @@ export class EmploymentContract implements ValueObject {
 
   isFullTime(): boolean {
     return this.weeklyTotalWorkedHours.equals(Duration.ofHours(35));
+  }
+
+  with(params: ClassAttributes<EmploymentContract> ) {
+    return EmploymentContract.build(params)
   }
 }

@@ -10,3 +10,10 @@ export type ExtractEitherRightType<A extends (...args: unknown[]) => unknown> = 
 >
   ? B
   : never;
+
+
+export type NonFunctionKeys<T> = {
+  [K in keyof T]: T[K] extends Function ? never : K;
+}[keyof T];
+
+export type ClassAttributes<T> = Pick<T, NonFunctionKeys<T>>;

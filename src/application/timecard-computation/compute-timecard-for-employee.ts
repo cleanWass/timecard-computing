@@ -9,8 +9,8 @@ import { EmploymentContract } from '../../domain/models/employment-contract-mana
 import { Leave } from '../../domain/models/leave-recording/leave/leave';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { Shift } from '../../domain/models/mission-delivery/shift/shift';
-import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/time-card/WorkingPeriodTimecard';
-import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/WorkingPeriod';
+import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
 import {
   computeSupplementaryHours,
@@ -51,19 +51,19 @@ const initializeWorkingPeriodTimecard = (workingPeriod: WorkingPeriod) =>
   });
 
 // todo pattern matching on contract fulltime et flow(a) flow(b) selon temps plein / partiel ?
-// [ ] si semaine incomplète (nouveau contrat ou avenant), ajouter aux jours manquants les heures habituels selon le planning
+// [x] si semaine incomplète (nouveau contrat ou avenant), ajouter aux jours manquants les heures habituels selon le planning
 // [ ] faire le total des heures normales disponibles (congés payes + jours fériés) de la semaine
 // [ ] faire le total des heures travaillées de la semaine
 // [ ] si le total des heures travaillées + heures normales disponibles est > contrat, décompter les heures normales effectives
 // [ ] si plus d'heures normales disponibles, décompter des heures sup / comp
 // [ ] calculer la majoration des heures additionnelles selon contrat HC10 11 25 | HS 25 50
 // [ ] calculer les majorations pour dimanche / jour férié / nuit
+// [ ] enlever les heures fictives
 
-const fillIfPartialWeek = (contract: EmploymentContract) => (wpTimecard: WorkingPeriodTimecard) => {
-  if (wpTimecard.workingPeriod.isComplete(contract)) return wpTimecard;
-  // TODO
-  return wpTimecard;
-};
+// TODO passer en option
+const fillIfPartialWeek = (contract: EmploymentContract) => (wpTimecard: WorkingPeriodTimecard) =>
+  wpTimecard.workingPeriod.isComplete(contract) ? wpTimecard : wpTimecard.with({ fakeShifts: wpTimecard.generateFakeShifts(contract) });
+
 export const computeWorkingPeriodTimecard: (
   workingPeriod: WorkingPeriod,
   shifts: List<Shift>,
@@ -75,6 +75,7 @@ export const computeWorkingPeriodTimecard: (
     initializeWorkingPeriodTimecard,
     fillIfPartialWeek(contract),
     computeTotalHours(shifts),
+    // filterShifts(shifts),
     computeComplementaryHours(contract),
     computeSupplementaryHours(contract),
     divideSupplementaryHoursByRating(contract)

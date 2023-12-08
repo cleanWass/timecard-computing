@@ -5,7 +5,7 @@ import {divideIntoPeriods} from './divideIntoPeriods';
 import {EmploymentContract} from '../../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import {LocalDateRange} from '../../../domain/models/local-date-range';
 import {Shift} from '../../../domain/models/mission-delivery/shift/shift';
-import {WorkingPeriod} from '../../../domain/models/time-card-computation/working-period/WorkingPeriod';
+import {WorkingPeriod} from '../../../domain/models/time-card-computation/working-period/working-period';
 import {TimecardComputationError} from '../../../~shared/error/TimecardComputationError';
 
 export const throwIfNoContract = <T>(list: List<T>) =>

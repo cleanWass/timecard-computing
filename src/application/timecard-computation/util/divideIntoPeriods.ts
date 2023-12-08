@@ -4,7 +4,7 @@ import {EmployeeId} from '../../../domain/models/employee-registration/employee/
 import {EmploymentContract} from '../../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import {EmploymentContractId} from '../../../domain/models/employment-contract-management/employment-contract/employment-contract-id';
 import {LocalDateRange} from '../../../domain/models/local-date-range';
-import {WorkingPeriod} from '../../../domain/models/time-card-computation/working-period/WorkingPeriod';
+import {WorkingPeriod} from '../../../domain/models/time-card-computation/working-period/working-period';
 
 const {DAYS} = ChronoUnit;
 const {MONDAY} = DayOfWeek;

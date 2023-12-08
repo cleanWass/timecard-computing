@@ -13,7 +13,7 @@ import {
 } from '../../../../src/domain/models/employment-contract-management/employment-contract/employment-contract-id';
 import { LocalDateRange } from '../../../../src/domain/models/local-date-range';
 import { LocalTimeSlot } from '../../../../src/domain/models/local-time-slot';
-import { WorkingPeriod } from '../../../../src/domain/models/time-card-computation/working-period/WorkingPeriod';
+import { WorkingPeriod } from '../../../../src/domain/models/time-card-computation/working-period/working-period';
 import forceSome from '../../../~shared/util/forceSome';
 
 const {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY} = DayOfWeek;
