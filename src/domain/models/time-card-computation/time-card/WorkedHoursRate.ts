@@ -1,9 +1,16 @@
-import {Duration} from '@js-joda/core';
-import { keys } from '@shared/util/types';
-import {Record} from 'immutable';
+import { Duration } from '@js-joda/core';
+
+import { Record, RecordOf } from 'immutable';
+import { keys } from '../../../../~shared/util/types';
 
 export const HoursTypeCodes = {
   TotalWeekly: 'H', // Horaire Total
+
+  TotalNormal: 'HN', // Horaire Normal Total
+  TotalNormalAvailable: 'HNA', // Horaire Normal Disponible
+
+  HolidaySurchargedH: 'MAJOFERIEH', // Majoration Férié Habituel
+  HolidaySurchargedP: 'MAJOFERIEP', // Majoration Férié Ponctuel
 
   TotalComplementary: 'HC', // Horaire Complémentaire Total
   TenPercentRateComplementary: 'HC10', // Horaire complémentaire 10%
@@ -14,11 +21,11 @@ export const HoursTypeCodes = {
   TwentyFivePercentRateSupplementary: 'HS25', // Horaire supplémentaire 25%
   FiftyPercentRateSupplementary: 'HS50', // Horaire supplémentaire 50%
 
-  SundayContract: 'Dim H', // Dimanche
-  SundayAdditional: 'Dim P', // Dimanche complémentaire
+  SundayContract: 'Dim H', // Dimanche Habituel
+  SundayAdditional: 'Dim P', // Dimanche Ponctuel
 
-  NightShiftContract: 'Nuit H', // Nuit
-  NightShiftAdditional: 'Nuit P', // Nuit complémentaire
+  NightShiftContract: 'Nuit H', // Nuit Habituel
+  NightShiftAdditional: 'Nuit P', // Nuit Ponctuel
 } as const;
 
 export type WorkedHoursRate = keyof typeof HoursTypeCodes;
@@ -28,10 +35,11 @@ const defaultValues = keys(HoursTypeCodes).reduce(
     acc[key] = Duration.ZERO;
     return acc;
   },
-  {} as {[k in WorkedHoursRate]: Duration}
+  {} as { [k in WorkedHoursRate]: Duration }
 );
 
 export const WorkedHoursResume = Record(defaultValues);
+export type WorkedHoursResumeType = RecordOf<typeof defaultValues>;
 //
 // const defaultValues = {
 //   TotalWeekly: Duration.ZERO,

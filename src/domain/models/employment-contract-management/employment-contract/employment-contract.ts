@@ -1,11 +1,12 @@
-import { EmployeeId } from '@domain/models/employee-registration/employee/employee-id';
-import { LocalDateRange } from '@domain/models/local-date-range';
-import { LocalTimeSlot } from '@domain/models/local-time-slot';
-import { DayOfWeek, Duration, LocalDate } from '@js-joda/core';
-import { identity, pipe } from 'fp-ts/function';
+
+import {DayOfWeek, Duration, LocalDate} from '@js-joda/core';
+import {identity, pipe} from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
-import { Map, Set, ValueObject } from 'immutable';
-import { EmploymentContractId } from './employment-contract-id';
+import {Map, Set, ValueObject} from 'immutable';
+import { EmployeeId } from '../../employee-registration/employee/employee-id';
+import { LocalDateRange } from '../../local-date-range';
+import { LocalTimeSlot } from '../../local-time-slot';
+import {EmploymentContractId} from './employment-contract-id';
 
 export class EmploymentContract implements ValueObject {
   public static build(params: {
@@ -17,7 +18,7 @@ export class EmploymentContract implements ValueObject {
     weeklyTotalWorkedHours: Duration;
     weeklyNightShiftHours: Duration;
     workedDays: Set<DayOfWeek>;
-    weeklyPlanning: Map<DayOfWeek, Set<LocalTimeSlot>>
+    weeklyPlanning: Map<DayOfWeek, Set<LocalTimeSlot>>;
   }) {
     return new EmploymentContract(
       params.id,
@@ -29,6 +30,23 @@ export class EmploymentContract implements ValueObject {
       params.weeklyNightShiftHours,
       params.workedDays,
       params.weeklyPlanning
+    );
+  }
+
+  public static buildFromJSON(json: any) {
+    return new EmploymentContract(
+      'ee',
+      'qqq',
+      LocalDate.parse(json.startDate),
+      pipe(
+        json.endDate,
+        O.map((d: string) => LocalDate.parse(d))
+      ),
+      Duration.ofDays(7),
+      Duration.parse(json.weeklyHours),
+      Duration.ofHours(7),
+      Set(Object.keys(json.planning).map(d => DayOfWeek[d])),
+      json.planning
     );
   }
 
@@ -44,8 +62,7 @@ export class EmploymentContract implements ValueObject {
     public readonly weeklyNightShiftHours: Duration,
     public readonly workedDays: Set<DayOfWeek>,
     public readonly weeklyPlanning: Map<DayOfWeek, Set<LocalTimeSlot>>
-
-) {
+  ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
       .set('id', this.id)
       .set('employeeId', this.employeeId)
@@ -62,7 +79,7 @@ export class EmploymentContract implements ValueObject {
       .set('weeklyTotalWorkedHours', this.weeklyTotalWorkedHours.toString())
       .set('weeklyNightShiftHours', this.weeklyNightShiftHours.toString())
       .set('workedDays', this.workedDays)
-      .set('weeklyPlanning', this.weeklyPlanning)
+      .set('weeklyPlanning', this.weeklyPlanning);
   }
 
   equals(other: unknown): boolean {
@@ -73,11 +90,14 @@ export class EmploymentContract implements ValueObject {
     return this._vo.hashCode();
   }
   period(defaultEndDate: LocalDate): LocalDateRange {
-    return new LocalDateRange(this.startDate, pipe(
-      this.endDate,
-      O.match(() => defaultEndDate, identity)
-    )
-  )}
+    return new LocalDateRange(
+      this.startDate,
+      pipe(
+        this.endDate,
+        O.match(() => defaultEndDate, identity)
+      )
+    );
+  }
 
   isFullTime(): boolean {
     return this.weeklyTotalWorkedHours.equals(Duration.ofHours(35));

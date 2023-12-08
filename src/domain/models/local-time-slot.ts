@@ -1,20 +1,14 @@
-import {IllegalArgumentError} from '@domain/~shared/error/illegal-argument-error';
+
 import {Duration, LocalTime} from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import {Map, Set, ValueObject} from 'immutable';
+import { IllegalArgumentError } from '../~shared/error/illegal-argument-error';
 
 export class LocalTimeSlot implements ValueObject {
-  public static of(
-    startTime: LocalTime,
-    endTime: LocalTime
-  ): E.Either<IllegalArgumentError, LocalTimeSlot> {
+  public static of(startTime: LocalTime, endTime: LocalTime): E.Either<IllegalArgumentError, LocalTimeSlot> {
     return endTime.isAfter(startTime)
       ? E.right(new LocalTimeSlot(startTime, endTime))
-      : E.left(
-          new IllegalArgumentError(
-            `Start (${startTime}) must be before End (${endTime}).`
-          )
-        );
+      : E.left(new IllegalArgumentError(`Start (${startTime}) must be before End (${endTime}).`));
   }
 
   private readonly valueObject: ValueObject;
@@ -23,9 +17,7 @@ export class LocalTimeSlot implements ValueObject {
     public readonly startTime: LocalTime,
     public readonly endTime: LocalTime
   ) {
-    this.valueObject = Map<string, LocalTime>()
-      .set('startTime', this.startTime)
-      .set('endTime', this.endTime);
+    this.valueObject = Map<string, LocalTime>().set('startTime', this.startTime).set('endTime', this.endTime);
   }
 
   equals(other: LocalTimeSlot): boolean {
@@ -38,15 +30,9 @@ export class LocalTimeSlot implements ValueObject {
 
   subtract(addend: LocalTimeSlot): Set<LocalTimeSlot> {
     const result = Set<LocalTimeSlot>();
-    if (
-      addend.startTime.equals(this.startTime) &&
-      addend.endTime.isBefore(this.endTime)
-    ) {
+    if (addend.startTime.equals(this.startTime) && addend.endTime.isBefore(this.endTime)) {
       return result.add(new LocalTimeSlot(addend.endTime, this.endTime));
-    } else if (
-      addend.startTime.isAfter(this.startTime) &&
-      addend.endTime.equals(this.endTime)
-    ) {
+    } else if (addend.startTime.isAfter(this.startTime) && addend.endTime.equals(this.endTime)) {
       return result.add(new LocalTimeSlot(this.startTime, addend.startTime));
     } else if (!this.isConcurrentOf(addend)) {
       return result.add(this);
@@ -80,10 +66,8 @@ export class LocalTimeSlot implements ValueObject {
 
   includesInclusive(addend: LocalTimeSlot) {
     return (
-      (addend.startTime.isAfter(this.startTime) ||
-        addend.startTime.equals(this.startTime)) &&
-      (addend.endTime.isBefore(this.endTime) ||
-        addend.endTime.equals(this.endTime))
+      (addend.startTime.isAfter(this.startTime) || addend.startTime.equals(this.startTime)) &&
+      (addend.endTime.isBefore(this.endTime) || addend.endTime.equals(this.endTime))
     );
   }
 
@@ -92,10 +76,7 @@ export class LocalTimeSlot implements ValueObject {
   }
 
   includes(addend: LocalTimeSlot) {
-    return (
-      addend.startTime.isAfter(this.startTime) &&
-      addend.endTime.isBefore(this.endTime)
-    );
+    return addend.startTime.isAfter(this.startTime) && addend.endTime.isBefore(this.endTime);
   }
 
   isIncludedIn(addend: LocalTimeSlot) {
@@ -103,30 +84,23 @@ export class LocalTimeSlot implements ValueObject {
   }
 
   endOverlaps(addend: LocalTimeSlot) {
-    return (
-      this.includesAddendStart(addend) && addend.endTime.isAfter(this.endTime)
-    );
+    return this.includesAddendStart(addend) && addend.endTime.isAfter(this.endTime);
   }
 
   endOverlapsInclusive(addend: LocalTimeSlot) {
     return (
-      (this.includesAddendStart(addend) ||
-        addend.startTime.equals(this.endTime)) &&
+      (this.includesAddendStart(addend) || addend.startTime.equals(this.endTime)) &&
       addend.endTime.isAfter(this.endTime)
     );
   }
 
   startOverlaps(addend: LocalTimeSlot) {
-    return (
-      this.includesAddendEnd(addend) &&
-      addend.startTime.isBefore(this.startTime)
-    );
+    return this.includesAddendEnd(addend) && addend.startTime.isBefore(this.startTime);
   }
 
   startOverlapsInclusive(addend: LocalTimeSlot) {
     return (
-      (this.includesAddendEnd(addend) ||
-        addend.endTime.equals(this.startTime)) &&
+      (this.includesAddendEnd(addend) || addend.endTime.equals(this.startTime)) &&
       addend.startTime.isBefore(this.startTime)
     );
   }
@@ -136,27 +110,15 @@ export class LocalTimeSlot implements ValueObject {
   }
 
   overlapsInclusive(addend: LocalTimeSlot) {
-    return (
-      this.endOverlapsInclusive(addend) || this.startOverlapsInclusive(addend)
-    );
+    return this.endOverlapsInclusive(addend) || this.startOverlapsInclusive(addend);
   }
 
   isConcurrentOf(addend: LocalTimeSlot) {
-    return (
-      this.equals(addend) ||
-      this.overlaps(addend) ||
-      this.includes(addend) ||
-      this.isIncludedIn(addend)
-    );
+    return this.equals(addend) || this.overlaps(addend) || this.includes(addend) || this.isIncludedIn(addend);
   }
 
   isConcurrentOfInclusive(addend: LocalTimeSlot) {
-    return (
-      this.equals(addend) ||
-      this.overlapsInclusive(addend) ||
-      this.includes(addend) ||
-      this.isIncludedIn(addend)
-    );
+    return this.equals(addend) || this.overlapsInclusive(addend) || this.includes(addend) || this.isIncludedIn(addend);
   }
 
   plusMinutes(slotDurationInMinutes: number) {
@@ -171,16 +133,10 @@ export class LocalTimeSlot implements ValueObject {
   }
 
   private includesAddendEnd(addend: LocalTimeSlot) {
-    return (
-      addend.endTime.isAfter(this.startTime) &&
-      addend.endTime.isBefore(this.endTime)
-    );
+    return addend.endTime.isAfter(this.startTime) && addend.endTime.isBefore(this.endTime);
   }
 
   private includesAddendStart(addend: LocalTimeSlot) {
-    return (
-      addend.startTime.isAfter(this.startTime) &&
-      addend.startTime.isBefore(this.endTime)
-    );
+    return addend.startTime.isAfter(this.startTime) && addend.startTime.isBefore(this.endTime);
   }
 }

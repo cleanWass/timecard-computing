@@ -1,19 +1,11 @@
-
-import {EmployeeId} from '@domain/models/employee-registration/employee/employee-id';
-
-import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/employment-contract';
-import {LocalTimeSlot} from '@domain/models/local-time-slot';
-import {ClientId} from '@domain/models/sales-contract-management/client/client-id';
-import {
-  DayOfWeek,
-  Duration,
-  LocalDate,
-  LocalDateTime,
-  LocalTime,
-} from '@js-joda/core';
+import {DayOfWeek, Duration, LocalDate, LocalDateTime, LocalTime} from '@js-joda/core';
 import * as O from 'fp-ts/Option';
 
 import {Map, Set} from 'immutable';
+import {EmployeeId} from '../../../src/domain/models/employee-registration/employee/employee-id';
+import {EmploymentContract} from '../../../src/domain/models/employment-contract-management/employment-contract/employment-contract';
+import {LocalTimeSlot} from '../../../src/domain/models/local-time-slot';
+import {ClientId} from '../../../src/domain/models/sales-contract-management/client/client-id';
 
 const {MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY} = DayOfWeek;
 const mondayToFriday = Set.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY);

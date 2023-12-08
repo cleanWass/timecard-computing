@@ -1,12 +1,12 @@
-import {divideIntoPeriods} from '@application/timecard-computation/util/divideIntoPeriods';
-import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/employment-contract';
-import {LocalDateRange} from '@domain/models/local-date-range';
-import {Shift} from '@domain/models/mission-delivery/shift/shift';
-import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';
-import {TimecardComputationError} from '@shared/error/TimecardComputationError';
 import * as E from 'fp-ts/Either';
 import {pipe} from 'fp-ts/function';
 import {List, Map} from 'immutable';
+import {divideIntoPeriods} from './divideIntoPeriods';
+import {EmploymentContract} from '../../../domain/models/employment-contract-management/employment-contract/employment-contract';
+import {LocalDateRange} from '../../../domain/models/local-date-range';
+import {Shift} from '../../../domain/models/mission-delivery/shift/shift';
+import {WorkingPeriod} from '../../../domain/models/time-card-computation/working-period/WorkingPeriod';
+import {TimecardComputationError} from '../../../~shared/error/TimecardComputationError';
 
 export const throwIfNoContract = <T>(list: List<T>) =>
   list.isEmpty() ? E.left(new TimecardComputationError('No contract matches this period')) : E.right(list);

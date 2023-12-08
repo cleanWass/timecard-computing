@@ -1,11 +1,9 @@
-import {EmployeeId} from '@domain/models/employee-registration/employee/employee-id';
-import {EmploymentContractId} from '@domain/models/employment-contract-management/employment-contract/employment-contract-id';
-import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';
-
-import {WorkingPeriodId} from '@domain/models/time-card-computation/working-period/WorkingPeriodId';
-import {Duration} from '@js-joda/core';
-import {List, Map, ValueObject, Record} from 'immutable';
-import { WorkedHoursRate, WorkedHoursResume } from './WorkedHoursRate';
+import { Duration } from '@js-joda/core';
+import { List, Map, Record, RecordOf, ValueObject } from 'immutable';
+import { EmployeeId } from '../../employee-registration/employee/employee-id';
+import { EmploymentContractId } from '../../employment-contract-management/employment-contract/employment-contract-id';
+import { WorkingPeriod } from '../working-period/WorkingPeriod';
+import { WorkedHoursRate, WorkedHoursResume, WorkedHoursResumeType } from './WorkedHoursRate';
 
 type WorkingPeriodTimecardId = string;
 
@@ -14,10 +12,10 @@ export interface WPTimecard {
   employeeId: EmployeeId;
   contractId: EmploymentContractId;
   workingPeriod: WorkingPeriod;
-  workedHours: Record<{[K in WorkedHoursRate]: Duration}>;
+  workedHours: WorkedHoursResumeType;
 }
 
-const test = new WorkedHoursResume()
+const test = new WorkedHoursResume();
 
 export class WorkingPeriodTimecard implements ValueObject, WPTimecard {
   private static count = 0;
@@ -25,14 +23,14 @@ export class WorkingPeriodTimecard implements ValueObject, WPTimecard {
     employeeId: EmployeeId;
     contractId: EmploymentContractId;
     workingPeriod: WorkingPeriod;
-    workedHours?: typeof test;
+    workedHours?: WorkedHoursResumeType;
   }) {
     return new WorkingPeriodTimecard(
       `${WorkingPeriodTimecard.count++}`,
       params.employeeId,
       params.contractId,
       params.workingPeriod,
-      params.workedHours ?? new WorkedHoursResume(),
+      params.workedHours ?? new WorkedHoursResume()
     );
   }
 

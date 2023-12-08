@@ -1,20 +1,12 @@
-import {LocalDateRange} from '@domain/models/local-date-range';
-import {Map, ValueObject} from 'immutable';
-
-import {EmploymentContractId} from '@domain/models/employment-contract-management/employment-contract/employment-contract-id';
-import {EmployeeId} from '@domain/models/employee-registration/employee/employee-id';
+import { Map, ValueObject } from 'immutable';
+import { EmployeeId } from '../../employee-registration/employee/employee-id';
+import { EmploymentContract } from '../../employment-contract-management/employment-contract/employment-contract';
+import { EmploymentContractId } from '../../employment-contract-management/employment-contract/employment-contract-id';
+import { LocalDateRange } from '../../local-date-range';
 
 export class WorkingPeriod implements ValueObject {
-  public static build(params: {
-    employeeId: EmployeeId;
-    employmentContractId: EmploymentContractId;
-    period: LocalDateRange;
-  }) {
-    return new WorkingPeriod(
-      params.employeeId,
-      params.employmentContractId,
-      params.period
-    );
+  public static build(params: { employeeId: EmployeeId; employmentContractId: EmploymentContractId; period: LocalDateRange }) {
+    return new WorkingPeriod(params.employeeId, params.employmentContractId, params.period);
   }
 
   private _vo: Map<string, ValueObject | string | number | boolean>;
@@ -40,5 +32,9 @@ export class WorkingPeriod implements ValueObject {
 
   toString(): string {
     return JSON.stringify(this._vo.toJSON());
+  }
+
+  isComplete({ overtimeAveragingPeriod }: EmploymentContract) {
+    return this.period.duration().equals(overtimeAveragingPeriod);
   }
 }

@@ -1,24 +1,16 @@
-import {EmployeeId} from '@domain/models/employee-registration/employee/employee-id';
-import {EmploymentContract} from '@domain/models/employment-contract-management/employment-contract/employment-contract';
-import {EmploymentContractId} from '@domain/models/employment-contract-management/employment-contract/employment-contract-id';
-import {LocalDateRange} from '@domain/models/local-date-range';
-import {WorkingPeriod} from '@domain/models/time-card-computation/working-period/WorkingPeriod';
-import {
-  ChronoUnit,
-  DayOfWeek,
-  LocalDate,
-  TemporalAdjusters,
-} from '@js-joda/core';
-import * as E from 'fp-ts/Either';
-import {pipe} from 'fp-ts/function';
+import {ChronoUnit, DayOfWeek, LocalDate, TemporalAdjusters} from '@js-joda/core';
 import {List} from 'immutable';
+import {EmployeeId} from '../../../domain/models/employee-registration/employee/employee-id';
+import {EmploymentContract} from '../../../domain/models/employment-contract-management/employment-contract/employment-contract';
+import {EmploymentContractId} from '../../../domain/models/employment-contract-management/employment-contract/employment-contract-id';
+import {LocalDateRange} from '../../../domain/models/local-date-range';
+import {WorkingPeriod} from '../../../domain/models/time-card-computation/working-period/WorkingPeriod';
 
 const {DAYS} = ChronoUnit;
 const {MONDAY} = DayOfWeek;
 
 const makePeriod =
-  (employeeId: EmployeeId, employmentContractId: EmploymentContractId) =>
-  (startDate: LocalDate, endDate: LocalDate) =>
+  (employeeId: EmployeeId, employmentContractId: EmploymentContractId) => (startDate: LocalDate, endDate: LocalDate) =>
     WorkingPeriod.build({
       employeeId,
       employmentContractId,
@@ -28,41 +20,31 @@ const makePeriod =
 // const generateFirstPeriod = (startDate: , ) => {};
 
 export const divideIntoPeriods = (
-  { employeeId, id, overtimeAveragingPeriod }: EmploymentContract,
+  {employeeId, id, overtimeAveragingPeriod}: EmploymentContract,
   startDate: LocalDate,
-  endDate: LocalDate,
+  endDate: LocalDate
 ) => {
   const makePeriodForEmployee = makePeriod(employeeId, id);
   const earliestMonday = startDate.with(TemporalAdjusters.nextOrSame(MONDAY));
   const lastMonday = endDate.with(TemporalAdjusters.previousOrSame(MONDAY));
   const overtimeAveragingPeriodInDays = overtimeAveragingPeriod.toDays();
-  const numberOfPeriods =
-    earliestMonday.until(lastMonday, DAYS) / overtimeAveragingPeriodInDays;
+
+  if (startDate.isBefore(earliestMonday) && endDate.minusDays(1).isBefore(earliestMonday))
+    return List<WorkingPeriod>([makePeriodForEmployee(startDate, endDate)]);
+
+  const numberOfPeriods = Math.max(earliestMonday.until(lastMonday, DAYS) / overtimeAveragingPeriodInDays, 0);
   const fullPeriods = Array.from(new Array(numberOfPeriods))
-    .map((_, index) =>
-      earliestMonday.plusDays(index * overtimeAveragingPeriodInDays),
-    )
-    .map((monday) =>
-      makePeriodForEmployee(monday, monday.plusDays(overtimeAveragingPeriodInDays)),
-    );
+    .map((_, index) => earliestMonday.plusDays(index * overtimeAveragingPeriodInDays))
+    .map(monday => makePeriodForEmployee(monday, monday.plusDays(overtimeAveragingPeriodInDays)));
   const firstPeriodPortion = startDate.isBefore(earliestMonday)
     ? [makePeriodForEmployee(startDate, earliestMonday)]
     : [];
-  const lastPeriodPortion = endDate.isAfter(lastMonday)
-    ? [makePeriodForEmployee(lastMonday, endDate)]
-    : [];
-  return List<WorkingPeriod>([
-    ...firstPeriodPortion,
-    ...fullPeriods,
-    ...lastPeriodPortion,
-  ]);
+  const lastPeriodPortion = endDate.isAfter(lastMonday) ? [makePeriodForEmployee(lastMonday, endDate)] : [];
+  return List<WorkingPeriod>([...firstPeriodPortion, ...fullPeriods, ...lastPeriodPortion]);
 };
 
 export const divideContractsIntoPeriods = (
   contracts: List<EmploymentContract>,
   startDate: LocalDate,
   endDate: LocalDate
-) =>
-  contracts.flatMap((ect) =>
-    divideIntoPeriods(ect, startDate, endDate),
-  );
+) => contracts.flatMap(ect => divideIntoPeriods(ect, startDate, endDate));

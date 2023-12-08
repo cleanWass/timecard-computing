@@ -1,9 +1,8 @@
-import { LocalDateRange } from '@domain/models/local-date-range';
-
-import { IllegalArgumentError } from '@domain/~shared/error/illegal-argument-error';
-import { ChronoUnit, LocalDate, Month, MonthDay, Year } from '@js-joda/core';
+import {ChronoUnit, LocalDate, Month, MonthDay, Year} from '@js-joda/core';
 import * as E from 'fp-ts/lib/Either';
-import { Set } from 'immutable';
+import {Set} from 'immutable';
+import {LocalDateRange} from 'src/domain/models/local-date-range';
+import {IllegalArgumentError} from '../../~shared/error/illegal-argument-error';
 
 const {JANUARY, MAY, JULY, AUGUST, NOVEMBER, DECEMBER} = Month;
 const {of} = MonthDay;
@@ -59,7 +58,7 @@ export class HolidayComputationService {
           )
         );
   }
-
+  
   private computeFrIdfDates(period: LocalDateRange): Set<LocalDate> {
     const numberOfDays = period.start.until(period.end, ChronoUnit.DAYS);
     const daysInPeriod = Array.from(new Array(numberOfDays))

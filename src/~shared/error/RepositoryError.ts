@@ -1,4 +1,4 @@
-import { TypedError } from './TypedError';
+import {TypedError} from './TypedError';
 
 export class RepositoryError extends TypedError {
   constructor(message: string) {

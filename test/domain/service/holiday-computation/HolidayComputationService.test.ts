@@ -1,11 +1,11 @@
-import { LocalDateRange } from '@domain/models/local-date-range';
 import * as E from 'fp-ts/lib/Either';
 import {Set} from 'immutable';
 import {LocalDate, Month} from '@js-joda/core';
-
+import { LocalDateRange } from '../../../../src/domain/models/local-date-range';
 import {
-  HolidayComputationService,
-} from '@domain/service/holiday-computation/holiday-computation-service';
+  HolidayComputationService
+} from '../../../../src/domain/service/holiday-computation/holiday-computation-service';
+
 import forceRight from '../../../~shared/util/forceRight';
 
 const {of} = LocalDate;
