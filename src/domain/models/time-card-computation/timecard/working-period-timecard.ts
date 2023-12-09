@@ -1,8 +1,7 @@
-import { DayOfWeek, Duration, LocalDate, LocalDateTime, LocalTime, TemporalAdjusters } from '@js-joda/core';
-import { List, Map, ValueObject, Set } from 'immutable';
-import { EmployeeId } from '../../employee-registration/employee/employee-id';
+import { DayOfWeek, Duration, LocalDateTime, TemporalAdjusters } from '@js-joda/core';
+import { List, Map, Set, ValueObject } from 'immutable';
+import { Employee } from '../../employee-registration/employee/employee';
 import { EmploymentContract } from '../../employment-contract-management/employment-contract/employment-contract';
-import { EmploymentContractId } from '../../employment-contract-management/employment-contract/employment-contract-id';
 import { LocalTimeSlot } from '../../local-time-slot';
 import { Shift } from '../../mission-delivery/shift/shift';
 import { WorkingPeriod } from '../working-period/working-period';
@@ -13,16 +12,16 @@ type WorkingPeriodTimecardId = string;
 export class WorkingPeriodTimecard implements ValueObject {
   private static count = 0;
   public static build(params: {
-    employeeId: EmployeeId;
-    contractId: EmploymentContractId;
+    employee: Employee;
+    contract: EmploymentContract;
     workingPeriod: WorkingPeriod;
-    workedHours?: WorkedHoursResumeType;
     fakeShifts?: List<Shift>;
+    workedHours?: WorkedHoursResumeType;
   }) {
     return new WorkingPeriodTimecard(
       `${WorkingPeriodTimecard.count++}`,
-      params.employeeId,
-      params.contractId,
+      params.employee,
+      params.contract,
       params.workingPeriod,
       params.workedHours ?? new WorkedHoursResume(),
       List<Shift>()
@@ -33,16 +32,16 @@ export class WorkingPeriodTimecard implements ValueObject {
 
   private constructor(
     public readonly id: WorkingPeriodTimecardId,
-    public readonly employeeId: EmployeeId,
-    public readonly contractId: EmploymentContractId,
+    public readonly employee: Employee,
+    public readonly contract: EmploymentContract,
     public readonly workingPeriod: WorkingPeriod,
     public readonly workedHours: WorkedHoursResumeType,
     public readonly fakeShifts: List<Shift>
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
       .set('id', this.id)
-      .set('employeeId', this.employeeId)
-      .set('contractId', this.contractId)
+      .set('employee', this.employee)
+      .set('contract', this.contract)
       .set('workingPeriod', this.workingPeriod)
       .set('workedHours', this.workedHours)
       .set('fakeShifts', this.fakeShifts);
@@ -59,8 +58,8 @@ export class WorkingPeriodTimecard implements ValueObject {
   with(params: Partial<WorkingPeriodTimecard>): WorkingPeriodTimecard {
     return new WorkingPeriodTimecard(
       params.id ?? this.id,
-      params.employeeId ?? this.employeeId,
-      params.contractId ?? this.contractId,
+      params.employee ?? this.employee,
+      params.contract ?? this.contract,
       params.workingPeriod ?? this.workingPeriod,
       params.workedHours ?? this.workedHours,
       params.fakeShifts ?? this.fakeShifts
@@ -96,7 +95,7 @@ export class WorkingPeriodTimecard implements ValueObject {
                     ({
                       id: `fake_shift_workingPeriod-${this.id}--${index}`,
                       duration: timeSlot.duration(),
-                      employeeId: this.employeeId,
+                      employeeId: this.employee.id,
                       startTime: LocalDateTime.of(day, timeSlot.startTime),
                       clientId: 'fake_client',
                     }) satisfies Shift

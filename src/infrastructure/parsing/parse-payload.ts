@@ -1,19 +1,19 @@
-import {DayOfWeek, Duration, LocalDate, LocalDateTime, LocalTime} from '@js-joda/core';
+import { DayOfWeek, Duration, LocalDate, LocalDateTime, LocalTime } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
-import {pipe} from 'fp-ts/function';
+import { pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
-import {List, Map, Set} from 'immutable';
+import { List, Map, Set } from 'immutable';
 import zod from 'zod';
-import {Employee} from '../../domain/models/employee-registration/employee/employee';
-import {EmploymentContract} from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
-import {Leave} from '../../domain/models/leave-recording/leave/leave';
-import {LocalDateRange} from '../../domain/models/local-date-range';
-import {LocalTimeSlot} from '../../domain/models/local-time-slot';
-import {Shift} from '../../domain/models/mission-delivery/shift/shift';
-import {ExtractEitherRightType, keys} from '../../~shared/util/types';
+import { Employee } from '../../domain/models/employee-registration/employee/employee';
+import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
+import { Leave } from '../../domain/models/leave-recording/leave/leave';
+import { LocalDateRange } from '../../domain/models/local-date-range';
+import { LocalTimeSlot } from '../../domain/models/local-time-slot';
+import { Shift } from '../../domain/models/mission-delivery/shift/shift';
+import { ExtractEitherRightType, keys } from '../../~shared/util/types';
 
 const daySchema = zod.enum(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
-const periodSchema = zod.object({start: zod.string(), end: zod.string()});
+const periodSchema = zod.object({ start: zod.string(), end: zod.string() });
 const shiftsFromJSONSchema = zod
   .object({
     date: zod.string().min(1),
@@ -44,9 +44,7 @@ const employeeSchema = zod.object({
 });
 const employeeWithTimecardSchema = zod
   .object({
-    cleaner: employeeSchema.transform(cleaner =>
-      Employee.build({...{id: '', firstName: '', lastName: ''}, ...cleaner})
-    ),
+    cleaner: employeeSchema.transform(cleaner => Employee.build({ ...{ id: '', firstName: '', lastName: '' }, ...cleaner })),
     shifts: zod.array(shiftsFromJSONSchema).nullish(),
     leaves: zod.array(leavesFromJSONSchema).nullish(),
     planning: zod.array(
@@ -115,7 +113,7 @@ const employeeWithTimecardSchema = zod
   }));
 
 export const formatPayload = (data: ExtractEitherRightType<typeof parsePayload>) => ({
-  employeeId: data.employee.id,
+  employee: data.employee,
   shifts: List<Shift>(data.shifts),
   leaves: List<Leave>(data.leaves),
   contracts: List<EmploymentContract>(data.contracts),
