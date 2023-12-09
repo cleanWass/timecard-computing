@@ -1,4 +1,4 @@
-import { DayOfWeek, Duration, LocalDateTime, TemporalAdjusters } from '@js-joda/core';
+import { DayOfWeek, Duration, Instant, LocalDateTime, TemporalAdjusters } from '@js-joda/core';
 
 import * as E from 'fp-ts/Either';
 import { Task } from 'fp-ts/es6/Task';
@@ -14,6 +14,7 @@ import { Shift } from '../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
+import { formatDuration, getFirstDayOfWeek } from '../../~shared/util/joda-helper';
 import {
   computeSupplementaryHours,
   computeTotalSupplementaryHours,
@@ -21,7 +22,7 @@ import {
 } from './full-time-computation/full-time-computation';
 import { computeComplementaryHours } from './partial-time-computation/partial-time-computation';
 import type { WPTimecardComputation } from './util/types';
-import { groupShiftsByWorkingPeriods, splitPeriodIntoWorkingPeriods } from './util/workingPeriodsComputation';
+import { groupShiftsByWorkingPeriods, splitPeriodIntoWorkingPeriods } from './util/working-period-computation';
 
 const computeTotalHoursByWorkingPeriod = (groupedShifts: Map<WorkingPeriod, List<Shift>>) =>
   E.right(groupedShifts.map(gs => gs.reduce((acc, sh) => acc.plus(sh.duration), Duration.ZERO)));
@@ -46,10 +47,14 @@ const findContract = (contracts: List<EmploymentContract>) => (workingPeriod: Wo
   );
 
 const initializeWorkingPeriodTimecard = ({
+  shifts,
+  leaves,
   contract,
   workingPeriod,
   employee,
 }: {
+  shifts: List<Shift>;
+  leaves: List<Leave>;
   contract: EmploymentContract;
   employee: Employee;
   workingPeriod: WorkingPeriod;
@@ -58,11 +63,13 @@ const initializeWorkingPeriodTimecard = ({
     contract,
     employee,
     workingPeriod,
+    shifts,
+    leaves,
   });
 
 // todo pattern matching on contract fulltime et flow(a) flow(b) selon temps plein / partiel ?
 // [x] si semaine incomplète (nouveau contrat ou avenant), ajouter aux jours manquants les heures habituels selon le planning
-// [ ] faire le total des heures normales disponibles (congés payes + jours fériés) de la semaine
+// [/] faire le total des heures normales disponibles (congés payes + jours fériés) de la semaine
 // [ ] faire le total des heures travaillées de la semaine
 // [ ] si le total des heures travaillées + heures normales disponibles est > contrat, décompter les heures normales effectives
 // [ ] si plus d'heures normales disponibles, décompter des heures sup / comp
@@ -72,17 +79,13 @@ const initializeWorkingPeriodTimecard = ({
 
 // TODO passer en option
 
-const generateFakeShifts = (timecard: WorkingPeriodTimecard) => {
-  return List(
-    timecard.workingPeriod.period
-      .with({
-        start: timecard.workingPeriod.period.start.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)),
-        end: timecard.workingPeriod.period.start
-          .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-          .plusDays(timecard.contract.overtimeAveragingPeriod.toDays()),
-      })
-      .toLocalDateArray()
-  )
+const generateFakeShifts = (timecard: WorkingPeriodTimecard) =>
+  timecard.workingPeriod.period
+    .with({
+      start: getFirstDayOfWeek(timecard.workingPeriod.period.start),
+      end: getFirstDayOfWeek(timecard.workingPeriod.period.start).plus(timecard.contract.overtimeAveragingPeriod),
+    })
+    .toLocalDateArray()
     .filter(d => !timecard.workingPeriod.period.contains(d))
     .reduce(
       (shifts, day) =>
@@ -90,23 +93,67 @@ const generateFakeShifts = (timecard: WorkingPeriodTimecard) => {
           timecard.contract.weeklyPlanning
             .get(day.dayOfWeek(), Set<LocalTimeSlot>())
             .toList()
-            .map(
-              (timeSlot, index) =>
-                ({
-                  id: `fake_shift_workingPeriod-${timecard.id}--${index}`,
-                  duration: timeSlot.duration(),
-                  employeeId: timecard.employee.id,
-                  startTime: LocalDateTime.of(day, timeSlot.startTime),
-                  clientId: 'fake_client',
-                }) satisfies Shift
+            // TODO construct shifts via a class and build method
+            .map((timeSlot, index) =>
+              Shift.build({
+                id: `fake_shift_workingPeriod-${timecard.id}--${index}`,
+                duration: timeSlot.duration(),
+                employeeId: timecard.employee.id,
+                startTime: LocalDateTime.of(day, timeSlot.startTime),
+                clientId: 'fake_client',
+              })
             )
         ),
       List<Shift>()
     );
+
+const generateFakeShiftsIfPartialWeek = (wpTimecard: WorkingPeriodTimecard) =>
+  wpTimecard.workingPeriod.isComplete(wpTimecard.contract) ? wpTimecard : wpTimecard.with({ fakeShifts: generateFakeShifts(wpTimecard) });
+
+const computeTotalNormalHoursAvailable = (leaves: List<Leave>, shifts: List<Shift>) => (timecard: WorkingPeriodTimecard) => {
+  const contract = timecard.contract;
+  const normalHoursFromLeaves = shifts
+    .filter(shift => leaves.some(leave => leave.period.contains(shift.startTime.toLocalDate())))
+    .reduce((sum, shift) => sum.plus(shift.duration), Duration.ZERO);
+
+  // TODO compute normal hours from holidays
+  const normalHoursFromHolidays = Duration.ZERO;
+
+  return timecard.register('TotalNormalAvailable', normalHoursFromLeaves.plus(normalHoursFromHolidays));
 };
 
-const fillIfPartialWeek = (wpTimecard: WorkingPeriodTimecard) =>
-  wpTimecard.workingPeriod.isComplete(wpTimecard.contract) ? wpTimecard : wpTimecard.with({ fakeShifts: generateFakeShifts(wpTimecard) });
+const isShiftDuringLeave = (leave: Leave) => (shift: Shift) => leave.getInterval().contains(Instant.from(shift.startTime));
+
+const filterShifts = ({
+  workingPeriod,
+  contract,
+  employee,
+  leaves,
+  shifts,
+}: {
+  workingPeriod: WorkingPeriod;
+  shifts: List<Shift>;
+  leaves: List<Leave>;
+  contract: EmploymentContract;
+  employee: Employee;
+}) => {
+  const curatedShifts = shifts
+    .reduce((acc, shift) => {
+      if (leaves.some(leave => isShiftDuringLeave(leave)(shift))) {
+        return acc;
+      }
+      return acc;
+    }, List<Shift>())
+    .filter(shift => leaves.some(leave => leave.period.contains(shift.startTime.toLocalDate())));
+
+  return {
+    workingPeriod,
+    shifts: shifts.filter(shift => workingPeriod.period.contains(shift.startTime.toLocalDate())),
+    leaves: leaves.filter(leave => workingPeriod.period.contains(leave.period.start)),
+    contract,
+    employee,
+  };
+};
 
 export const computeWorkingPeriodTimecard: (
   workingPeriod: WorkingPeriod,
@@ -114,23 +161,26 @@ export const computeWorkingPeriodTimecard: (
   leaves: List<Leave>,
   contract: EmploymentContract,
   employee: Employee
-) => WorkingPeriodTimecard = (workingPeriod, shifts, leaves, contract, employee) =>
-  pipe(
+) => WorkingPeriodTimecard = (workingPeriod, shifts, leaves, contract, employee) => {
+  return pipe(
     {
       contract,
       employee,
       workingPeriod,
+      shifts,
+      leaves,
     },
+    filterShifts,
     initializeWorkingPeriodTimecard,
-    fillIfPartialWeek,
+    generateFakeShiftsIfPartialWeek,
+    computeTotalNormalHoursAvailable(leaves, shifts),
     computeTotalHours(shifts),
     // filterShifts(shifts),
     computeComplementaryHours(contract),
     computeSupplementaryHours(contract),
     divideSupplementaryHoursByRating(contract)
   );
-
-const formatDuration = (d: Duration) => `${d.toHours()}h${d?.toMinutes() % 60 > 0 ? `${d.toMinutes() % 60} ` : ''}`;
+};
 
 export const computeTimecardForEmployee =
   (period: LocalDateRange) =>

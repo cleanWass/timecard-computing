@@ -69,27 +69,26 @@ const employeeWithTimecardSchema = zod
   })
   .transform(raw => ({
     cleaner: raw.cleaner,
-    shifts: raw.shifts.map(
-      shift =>
-        ({
-          id: 'TODO',
-          clientId: 'TODO',
-          startTime: LocalDateTime.of(LocalDate.parse(shift.date), LocalTime.parse(shift.startTime)),
-          duration: Duration.parse(shift.duration),
-          employeeId: raw.cleaner.id,
-        }) satisfies Shift
+    shifts: raw.shifts.map(shift =>
+      Shift.build({
+        id: 'TODO',
+        clientId: 'TODO',
+        startTime: LocalDateTime.of(LocalDate.parse(shift.date), LocalTime.parse(shift.startTime)),
+        duration: Duration.parse(shift.duration),
+        employeeId: raw.cleaner.id,
+      })
     ),
     leaves: raw.leaves.map(leave => {
       const startTime = LocalTime.parse(leave.startTime);
       const endTime = LocalTime.parse(leave.endTime);
-      return {
+      return Leave.build({
         id: 'TODO',
         startTime,
         endTime,
         period: new LocalDateRange(LocalDate.parse(leave.period.start), LocalDate.parse(leave.period.end)),
         reason: 'Paid',
         comment: O.some('TODO'),
-      } satisfies Leave;
+      });
     }),
     planning: raw.planning.map(p =>
       EmploymentContract.build({

@@ -2,6 +2,7 @@ import { DayOfWeek, Duration, LocalDateTime, TemporalAdjusters } from '@js-joda/
 import { List, Map, Set, ValueObject } from 'immutable';
 import { Employee } from '../../employee-registration/employee/employee';
 import { EmploymentContract } from '../../employment-contract-management/employment-contract/employment-contract';
+import { Leave } from '../../leave-recording/leave/leave';
 import { LocalTimeSlot } from '../../local-time-slot';
 import { Shift } from '../../mission-delivery/shift/shift';
 import { WorkingPeriod } from '../working-period/working-period';
@@ -15,6 +16,10 @@ export class WorkingPeriodTimecard implements ValueObject {
     employee: Employee;
     contract: EmploymentContract;
     workingPeriod: WorkingPeriod;
+
+    shifts: List<Shift>;
+    leaves: List<Leave>;
+
     fakeShifts?: List<Shift>;
     workedHours?: WorkedHoursResumeType;
   }) {
@@ -24,6 +29,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.contract,
       params.workingPeriod,
       params.workedHours ?? new WorkedHoursResume(),
+      params.shifts,
+      params.leaves,
       List<Shift>()
     );
   }
@@ -36,6 +43,10 @@ export class WorkingPeriodTimecard implements ValueObject {
     public readonly contract: EmploymentContract,
     public readonly workingPeriod: WorkingPeriod,
     public readonly workedHours: WorkedHoursResumeType,
+
+    public readonly shifts: List<Shift>,
+    public readonly leaves: List<Leave>,
+
     public readonly fakeShifts: List<Shift>
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
@@ -62,6 +73,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.contract ?? this.contract,
       params.workingPeriod ?? this.workingPeriod,
       params.workedHours ?? this.workedHours,
+      params.shifts ?? this.shifts,
+      params.leaves ?? this.leaves,
       params.fakeShifts ?? this.fakeShifts
     );
   }
@@ -81,28 +94,23 @@ export class WorkingPeriodTimecard implements ValueObject {
         })
         .toLocalDateArray()
     ).filter(d => !this.workingPeriod.period.contains(d));
-    return (
-      list
-        // TODO: when shifts is refactored to class, we can use a builder to generate fake shifts
-        .reduce(
-          (shifts, day) =>
-            shifts.concat(
-              contract.weeklyPlanning
-                .get(day.dayOfWeek(), Set<LocalTimeSlot>())
-                .toList()
-                .map(
-                  (timeSlot, index) =>
-                    ({
-                      id: `fake_shift_workingPeriod-${this.id}--${index}`,
-                      duration: timeSlot.duration(),
-                      employeeId: this.employee.id,
-                      startTime: LocalDateTime.of(day, timeSlot.startTime),
-                      clientId: 'fake_client',
-                    }) satisfies Shift
-                )
-            ),
-          List<Shift>()
-        )
+    return list.reduce(
+      (shifts, day) =>
+        shifts.concat(
+          contract.weeklyPlanning
+            .get(day.dayOfWeek(), Set<LocalTimeSlot>())
+            .toList()
+            .map((timeSlot, index) =>
+              Shift.build({
+                id: `fake_shift_workingPeriod-${this.id}--${index}`,
+                duration: timeSlot.duration(),
+                employeeId: this.employee.id,
+                startTime: LocalDateTime.of(day, timeSlot.startTime),
+                clientId: 'fake_client',
+              })
+            )
+        ),
+      List<Shift>()
     );
   }
 }

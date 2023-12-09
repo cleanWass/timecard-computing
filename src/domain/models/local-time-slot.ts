@@ -1,8 +1,8 @@
-
-import {Duration, LocalTime} from '@js-joda/core';
+import { Duration, Instant, LocalDate, LocalDateTime, LocalTime } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
-import {Map, Set, ValueObject} from 'immutable';
+import { Map, Set, ValueObject } from 'immutable';
 import { IllegalArgumentError } from '../~shared/error/illegal-argument-error';
+import { Interval } from '@js-joda/extra';
 
 export class LocalTimeSlot implements ValueObject {
   public static of(startTime: LocalTime, endTime: LocalTime): E.Either<IllegalArgumentError, LocalTimeSlot> {
@@ -37,9 +37,7 @@ export class LocalTimeSlot implements ValueObject {
     } else if (!this.isConcurrentOf(addend)) {
       return result.add(this);
     } else if (this.includes(addend)) {
-      return result
-        .add(new LocalTimeSlot(this.startTime, addend.startTime))
-        .add(new LocalTimeSlot(addend.endTime, this.endTime));
+      return result.add(new LocalTimeSlot(this.startTime, addend.startTime)).add(new LocalTimeSlot(addend.endTime, this.endTime));
     } else if (this.startOverlaps(addend)) {
       return result.add(new LocalTimeSlot(addend.endTime, this.endTime));
     } else if (this.endOverlaps(addend)) {
@@ -88,10 +86,7 @@ export class LocalTimeSlot implements ValueObject {
   }
 
   endOverlapsInclusive(addend: LocalTimeSlot) {
-    return (
-      (this.includesAddendStart(addend) || addend.startTime.equals(this.endTime)) &&
-      addend.endTime.isAfter(this.endTime)
-    );
+    return (this.includesAddendStart(addend) || addend.startTime.equals(this.endTime)) && addend.endTime.isAfter(this.endTime);
   }
 
   startOverlaps(addend: LocalTimeSlot) {
@@ -99,10 +94,7 @@ export class LocalTimeSlot implements ValueObject {
   }
 
   startOverlapsInclusive(addend: LocalTimeSlot) {
-    return (
-      (this.includesAddendEnd(addend) || addend.endTime.equals(this.startTime)) &&
-      addend.startTime.isBefore(this.startTime)
-    );
+    return (this.includesAddendEnd(addend) || addend.endTime.equals(this.startTime)) && addend.startTime.isBefore(this.startTime);
   }
 
   overlaps(addend: LocalTimeSlot) {
@@ -122,14 +114,18 @@ export class LocalTimeSlot implements ValueObject {
   }
 
   plusMinutes(slotDurationInMinutes: number) {
-    return new LocalTimeSlot(
-      this.startTime.plusMinutes(slotDurationInMinutes),
-      this.endTime.plusMinutes(slotDurationInMinutes)
-    );
+    return new LocalTimeSlot(this.startTime.plusMinutes(slotDurationInMinutes), this.endTime.plusMinutes(slotDurationInMinutes));
   }
 
   duration() {
     return Duration.between(this.startTime, this.endTime);
+  }
+
+  asInterval(startDate: LocalDate, endDate?: LocalDate): Interval {
+    return Interval.of(
+      Instant.from(LocalDateTime.of(startDate, this.startTime)),
+      Instant.from(LocalDateTime.of(endDate ?? startDate, this.endTime))
+    );
   }
 
   private includesAddendEnd(addend: LocalTimeSlot) {
