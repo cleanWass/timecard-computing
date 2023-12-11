@@ -3,7 +3,7 @@ import { Duration, LocalDate, LocalDateTime, LocalTime } from '@js-joda/core';
 import { List } from 'immutable';
 import * as O from 'fp-ts/Option';
 import { LocalDateRange } from '../../../src/domain/models/local-date-range';
-import { Leave } from '../../../src/domain/models/leave-recording/leave/leave';
+import { LeavePeriod } from '../../../src/domain/models/leave-recording/leave/leave-period';
 import { Shift } from '../../../src/domain/models/mission-delivery/shift/shift';
 import { getCuratedShifts } from '../../../src/application/timecard-computation/compute-timecard-for-employee';
 import { contracts } from './computeTimecardHelper';
@@ -18,7 +18,7 @@ describe('getCuratedShifts', () => {
     clientId: '',
     employeeId: '',
   });
-  let leave = Leave.build({
+  let leave = LeavePeriod.build({
     id: '1',
     period: new LocalDateRange(LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 1)),
     comment: O.some('eee'),

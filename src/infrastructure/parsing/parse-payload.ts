@@ -6,7 +6,7 @@ import { List, Map, Set } from 'immutable';
 import zod from 'zod';
 import { Employee } from '../../domain/models/employee-registration/employee/employee';
 import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
-import { Leave } from '../../domain/models/leave-recording/leave/leave';
+import { LeavePeriod } from '../../domain/models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { LocalTimeSlot } from '../../domain/models/local-time-slot';
 import { Shift } from '../../domain/models/mission-delivery/shift/shift';
@@ -81,7 +81,7 @@ const employeeWithTimecardSchema = zod
     leaves: raw.leaves.map(leave => {
       const startTime = LocalTime.parse(leave.startTime);
       const endTime = LocalTime.parse(leave.endTime);
-      return Leave.build({
+      return LeavePeriod.build({
         id: 'TODO',
         startTime,
         endTime,
@@ -114,7 +114,7 @@ const employeeWithTimecardSchema = zod
 export const formatPayload = (data: ExtractEitherRightType<typeof parsePayload>) => ({
   employee: data.employee,
   shifts: List<Shift>(data.shifts),
-  leaves: List<Leave>(data.leaves),
+  leaves: List<LeavePeriod>(data.leaves),
   contracts: List<EmploymentContract>(data.contracts),
 });
 

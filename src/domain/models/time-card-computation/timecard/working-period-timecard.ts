@@ -3,8 +3,10 @@ import { List, Map, Set, ValueObject } from 'immutable';
 import { Employee } from '../../employee-registration/employee/employee';
 import { EmploymentContract } from '../../employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../leave-recording/leave/leave';
+import { LeavePeriod } from '../../leave-recording/leave/leave-period';
 import { LocalTimeSlot } from '../../local-time-slot';
 import { Shift } from '../../mission-delivery/shift/shift';
+import { TheoreticalShift } from '../../mission-delivery/shift/theorical-shift';
 import { WorkingPeriod } from '../working-period/working-period';
 import { WorkedHoursRate, WorkedHoursResume, WorkedHoursResumeType } from './worked-hours-rate';
 
@@ -18,9 +20,11 @@ export class WorkingPeriodTimecard implements ValueObject {
     workingPeriod: WorkingPeriod;
 
     shifts: List<Shift>;
-    leaves: List<Leave>;
+    theoreticalShift?: List<TheoreticalShift>;
 
-    fakeShifts?: List<Shift>;
+    leaves: List<Leave>;
+    leavePeriods: List<LeavePeriod>;
+
     workedHours?: WorkedHoursResumeType;
   }) {
     return new WorkingPeriodTimecard(
@@ -31,6 +35,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.workedHours ?? new WorkedHoursResume(),
       params.shifts,
       params.leaves,
+      params.leavePeriods,
       List<Shift>()
     );
   }
@@ -45,9 +50,11 @@ export class WorkingPeriodTimecard implements ValueObject {
     public readonly workedHours: WorkedHoursResumeType,
 
     public readonly shifts: List<Shift>,
-    public readonly leaves: List<Leave>,
 
-    public readonly fakeShifts: List<Shift>
+    public readonly leaves: List<Leave>,
+    public readonly leavePeriods: List<LeavePeriod>,
+
+    public readonly theoreticalShift: List<Shift>
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
       .set('id', this.id)
@@ -55,7 +62,10 @@ export class WorkingPeriodTimecard implements ValueObject {
       .set('contract', this.contract)
       .set('workingPeriod', this.workingPeriod)
       .set('workedHours', this.workedHours)
-      .set('fakeShifts', this.fakeShifts);
+      .set('shifts', this.shifts)
+      .set('leaves', this.leaves)
+      .set('leavePeriods', this.leavePeriods)
+      .set('theoreticalShift', this.theoreticalShift);
   }
 
   equals(other: unknown): boolean {
@@ -75,7 +85,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.workedHours ?? this.workedHours,
       params.shifts ?? this.shifts,
       params.leaves ?? this.leaves,
-      params.fakeShifts ?? this.fakeShifts
+      params.leavePeriods ?? this.leavePeriods,
+      params.theoreticalShift ?? this.theoreticalShift
     );
   }
 
@@ -83,7 +94,7 @@ export class WorkingPeriodTimecard implements ValueObject {
     return this.with(this.workedHours.set(workedHoursRate, duration));
   }
 
-  generateFakeShifts(contract: EmploymentContract) {
+  generateTheoreticalShifts(contract: EmploymentContract) {
     let list = List(
       this.workingPeriod.period
         .with({
@@ -102,7 +113,7 @@ export class WorkingPeriodTimecard implements ValueObject {
             .toList()
             .map((timeSlot, index) =>
               Shift.build({
-                id: `fake_shift_workingPeriod-${this.id}--${index}`,
+                id: `fictional_shift_workingPeriod-${this.id}--${index}`,
                 duration: timeSlot.duration(),
                 employeeId: this.employee.id,
                 startTime: LocalDateTime.of(day, timeSlot.startTime),

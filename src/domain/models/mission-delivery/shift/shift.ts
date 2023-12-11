@@ -11,25 +11,25 @@ import '@js-joda/timezone';
 
 export type IShift = {
   id: ShiftId;
-  serviceContractId?: ServiceContractId;
-  requirementIds?: RequirementId[];
   startTime: LocalDateTime;
   duration: Duration;
   clientId: ClientId;
   employeeId: EmployeeId;
   replacedShiftId?: ShiftId;
+  requirementIds?: RequirementId[];
+  serviceContractId?: ServiceContractId;
 };
 
 export class Shift implements ValueObject, IShift {
   public static build(params: {
     id: ShiftId;
-    serviceContractId?: ServiceContractId;
-    requirementIds?: RequirementId[];
     startTime: LocalDateTime;
     duration: Duration;
     clientId: ClientId;
     employeeId: EmployeeId;
     replacedShiftId?: ShiftId;
+    requirementIds?: RequirementId[];
+    serviceContractId?: ServiceContractId;
   }) {
     return new Shift(
       params.id,
@@ -45,7 +45,7 @@ export class Shift implements ValueObject, IShift {
 
   private readonly _vo: ValueObject;
 
-  private constructor(
+  constructor(
     public readonly id: ShiftId,
     public readonly startTime: LocalDateTime,
     public readonly duration: Duration,

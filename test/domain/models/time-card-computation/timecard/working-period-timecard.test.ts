@@ -19,7 +19,7 @@ describe('WorkingPeriodTimecard', () => {
       period: new LocalDateRange(LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 9)),
     }),
     workedHours: new WorkedHoursResume(),
-    fakeShifts: List(),
+    theoreticalShift: List(),
   };
 
   beforeEach(() => {
@@ -32,8 +32,8 @@ describe('WorkingPeriodTimecard', () => {
 
   it('should generate fake shifts', () => {
     const contract = contracts.OneWeekContract;
-    const fakeShifts = workingPeriodTimecard.generateFakeShifts(contract);
-    expect(fakeShifts).toBeInstanceOf(List);
+    const theoreticalShift = workingPeriodTimecard.generateTheoreticalShifts(contract);
+    expect(theoreticalShift).toBeInstanceOf(List);
   });
 
   it('should compare equality with another WorkingPeriodTimecard', () => {
@@ -41,23 +41,23 @@ describe('WorkingPeriodTimecard', () => {
     expect(workingPeriodTimecard.equals(anotherWorkingPeriodTimecard)).toBe(true);
   });
 
-  describe('.generateFakeShifts', () => {
+  describe('.generateTheoreticalShift', () => {
     it('should generate 2 fake shifts for Monday', () => {
       const contract = contracts.OneWeekContract;
-      const fakeShifts = workingPeriodTimecard.generateFakeShifts(contract);
-      console.log(fakeShifts.toJSON())
-      expect(fakeShifts.size).toBe(2);
+      const theoreticalShift = workingPeriodTimecard.generateTheoreticalShifts(contract);
+      console.log(theoreticalShift.toJSON());
+      expect(theoreticalShift.size).toBe(2);
     });
     it('should not generate fake shifts', () => {
       const contract = contracts.OneWeekContract;
-      const fakeShifts = workingPeriodTimecard
+      const theoreticalShift = workingPeriodTimecard
         .with({
           workingPeriod: workingPeriodTimecard.workingPeriod.with({
             period: workingPeriodTimecard.workingPeriod.period.with({ start: LocalDate.of(2023, 1, 2) }),
           }),
         })
-        .generateFakeShifts(contract);
-      expect(fakeShifts.size).toBe(0);
+        .generateTheoreticalShifts(contract);
+      expect(theoreticalShift.size).toBe(0);
     });
   });
 });

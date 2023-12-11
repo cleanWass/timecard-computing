@@ -1,1 +1,1 @@
-export type LeaveReason = 'Unpaid' | 'Paid';
+export type LeaveReason = 'Unpaid' | 'Paid' | 'Holiday';

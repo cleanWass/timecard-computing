@@ -12,6 +12,8 @@ export const HoursTypeCodes = {
   HolidaySurchargedH: 'MAJOFERIEH', // Majoration Férié Habituel
   HolidaySurchargedP: 'MAJOFERIEP', // Majoration Férié Ponctuel
 
+  TotalAdditionalHours: 'HA', // Horaire Additionnel Total
+
   TotalComplementary: 'HC', // Horaire Complémentaire Total
   TenPercentRateComplementary: 'HC10', // Horaire complémentaire 10%
   ElevenPercentRateComplementary: 'HC11', // Horaire complémentaire 11%
