@@ -1,13 +1,29 @@
-import {Duration} from '@js-joda/core';
-import {EmploymentContract} from '../../../domain/models/employment-contract-management/employment-contract/employment-contract';
-import {WorkingPeriodTimecard} from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { Duration } from '@js-joda/core';
+import { pipe } from 'fp-ts/function';
+import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { getGreaterDuration } from '../../../~shared/util/joda-helper';
 
-export const computeComplementaryHours = (contract: EmploymentContract) => (timecard: WorkingPeriodTimecard) =>
-  contract?.isFullTime()
-    ? timecard
-    : timecard.register(
-        'TotalComplementary',
-        Duration.ofMinutes(
-          Math.max(0, timecard.workedHours.get('TotalWeekly').toMinutes() - contract.weeklyTotalWorkedHours.toMinutes())
-        )
-      );
+const computeSurchargeWithExtraHours = (timecard: WorkingPeriodTimecard) => {
+  const additionalHours = timecard.workedHours.TotalAdditionalHours;
+  const _10PerCentRateHours = getGreaterDuration(additionalHours, timecard.contract.extraDuration);
+  const _25PerCentRateHours = getGreaterDuration(additionalHours.minus(_10PerCentRateHours), Duration.ZERO);
+  return timecard
+    .register('TenPercentRateComplementary', _10PerCentRateHours)
+    .register('TwentyFivePercentRateComplementary', _25PerCentRateHours);
+};
+
+const computeSurchargeWithoutExtraHours = (timecard: WorkingPeriodTimecard) => {
+  const additionalHours = timecard.workedHours.TotalAdditionalHours;
+  const _11PercentRateHours = getGreaterDuration(
+    additionalHours,
+    Duration.ofMinutes(Number((timecard.contract.weeklyTotalWorkedHours.toMinutes() / 0.1).toFixed(2)))
+  );
+  const _25PerCentRateHours = getGreaterDuration(additionalHours, _11PercentRateHours);
+  return timecard
+    .register('ElevenPercentRateComplementary', _11PercentRateHours)
+    .register('TwentyFivePercentRateComplementary', _25PerCentRateHours);
+};
+
+export const computeComplementaryHours = (timecard: WorkingPeriodTimecard) => {
+  return pipe(timecard, timecard.contract.isExtraHours() ? computeSurchargeWithExtraHours : computeSurchargeWithoutExtraHours);
+};

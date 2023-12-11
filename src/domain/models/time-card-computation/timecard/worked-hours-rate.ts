@@ -4,22 +4,12 @@ import { Record, RecordOf } from 'immutable';
 import { keys } from '../../../../~shared/util/types';
 
 export const HoursTypeCodes = {
-  TotalWeekly: 'H', // Horaire Total
-
   TotalNormal: 'HN', // Horaire Normal Total
-  TotalNormalAvailable: 'HNA', // Horaire Normal Disponible
 
-  HolidaySurchargedH: 'MAJOFERIEH', // Majoration Férié Habituel
-  HolidaySurchargedP: 'MAJOFERIEP', // Majoration Férié Ponctuel
-
-  TotalAdditionalHours: 'HA', // Horaire Additionnel Total
-
-  TotalComplementary: 'HC', // Horaire Complémentaire Total
   TenPercentRateComplementary: 'HC10', // Horaire complémentaire 10%
   ElevenPercentRateComplementary: 'HC11', // Horaire complémentaire 11%
   TwentyFivePercentRateComplementary: 'HC25', // Horaire complémentaire 25%
 
-  TotalSupplementary: 'HS', // Horaire Supplémentaire Total
   TwentyFivePercentRateSupplementary: 'HS25', // Horaire supplémentaire 25%
   FiftyPercentRateSupplementary: 'HS50', // Horaire supplémentaire 50%
 
@@ -28,6 +18,16 @@ export const HoursTypeCodes = {
 
   NightShiftContract: 'Nuit H', // Nuit Habituel
   NightShiftAdditional: 'Nuit P', // Nuit Ponctuel
+
+  HolidaySurchargedH: 'MAJOFERIEH', // Majoration Férié Habituel
+  HolidaySurchargedP: 'MAJOFERIEP', // Majoration Férié Ponctuel
+
+  TotalWeekly: 'H', // Horaire Total
+  TotalTheoretical: 'HT', // Horaire Théorique Total
+  // TotalSupplementary: 'HS', // Horaire Supplémentaire Total
+  // TotalComplementary: 'HC', // Horaire Complémentaire Total
+  TotalAdditionalHours: 'HA', // Horaire Additionnel Total
+  TotalNormalAvailable: 'HNA', // Horaire Normal Disponible
 } as const;
 
 export type WorkedHoursRate = keyof typeof HoursTypeCodes;

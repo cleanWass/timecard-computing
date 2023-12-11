@@ -1,13 +1,13 @@
-
-import {DayOfWeek, Duration, LocalDate} from '@js-joda/core';
-import {identity, pipe} from 'fp-ts/function';
+import { DayOfWeek, Duration, LocalDate } from '@js-joda/core';
+import { identity, pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
-import {Map, Set, ValueObject} from 'immutable';
+import { Map, Set, ValueObject } from 'immutable';
 import { ClassAttributes } from '../../../../~shared/util/types';
 import { EmployeeId } from '../../employee-registration/employee/employee-id';
 import { LocalDateRange } from '../../local-date-range';
 import { LocalTimeSlot } from '../../local-time-slot';
-import {EmploymentContractId} from './employment-contract-id';
+import { EmploymentContractId } from './employment-contract-id';
+import type { ContractSubType } from './contract-sub-type';
 
 export class EmploymentContract implements ValueObject {
   public static build(params: ClassAttributes<EmploymentContract>) {
@@ -20,26 +20,28 @@ export class EmploymentContract implements ValueObject {
       params.weeklyTotalWorkedHours,
       params.weeklyNightShiftHours,
       params.workedDays,
-      params.weeklyPlanning
+      params.weeklyPlanning,
+      params.subType,
+      params.extraDuration ?? null
     );
   }
 
-  public static buildFromJSON(json: any) {
-    return new EmploymentContract(
-      'ee',
-      'qqq',
-      LocalDate.parse(json.startDate),
-      pipe(
-        json.endDate,
-        O.map((d: string) => LocalDate.parse(d))
-      ),
-      Duration.ofDays(7),
-      Duration.parse(json.weeklyHours),
-      Duration.ofHours(7),
-      Set(Object.keys(json.planning).map(d => DayOfWeek[d])),
-      json.planning
-    );
-  }
+  // public static buildFromJSON(json: any) {
+  //   return new EmploymentContract(
+  //     'ee',
+  //     'qqq',
+  //     LocalDate.parse(json.startDate),
+  //     pipe(
+  //       json.endDate,
+  //       O.map((d: string) => LocalDate.parse(d))
+  //     ),
+  //     Duration.ofDays(7),
+  //     Duration.parse(json.weeklyHours),
+  //     Duration.ofHours(7),
+  //     Set(Object.keys(json.planning).map(d => DayOfWeek[d])),
+  //     json.planning
+  //   );
+  // }
 
   private readonly _vo: ValueObject;
 
@@ -52,7 +54,9 @@ export class EmploymentContract implements ValueObject {
     public readonly weeklyTotalWorkedHours: Duration,
     public readonly weeklyNightShiftHours: Duration,
     public readonly workedDays: Set<DayOfWeek>,
-    public readonly weeklyPlanning: Map<DayOfWeek, Set<LocalTimeSlot>>
+    public readonly weeklyPlanning: Map<DayOfWeek, Set<LocalTimeSlot>>,
+    public readonly subType: ContractSubType,
+    public readonly extraDuration?: Duration
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
       .set('id', this.id)
@@ -70,7 +74,8 @@ export class EmploymentContract implements ValueObject {
       .set('weeklyTotalWorkedHours', this.weeklyTotalWorkedHours.toString())
       .set('weeklyNightShiftHours', this.weeklyNightShiftHours.toString())
       .set('workedDays', this.workedDays)
-      .set('weeklyPlanning', this.weeklyPlanning);
+      .set('weeklyPlanning', this.weeklyPlanning)
+      .set('subType', this.subType);
   }
 
   equals(other: unknown): boolean {
@@ -90,11 +95,15 @@ export class EmploymentContract implements ValueObject {
     );
   }
 
+  isExtraHours(): boolean {
+    return this.subType === 'complement_heure';
+  }
+
   isFullTime(): boolean {
     return this.weeklyTotalWorkedHours.equals(Duration.ofHours(35));
   }
 
-  with(params: ClassAttributes<EmploymentContract> ) {
-    return EmploymentContract.build(params)
+  with(params: ClassAttributes<EmploymentContract>) {
+    return EmploymentContract.build(params);
   }
 }

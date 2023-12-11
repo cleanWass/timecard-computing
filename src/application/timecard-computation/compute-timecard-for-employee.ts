@@ -16,12 +16,8 @@ import { TheoreticalShift } from '../../domain/models/mission-delivery/shift/the
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
-import { formatDuration, getFirstDayOfWeek } from '../../~shared/util/joda-helper';
-import {
-  computeSupplementaryHours,
-  computeTotalSupplementaryHours,
-  divideSupplementaryHoursByRating,
-} from './full-time-computation/full-time-computation';
+import { getFirstDayOfWeek, getGreaterDuration } from '../../~shared/util/joda-helper';
+import { computeSupplementaryHours } from './full-time-computation/full-time-computation';
 import { computeComplementaryHours } from './partial-time-computation/partial-time-computation';
 import type { WPTimecardComputation } from './util/types';
 import { groupShiftsByWorkingPeriods, splitPeriodIntoWorkingPeriods } from './util/working-period-computation';
@@ -30,8 +26,8 @@ const computeTotalHoursByWorkingPeriod = (groupedShifts: Map<WorkingPeriod, List
   E.right(groupedShifts.map(gs => gs.reduce((acc, sh) => acc.plus(sh.duration), Duration.ZERO)));
 
 // todo HERE
-const computeNightShiftHours: WPTimecardComputation = contract => timecard => {
-  const nightHours = contract.weeklyNightShiftHours;
+const computeNightShiftHours = (timecard: WorkingPeriodTimecard) => {
+  const nightHours = timecard.contract.weeklyNightShiftHours;
   return timecard;
 };
 
@@ -41,22 +37,23 @@ const computeTotalHoursWorked = (timecard: WorkingPeriodTimecard) =>
     timecard.shifts.reduce((acc, sh) => acc.plus(sh.duration), Duration.ZERO)
   );
 
-// si le total des heures travaillées + heures normales disponibles est > contrat, décompter les heures normales effectives
 const computeTotalAdditionalHours = (timecard: WorkingPeriodTimecard) => {
   const {
     contract: { weeklyTotalWorkedHours },
-    workedHours,
-    theoreticalShift,
+    workedHours: {
+      TotalNormalAvailable: totalNormalAvailableHours,
+      TotalTheoretical: totalTheoreticalHours,
+      TotalWeekly: totalWeeklyHours,
+    },
   } = timecard;
-  const totalWeeklyHours = workedHours.get('TotalWeekly');
-  const totalNormalAvailableHours = workedHours.get('TotalNormalAvailable');
-  const totalFictiveHours = theoreticalShift.reduce((acc, sh) => acc.plus(sh.duration), Duration.ZERO);
+  const totalEffectiveHours = totalWeeklyHours.plus(totalTheoreticalHours);
 
-  const totalEffectiveHours = totalWeeklyHours.plus(totalFictiveHours);
-  const totalNormalHours = totalNormalAvailableHours;
-  const totalAdditionalHours = totalWeeklyHours.minus(totalNormalAvailableHours);
-
-  return timecard.register('TotalAdditionalHours', totalAdditionalHours);
+  const totalAdditionalHours = totalEffectiveHours.minus(weeklyTotalWorkedHours);
+  if (totalAdditionalHours.isNegative()) return timecard.register('TotalAdditionalHours', Duration.ZERO);
+  const totalNormalHours = getGreaterDuration(totalNormalAvailableHours, totalAdditionalHours);
+  return timecard
+    .register('TotalNormal', totalNormalHours)
+    .register('TotalAdditionalHours', getGreaterDuration(totalAdditionalHours.minus(totalNormalHours), Duration.ZERO));
 };
 
 const findContract = (contracts: List<EmploymentContract>) => (workingPeriod: WorkingPeriod) =>
@@ -113,10 +110,15 @@ const generateTheoreticalShift = (timecard: WorkingPeriodTimecard) =>
       )
   );
 
-const generateTheoreticalShiftIfPartialWeek = (wpTimecard: WorkingPeriodTimecard) =>
-  wpTimecard.workingPeriod.isComplete(wpTimecard.contract)
-    ? wpTimecard
-    : wpTimecard.with({ theoreticalShift: generateTheoreticalShift(wpTimecard) });
+const generateTheoreticalShiftIfPartialWeek = (wpTimecard: WorkingPeriodTimecard) => {
+  if (wpTimecard.workingPeriod.isComplete(wpTimecard.contract)) return wpTimecard;
+
+  const theoreticalShifts = generateTheoreticalShift(wpTimecard);
+  return wpTimecard.with({ theoreticalShift: generateTheoreticalShift(wpTimecard) }).register(
+    'TotalTheoretical',
+    theoreticalShifts.reduce((acc, sh) => acc.plus(sh.duration), Duration.ZERO)
+  );
+};
 
 const computeTotalNormalHoursAvailable = (timecard: WorkingPeriodTimecard) => {
   const normalHoursFromLeaves = timecard.leaves
@@ -160,7 +162,6 @@ const filterShifts = (timecard: WorkingPeriodTimecard) => {
     const leaveDuringShift = timecard.leavePeriods.find(isShiftDuringLeavePeriod(shift));
     return leaveDuringShift ? getCuratedShifts(leaveDuringShift, shift) : [shift];
   });
-  // .filter(shift => leaves.some(leave => leave.period.contains(shift.startTime.toLocalDate())));
 
   return timecard.with({ shifts });
 };
@@ -202,11 +203,24 @@ const curateLeaves = ({
 // [x] si semaine incomplète (nouveau contrat ou avenant), ajouter aux jours manquants les heures habituels selon le planning
 // [/] faire le total des heures normales disponibles (congés payes + jours fériés) de la semaine
 // [x] faire le total des heures travaillées de la semaine
-// [ ] si le total des heures travaillées + heures normales disponibles est > contrat, décompter les heures normales effectives
-// [ ] si plus d'heures normales disponibles, décompter des heures sup / comp
-// [ ] calculer la majoration des heures additionnelles selon contrat HC10 11 25 | HS 25 50
+// [x] si le total des heures travaillées + heures normales disponibles est > contrat, décompter les heures normales effectives
+// [x] si plus d'heures normales disponibles, décompter des heures sup / comp
+// [x] calculer la majoration des heures additionnelles selon contrat HC10 11 25 | HS 25 50
 // [ ] calculer les majorations pour dimanche / jour férié / nuit
 // [ ] enlever les heures fictives
+
+const computeSundayHours = (timecard: WorkingPeriodTimecard) => {
+  throw new Error('Function not implemented.');
+  return timecard;
+};
+const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
+  throw new Error('Function not implemented.');
+  return timecard;
+};
+
+// TODO
+const computeSurchargedHours = (timecard: WorkingPeriodTimecard) =>
+  pipe(timecard, computeNightShiftHours, computeSundayHours, computeHolidayHours);
 
 export const computeWorkingPeriodTimecard: (
   workingPeriod: WorkingPeriod,
@@ -230,9 +244,9 @@ export const computeWorkingPeriodTimecard: (
     computeTotalNormalHoursAvailable,
     computeTotalHoursWorked,
     computeTotalAdditionalHours,
-    computeComplementaryHours(contract),
-    computeSupplementaryHours(contract),
-    divideSupplementaryHoursByRating(contract)
+    computeComplementaryHours,
+    computeSupplementaryHours,
+    computeSurchargedHours
   );
 };
 
@@ -254,7 +268,6 @@ export const computeTimecardForEmployee =
       E.bind('workingPeriods', () => splitPeriodIntoWorkingPeriods(contracts, period)),
       E.bindW('groupedShifts', ({ workingPeriods }) => groupShiftsByWorkingPeriods(shifts, workingPeriods)),
       E.bindW('groupedLeaves', () => E.right(Map<WorkingPeriod, List<LeavePeriod>>())),
-      E.bindW('totalWeekly', ({ groupedShifts }) => computeTotalHoursByWorkingPeriod(groupedShifts)),
       E.bindW('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) =>
         pipe(
           workingPeriods.toArray().map(wp =>
@@ -276,53 +289,22 @@ export const computeTimecardForEmployee =
           E.map(tcs => List(tcs))
         )
       ),
-      E.bindW('totalSupplementaryHours', ({ totalWeekly }) => computeTotalSupplementaryHours(contracts, totalWeekly)),
-      E.map(
-        ({
-          timecards,
+      E.map(({ timecards, workingPeriods, groupedShifts }) => {
+        return {
+          employee,
+          period,
           workingPeriods,
           groupedShifts,
-          totalWeekly,
+          timecards,
           // totalAdditionalHours,
-          totalSupplementaryHours,
-        }) => {
-          console.log(
-            timecards
-              .map(tc => {
-                const contract = contracts.find(c => c.id === tc.workingPeriod.employmentContractId);
-                const weekly = tc.workedHours.get('TotalWeekly');
-                const complementary = tc.workedHours.get('TotalComplementary');
-                const supplementary = tc.workedHours.get('TotalSupplementary');
-
-                return `${tc.workingPeriod.period.toFormattedString()} ${contract?.weeklyTotalWorkedHours.toString()}
-                    TotalHours: ${formatDuration(weekly)}
-                    TotalComplementary: ${formatDuration(complementary)}
-                    TotalSupplementary: ${formatDuration(supplementary)}
-                        -- 25%: ${formatDuration(tc.workedHours.TwentyFivePercentRateSupplementary)}
-                        -- 50%: ${formatDuration(tc.workedHours.FiftyPercentRateSupplementary)}`;
-              })
-              .valueSeq()
-              .toArray()
-              .join('\n')
-          );
-          return {
-            employee,
-            period,
-            workingPeriods,
-            groupedShifts,
-            totalWeekly,
-            timecards,
-            // totalAdditionalHours,
-            totalSupplementaryHours,
-          };
-        }
-      )
+        };
+      })
     );
 
 // TODO
 // - [x] filter contracts
 // - [x] filter shifts
-// - [ ] filter leaves
+// - [x] filter leaves
 // - [x] group shifts by contract
 // - [ ] group leaves by contract
 // - [X] divide contract period into periods
