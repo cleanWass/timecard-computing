@@ -1,5 +1,6 @@
-import { Duration, Instant, LocalDateTime, LocalTime } from '@js-joda/core';
+import { DateTimeFormatter, Instant, LocalDateTime, LocalTime, ZoneId } from '@js-joda/core';
 import { Interval } from '@js-joda/extra';
+import '@js-joda/timezone';
 import * as O from 'fp-ts/Option';
 import { Map, ValueObject } from 'immutable';
 import { LocalDateRange } from '../../local-date-range';
@@ -68,8 +69,14 @@ export class Leave implements ValueObject, ILeave {
 
   getInterval(): Interval {
     return Interval.of(
-      Instant.from(LocalDateTime.of(this.period.start, this.startTime)),
-      Instant.from(LocalDateTime.of(this.period.end, this.endTime))
+      Instant.from(LocalDateTime.of(this.period.start, this.startTime).atZone(ZoneId.of('Europe/Paris'))),
+      Instant.from(LocalDateTime.of(this.period.end, this.endTime).atZone(ZoneId.of('Europe/Paris')))
     );
+  }
+
+  debugFormat(): string {
+    return `${LocalDateTime.of(this.period.start, this.startTime).format(
+      DateTimeFormatter.ofPattern('hh:mm dd/MM/yy')
+    )} -> ${LocalDateTime.of(this.period.end, this.endTime).format(DateTimeFormatter.ofPattern('hh:mm dd/MM/yy'))}`;
   }
 }

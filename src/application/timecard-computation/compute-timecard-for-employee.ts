@@ -1,9 +1,11 @@
-import { DayOfWeek, Duration, Instant, LocalDateTime, TemporalAdjusters } from '@js-joda/core';
+import { DateTimeFormatter, DayOfWeek, Duration, Instant, LocalDateTime, TemporalAdjusters } from '@js-joda/core';
 
+import * as O from 'fp-ts/Option';
 import * as E from 'fp-ts/Either';
 import { Task } from 'fp-ts/es6/Task';
 import * as T from 'fp-ts/Task';
-import { pipe } from 'fp-ts/function';
+import { Interval } from '@js-joda/extra';
+import { identity, pipe } from 'fp-ts/function';
 import { List, Map, Set } from 'immutable';
 import { Employee } from '../../domain/models/employee-registration/employee/employee';
 import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
@@ -93,7 +95,6 @@ const generateFakeShifts = (timecard: WorkingPeriodTimecard) =>
           timecard.contract.weeklyPlanning
             .get(day.dayOfWeek(), Set<LocalTimeSlot>())
             .toList()
-            // TODO construct shifts via a class and build method
             .map((timeSlot, index) =>
               Shift.build({
                 id: `fake_shift_workingPeriod-${timecard.id}--${index}`,
@@ -122,14 +123,41 @@ const computeTotalNormalHoursAvailable = (leaves: List<Leave>, shifts: List<Shif
   return timecard.register('TotalNormalAvailable', normalHoursFromLeaves.plus(normalHoursFromHolidays));
 };
 
-const isShiftDuringLeave = (leave: Leave) => (shift: Shift) => leave.getInterval().contains(Instant.from(shift.startTime));
+const isShiftDuringLeave = (shift: Shift) => (leave: Leave) => leave.getInterval().contains(Instant.from(shift.startTime));
+
+export const getCuratedShifts = (leave: Leave, shift: Shift) => {
+  return pipe(
+    shift.getInterval(),
+    E.fromPredicate(
+      s => leave.getInterval().overlaps(s),
+      () => List([shift])
+    ),
+    E.map(sh => {
+      if (leave.getInterval().encloses(sh)) return List<Shift>([]);
+      const beforeLeave = Interval.of(sh.start(), leave.getInterval().start());
+      const afterLeave = Interval.of(leave.getInterval().end(), sh.end());
+
+      return List([
+        beforeLeave.toDuration().toMillis() > 0 &&
+          shift.with({ id: `${shift.id}-before Leave ${leave.id}`, duration: beforeLeave.toDuration() }),
+        afterLeave.toDuration().toMillis() > 0 &&
+          shift.with({
+            id: `${shift.id}-after Leave ${leave.id}`,
+            startTime: LocalDateTime.of(leave.period.end, leave.endTime),
+            duration: afterLeave.toDuration(),
+          }),
+      ]).filter(identity);
+    }),
+    E.getOrElse(() => List([shift]))
+  );
+};
 
 const filterShifts = ({
   workingPeriod,
   contract,
   employee,
   leaves,
-  shifts,
+  shifts: rawShifts,
 }: {
   workingPeriod: WorkingPeriod;
   shifts: List<Shift>;
@@ -137,18 +165,15 @@ const filterShifts = ({
   contract: EmploymentContract;
   employee: Employee;
 }) => {
-  const curatedShifts = shifts
-    .reduce((acc, shift) => {
-      if (leaves.some(leave => isShiftDuringLeave(leave)(shift))) {
-        return acc;
-      }
-      return acc;
-    }, List<Shift>())
-    .filter(shift => leaves.some(leave => leave.period.contains(shift.startTime.toLocalDate())));
+  const shifts = rawShifts.flatMap(shift => {
+    const leaveDuringShift = leaves.find(isShiftDuringLeave(shift));
+    return leaveDuringShift ? getCuratedShifts(leaveDuringShift, shift) : [shift];
+  });
+  // .filter(shift => leaves.some(leave => leave.period.contains(shift.startTime.toLocalDate())));
 
   return {
     workingPeriod,
-    shifts: shifts.filter(shift => workingPeriod.period.contains(shift.startTime.toLocalDate())),
+    shifts,
     leaves: leaves.filter(leave => workingPeriod.period.contains(leave.period.start)),
     contract,
     employee,

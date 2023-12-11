@@ -1,4 +1,4 @@
-import { Duration, Instant, LocalDateTime } from '@js-joda/core';
+import { DateTimeFormatter, Duration, Instant, LocalDateTime, ZoneId } from '@js-joda/core';
 import { Map, ValueObject } from 'immutable';
 import { TypeProps } from '../../../../~shared/util/types';
 import { EmployeeId } from '../../employee-registration/employee/employee-id';
@@ -7,6 +7,7 @@ import { RequirementId } from '../../sales-contract-management/requirement/requi
 import { ServiceContractId } from '../../sales-contract-management/service-contract/service-contract-id';
 import { ShiftId } from './shift-id';
 import { Interval } from '@js-joda/extra';
+import '@js-joda/timezone';
 
 export type IShift = {
   id: ShiftId;
@@ -74,22 +75,36 @@ export class Shift implements ValueObject, IShift {
   }
 
   with(params: Partial<Shift>): Shift {
-    return new Shift(
-      params.id ?? this.id,
-      params.startTime ?? this.startTime,
-      params.duration ?? this.duration,
-      params.clientId ?? this.clientId,
-      params.employeeId ?? this.employeeId,
-      params.serviceContractId ?? this.serviceContractId,
-      params.requirementIds ?? this.requirementIds,
-      params.replacedShiftId ?? this.replacedShiftId
-    );
+    return Shift.build({
+      id: params.id ?? this.id,
+      startTime: params.startTime ?? this.startTime,
+      duration: params.duration ?? this.duration,
+      clientId: params.clientId ?? this.clientId,
+      employeeId: params.employeeId ?? this.employeeId,
+      serviceContractId: params.serviceContractId ?? this.serviceContractId,
+      requirementIds: params.requirementIds ?? this.requirementIds,
+      replacedShiftId: params.replacedShiftId ?? this.replacedShiftId,
+    });
   }
 
   getInterval(): Interval {
     return Interval.of(
-      Instant.from(LocalDateTime.from(this.startTime)),
-      Instant.from(LocalDateTime.from(this.startTime.plus(this.duration)))
+      Instant.from(LocalDateTime.from(this.startTime).atZone(ZoneId.of('Europe/Paris'))),
+      Instant.from(LocalDateTime.from(this.startTime.plus(this.duration)).atZone(ZoneId.of('Europe/Paris')))
     );
+  }
+
+  getStartTime(): LocalDateTime {
+    return this.startTime;
+  }
+
+  getEndTime(): LocalDateTime {
+    return this.startTime.plus(this.duration);
+  }
+
+  debugFormat(): string {
+    return `Shift ${this.id} client ${this.clientId} employee ${this.employeeId || 'unknown'} ${this.startTime.format(
+      DateTimeFormatter.ofPattern('hh:mm dd/MM/yy')
+    )} -> ${this.startTime.plus(this.duration).format(DateTimeFormatter.ofPattern('hh:mm dd/MM/yy'))}`;
   }
 }
