@@ -11,7 +11,7 @@ describe('WorkingPeriodTimecard', () => {
   let workingPeriodTimecard: WorkingPeriodTimecard;
   const params: ClassAttributes<WorkingPeriodTimecard> = {
     id: '1',
-    employeeId: 'employee1',
+    employee: 'employee1',
     contractId: 'contract1',
     workingPeriod: WorkingPeriod.build({
       employeeId: 'employeeId',

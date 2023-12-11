@@ -1,4 +1,5 @@
 import { DateTimeFormatter, Duration, Instant, LocalDateTime, ZoneId } from '@js-joda/core';
+import { Interval } from '@js-joda/extra';
 import { Map, ValueObject } from 'immutable';
 import { TypeProps } from '../../../../~shared/util/types';
 import { EmployeeId } from '../../employee-registration/employee/employee-id';
@@ -6,7 +7,6 @@ import { ClientId } from '../../sales-contract-management/client/client-id';
 import { RequirementId } from '../../sales-contract-management/requirement/requirement-id';
 import { ServiceContractId } from '../../sales-contract-management/service-contract/service-contract-id';
 import { ShiftId } from './shift-id';
-import { Interval } from '@js-joda/extra';
 import '@js-joda/timezone';
 
 export type IShift = {

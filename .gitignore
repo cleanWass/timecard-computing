@@ -1,0 +1,7 @@
+.idea/
+
+build/
+
+bun*
+
+node_modules/
