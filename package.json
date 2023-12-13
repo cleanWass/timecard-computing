@@ -2,6 +2,7 @@
   "dependencies": {
     "@js-joda/core": "^5.5.3",
     "@js-joda/extra": "^0.11.5",
+    "@js-joda/timezone": "^2.18.2",
     "@types/axios": "^0.14.0",
     "@types/body-parser": "^1.19.5",
     "@types/cors": "^2.8.16",
