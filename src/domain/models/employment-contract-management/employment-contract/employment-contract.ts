@@ -55,7 +55,7 @@ export class EmploymentContract implements ValueObject {
     public readonly weeklyNightShiftHours: Duration,
     public readonly workedDays: Set<DayOfWeek>,
     public readonly weeklyPlanning: Map<DayOfWeek, Set<LocalTimeSlot>>,
-    public readonly subType: ContractSubType,
+    public readonly subType?: ContractSubType,
     public readonly extraDuration?: Duration
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()

@@ -86,7 +86,6 @@ export class LocalDateRange implements ValueObject {
     const newEnd = end ?? this.end;
     return new LocalDateRange(newStart, newEnd);
   }
-
   private includesAddendEnd(addend: LocalDateRange) {
     return addend.end.isAfter(this.start) && addend.end.isBefore(this.end);
   }

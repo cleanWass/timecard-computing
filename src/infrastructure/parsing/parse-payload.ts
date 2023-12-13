@@ -78,7 +78,7 @@ const employeeWithTimecardSchema = zod
         employeeId: raw.cleaner.id,
       })
     ),
-    leaves: raw.leaves.map(leave => {
+    leavePeriods: raw.leaves.map(leave => {
       const startTime = LocalTime.parse(leave.startTime);
       const endTime = LocalTime.parse(leave.endTime);
       return LeavePeriod.build({
@@ -113,9 +113,9 @@ const employeeWithTimecardSchema = zod
 
 export const formatPayload = (data: ExtractEitherRightType<typeof parsePayload>) => ({
   employee: data.employee,
-  shifts: List<Shift>(data.shifts),
-  leaves: List<LeavePeriod>(data.leaves),
-  contracts: List<EmploymentContract>(data.contracts),
+  shifts: List(data.shifts),
+  leavePeriods: List(data.leavePeriods),
+  contracts: List(data.contracts),
 });
 
 export const parsePayload = (payload: unknown) => {
@@ -128,7 +128,7 @@ export const parsePayload = (payload: unknown) => {
     E.map(parsedJSON => (parsedJSON.success ? parsedJSON.data : null)),
     E.map(raw => ({
       shifts: raw.shifts,
-      leaves: raw.leaves,
+      leavePeriods: raw.leavePeriods,
       contracts: raw.planning,
       employee: raw.cleaner,
     }))

@@ -192,7 +192,7 @@ const curateLeaves = ({
   return {
     workingPeriod,
     shifts,
-    leaves,
+    leaves: leavePeriods,
     leavePeriods,
     contract,
     employee,
