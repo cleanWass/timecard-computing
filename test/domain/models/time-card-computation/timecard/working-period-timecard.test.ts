@@ -1,5 +1,6 @@
 import { LocalDate } from '@js-joda/core';
 import Immutable, { List, Record } from 'immutable';
+import { Employee } from '../../../../../src/domain/models/employee-registration/employee/employee';
 import { LocalDateRange } from '../../../../../src/domain/models/local-date-range';
 import { WorkedHoursResume } from '../../../../../src/domain/models/time-card-computation/timecard/worked-hours-rate';
 import { WorkingPeriodTimecard } from '../../../../../src/domain/models/time-card-computation/timecard/working-period-timecard';
@@ -7,12 +8,18 @@ import { WorkingPeriod } from '../../../../../src/domain/models/time-card-comput
 import { ClassAttributes } from '../../../../../src/~shared/util/types';
 import { contracts } from '../../../../application/timecard-computation/computeTimecardHelper';
 
+const employee1 = Employee.build({
+  id: '1',
+  firstName: 'Wass',
+  lastName: 'Krif',
+});
+
 describe('WorkingPeriodTimecard', () => {
   let workingPeriodTimecard: WorkingPeriodTimecard;
   const params: ClassAttributes<WorkingPeriodTimecard> = {
     id: '1',
-    employee: 'employee1',
-    contractId: 'contract1',
+    employee: employee1,
+    contract: contracts.OneWeekContract,
     workingPeriod: WorkingPeriod.build({
       employeeId: 'employeeId',
       employmentContractId: '1',

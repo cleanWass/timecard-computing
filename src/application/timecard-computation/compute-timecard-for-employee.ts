@@ -166,37 +166,19 @@ const filterShifts = (timecard: WorkingPeriodTimecard) => {
   return timecard.with({ shifts });
 };
 
-const curateLeaves = ({
-  workingPeriod,
-  contract,
-  employee,
-  shifts,
-  leavePeriods,
-}: {
-  workingPeriod: WorkingPeriod;
-  shifts: List<Shift>;
-  leavePeriods: List<LeavePeriod>;
-  contract: EmploymentContract;
-  employee: Employee;
-}) => {
-  const leaves = leavePeriods.flatMap(leavePeriod =>
-    shifts.filter(leavePeriod.containsShift).map(shift =>
-      Leave.build({
+const curateLeaves = (timecard: WorkingPeriodTimecard) => {
+  const leaves = timecard.leavePeriods.flatMap(leavePeriod =>
+    timecard.shifts.filter(leavePeriod.containsShift).map(shift => {
+      let intersection = leavePeriod.getInterval().intersection(shift.getInterval());
+      return Leave.build({
         reason: leavePeriod.reason,
-        startTime: LocalDateTime.ofInstant(leavePeriod.getInterval().intersection(shift.getInterval()).start(), ZoneId.of('Europe/Paris')),
-        duration: leavePeriod.getInterval().intersection(shift.getInterval()).toDuration(),
-      })
-    )
+        startTime: LocalDateTime.ofInstant(intersection.start(), ZoneId.of('Europe/Paris')),
+        duration: intersection.toDuration(),
+      });
+    })
   );
 
-  return {
-    workingPeriod,
-    shifts,
-    leaves: leavePeriods,
-    leavePeriods,
-    contract,
-    employee,
-  };
+  return timecard.with({ leaves });
 };
 
 // todo pattern matching on contract fulltime et flow(a) flow(b) selon temps plein / partiel ?
@@ -207,7 +189,6 @@ const curateLeaves = ({
 // [x] si plus d'heures normales disponibles, décompter des heures sup / comp
 // [x] calculer la majoration des heures additionnelles selon contrat HC10 11 25 | HS 25 50
 // [ ] calculer les majorations pour dimanche / jour férié / nuit
-// [ ] enlever les heures fictives
 
 const computeSundayHours = (timecard: WorkingPeriodTimecard) => {
   throw new Error('Function not implemented.');
@@ -229,6 +210,7 @@ export const computeWorkingPeriodTimecard: (
   contract: EmploymentContract,
   employee: Employee
 ) => WorkingPeriodTimecard = (workingPeriod, shifts, leavePeriods, contract, employee) => {
+  console.log('entering computeWorkingPeriodTimecard');
   return pipe(
     {
       contract,
@@ -238,15 +220,43 @@ export const computeWorkingPeriodTimecard: (
       leavePeriods,
     },
     initializeWorkingPeriodTimecard,
+    t => {
+      console.log('after initializeWorkingPeriodTimecard');
+      return t;
+    },
     curateLeaves,
+    t => {
+      console.log('after curateLeaves');
+      return t;
+    },
     filterShifts,
+    t => {
+      console.log('after filterShifts', t);
+      return t;
+    },
     generateTheoreticalShiftIfPartialWeek,
+    t => {
+      console.log('after generateTheoreticalShiftIfPartialWeek');
+      return t;
+    },
     computeTotalNormalHoursAvailable,
+    t => {
+      console.log('after computeTotalNormalHoursAvailable');
+      return t;
+    },
     computeTotalHoursWorked,
+    t => {
+      console.log('after computeTotalHoursWorked');
+      return t;
+    },
     computeTotalAdditionalHours,
+    t => {
+      console.log('after computeTotalAdditionalHours');
+      return t;
+    },
     computeComplementaryHours,
-    computeSupplementaryHours,
-    computeSurchargedHours
+    computeSupplementaryHours
+    // computeSurchargedHours
   );
 };
 
@@ -256,11 +266,11 @@ export const computeTimecardForEmployee =
     employee,
     shifts,
     contracts,
-    leaves,
+    leavePeriods,
   }: {
     employee: Employee;
     shifts: List<Shift>;
-    leaves: List<LeavePeriod>;
+    leavePeriods: List<LeavePeriod>;
     contracts: List<EmploymentContract>;
   }) =>
     pipe(
@@ -268,8 +278,9 @@ export const computeTimecardForEmployee =
       E.bind('workingPeriods', () => splitPeriodIntoWorkingPeriods(contracts, period)),
       E.bindW('groupedShifts', ({ workingPeriods }) => groupShiftsByWorkingPeriods(shifts, workingPeriods)),
       E.bindW('groupedLeaves', () => E.right(Map<WorkingPeriod, List<LeavePeriod>>())),
-      E.bindW('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) =>
-        pipe(
+      E.bindW('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) => {
+        console.log('entering timecard computation');
+        return pipe(
           workingPeriods.toArray().map(wp =>
             pipe(
               wp,
@@ -287,8 +298,8 @@ export const computeTimecardForEmployee =
           ),
           E.sequenceArray,
           E.map(tcs => List(tcs))
-        )
-      ),
+        );
+      }),
       E.map(({ timecards, workingPeriods, groupedShifts }) => {
         return {
           employee,

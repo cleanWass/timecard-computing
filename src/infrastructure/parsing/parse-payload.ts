@@ -118,8 +118,8 @@ export const formatPayload = (data: ExtractEitherRightType<typeof parsePayload>)
   contracts: List(data.contracts),
 });
 
-export const parsePayload = (payload: unknown) => {
-  return pipe(
+export const parsePayload = (payload: unknown) =>
+  pipe(
     employeeWithTimecardSchema.safeParse(payload),
     E.fromPredicate(
       parsedJSON => parsedJSON.success,
@@ -133,4 +133,3 @@ export const parsePayload = (payload: unknown) => {
       employee: raw.cleaner,
     }))
   );
-};

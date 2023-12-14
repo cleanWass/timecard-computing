@@ -1,5 +1,5 @@
-import {Map, ValueObject} from 'immutable';
-import {EmployeeId} from '../../employee-registration/employee/employee-id';
+import { Map, ValueObject } from 'immutable';
+import { EmployeeId } from './employee-id';
 
 export class Employee implements ValueObject {
   public static build(params: {
@@ -29,12 +29,9 @@ export class Employee implements ValueObject {
     public readonly lastName: string,
     public readonly email?: string,
     public readonly phoneNumber?: string,
-    public readonly address?: {city?: string; street?: string; postalCode?: string}
+    public readonly address?: { city?: string; street?: string; postalCode?: string }
   ) {
-    this._vo = Map<
-      string,
-      ValueObject | string | number | boolean | {city?: string; street?: string; postalCode?: string}
-    >()
+    this._vo = Map<string, ValueObject | string | number | boolean | { city?: string; street?: string; postalCode?: string }>()
       .set('id', this.id)
       .set('firstName', this.firstName)
       .set('lastName', this.lastName)

@@ -53,11 +53,16 @@ app.post('/timecard', async (req, res) => {
     ),
     TE.chainW(flow(parsePayload, TE.fromEither)),
     TE.map(t => {
-      console.log('t', t);
+      console.log('1', t);
 
       return t;
     }),
     TE.map(flow(formatPayload, computeTimecardForEmployee(period))),
+    TE.map(t => {
+      console.log('2', t);
+
+      return t;
+    }),
     TE.fold(
       e => {
         console.error('Error in TE.fold:', e);
