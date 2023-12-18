@@ -5,3 +5,4 @@ export const getFirstDayOfWeek = (date: LocalDate) => date.with(TemporalAdjuster
 export const formatDuration = (d: Duration) => `${d.toHours()}h${d?.toMinutes() % 60 > 0 ? `${d.toMinutes() % 60} ` : ''}`;
 
 export const getGreaterDuration = (d1: Duration, d2: Duration) => (d1.compareTo(d2) > 0 ? d1 : d2);
+export const getLowerDuration = (d1: Duration, d2: Duration) => (d1.compareTo(d2) > 0 ? d2 : d1);

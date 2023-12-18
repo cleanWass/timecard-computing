@@ -44,25 +44,15 @@ app.post('/timecard', async (req, res) => {
     period: { startDate, endDate },
   } = req.body;
 
-  const period = new LocalDateRange(LocalDate.parse(startDate), LocalDate.parse(endDate));
+  const period = new LocalDateRange(LocalDate.parse('2023-11-01'), LocalDate.parse('2023-11-30'));
 
   await pipe(
     TE.tryCatch(
-      () => fetchDataForEmployee(cleanerId, { startDate, endDate }),
+      () => fetchDataForEmployee(cleanerId, { startDate: '2023-11-01', endDate: '2023-11-30' }),
       e => new Error(`Fetching from care data parser went wrong ${e}`)
     ),
     TE.chainW(flow(parsePayload, TE.fromEither)),
-    TE.map(t => {
-      console.log('1', t);
-
-      return t;
-    }),
     TE.map(flow(formatPayload, computeTimecardForEmployee(period))),
-    TE.map(t => {
-      console.log('2', t);
-
-      return t;
-    }),
     TE.fold(
       e => {
         console.error('Error in TE.fold:', e);

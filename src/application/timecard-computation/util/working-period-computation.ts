@@ -1,6 +1,7 @@
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import { List, Map } from 'immutable';
+import { LeavePeriod } from '../../../domain/models/leave-recording/leave/leave-period';
 import { divideIntoPeriods } from './divide-into-periods';
 import { EmploymentContract } from '../../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
@@ -45,6 +46,20 @@ export const groupShiftsByWorkingPeriods = (shifts: List<Shift>, workingPeriods:
             shifts.filter(({ startTime }) => workingPeriod.period.includesDate(startTime.toLocalDate().plusDays(1)))
           ),
         Map<WorkingPeriod, List<Shift>>()
+      )
+    )
+  );
+
+export const groupLeavePeriodsByWorkingPeriods = (leavePeriods: List<LeavePeriod>, workingPeriods: List<WorkingPeriod>) =>
+  pipe(workingPeriods, wp =>
+    E.right(
+      wp.reduce(
+        (groupedPeriods, workingPeriod) =>
+          groupedPeriods.set(
+            workingPeriod,
+            leavePeriods.filter(({ period }) => workingPeriod.period.overlaps(period))
+          ),
+        Map<WorkingPeriod, List<LeavePeriod>>()
       )
     )
   );

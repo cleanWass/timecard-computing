@@ -1,12 +1,14 @@
+import * as E from 'fp-ts/Either';
 import { Duration, LocalDate, LocalDateTime, LocalTime } from '@js-joda/core';
+import { pipe } from 'fp-ts/function';
 
 import { List } from 'immutable';
 import * as O from 'fp-ts/Option';
 import { LocalDateRange } from '../../../src/domain/models/local-date-range';
 import { LeavePeriod } from '../../../src/domain/models/leave-recording/leave/leave-period';
 import { Shift } from '../../../src/domain/models/mission-delivery/shift/shift';
-import { getCuratedShifts } from '../../../src/application/timecard-computation/compute-timecard-for-employee';
-import { contracts } from './computeTimecardHelper';
+import { computeTimecardForEmployee, getCuratedShifts } from '../../../src/application/timecard-computation/compute-timecard-for-employee';
+import { cas1, contracts } from './computeTimecardHelper';
 
 const { OneWeekContract, OneMonthContract, IrrelevantContract } = contracts;
 
@@ -69,7 +71,6 @@ describe('getCuratedShifts', () => {
 
     const result = getCuratedShifts(leave, shift);
     expect(result.size).toEqual(2);
-    // console.log(result.map(s => s.debugFormat()).join('\n'));
   });
 
   it('returns empty list when shift is entirely during leave', () => {
@@ -86,5 +87,16 @@ describe('getCuratedShifts', () => {
 
     const result = getCuratedShifts(leave, shift);
     expect(result.size).toEqual(0);
+  });
+
+  it('test if computes timecard for employee works', () => {
+    const result = computeTimecardForEmployee(new LocalDateRange(LocalDate.of(2023, 11, 13), LocalDate.of(2023, 11, 20)))(cas1);
+    pipe(
+      result,
+      E.match(
+        error => console.log(`error : ${error.message}`),
+        t => console.log(`1 timecard : ${t.timecards.first('').debug()}`)
+      )
+    );
   });
 });

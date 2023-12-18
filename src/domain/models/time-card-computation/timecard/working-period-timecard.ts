@@ -1,5 +1,6 @@
-import { DayOfWeek, Duration, LocalDateTime, TemporalAdjusters } from '@js-joda/core';
+import { DateTimeFormatter, DayOfWeek, Duration, LocalDateTime, TemporalAdjusters } from '@js-joda/core';
 import { List, Map, Set, ValueObject } from 'immutable';
+import { formatDuration } from '../../../../~shared/util/joda-helper';
 import { Employee } from '../../employee-registration/employee/employee';
 import { EmploymentContract } from '../../employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../leave-recording/leave/leave';
@@ -36,7 +37,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.shifts,
       params.leaves,
       params.leavePeriods,
-      List<Shift>()
+      List<TheoreticalShift>()
     );
   }
 
@@ -54,7 +55,7 @@ export class WorkingPeriodTimecard implements ValueObject {
     public readonly leaves: List<Leave>,
     public readonly leavePeriods: List<LeavePeriod>,
 
-    public readonly theoreticalShift: List<Shift>
+    public readonly theoreticalShift: List<TheoreticalShift>
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
       .set('id', this.id)
@@ -91,7 +92,26 @@ export class WorkingPeriodTimecard implements ValueObject {
   }
 
   register(workedHoursRate: WorkedHoursRate, duration: Duration): WorkingPeriodTimecard {
-    return this.with(this.workedHours.set(workedHoursRate, duration));
+    return this.with({ workedHours: this.workedHours.set(workedHoursRate, duration) });
+  }
+
+  debug() {
+    console.log(
+      `
+        WorkingPeriodTimecard ${this.id} for ${this.employee.firstName} ${this.employee.lastName} (${this.employee.id})
+        Period: ${this.workingPeriod.period.toFormattedString()}
+        Contract: ${formatDuration(this.contract.weeklyTotalWorkedHours)} / week
+        WorkedHours: ${this.workedHours
+          .toSeq()
+          .map((duration, rate) => (duration.isZero() ? `` : `${rate} -> ${formatDuration(duration)}`))
+          .filter(s => s)
+          .join('\n')}
+        Leaves: ${this.leaves.map(l => l.debug()).join(' | ')}
+        LeavePeriods: ${this.leavePeriods.map(l => l.debug()).join(' | ')}
+        Shifts: ${this.shifts.map(s => s.debug()).join(' | ')}
+        TheoreticalShifts: ${this.theoreticalShift.map(s => s.debug()).join(' | ')}
+      `
+    );
   }
 
   generateTheoreticalShifts(contract: EmploymentContract) {

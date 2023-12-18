@@ -27,6 +27,9 @@ describe('WorkingPeriodTimecard', () => {
     }),
     workedHours: new WorkedHoursResume(),
     theoreticalShift: List(),
+    shifts: List(),
+    leaves: List(),
+    leavePeriods: List(),
   };
 
   beforeEach(() => {

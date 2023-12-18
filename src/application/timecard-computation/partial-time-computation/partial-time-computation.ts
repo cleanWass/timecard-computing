@@ -1,7 +1,7 @@
 import { Duration } from '@js-joda/core';
 import { pipe } from 'fp-ts/function';
 import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
-import { getGreaterDuration } from '../../../~shared/util/joda-helper';
+import { getGreaterDuration, getLowerDuration } from '../../../~shared/util/joda-helper';
 
 const computeSurchargeWithExtraHours = (timecard: WorkingPeriodTimecard) => {
   const additionalHours = timecard.workedHours.TotalAdditionalHours;
@@ -14,11 +14,12 @@ const computeSurchargeWithExtraHours = (timecard: WorkingPeriodTimecard) => {
 
 const computeSurchargeWithoutExtraHours = (timecard: WorkingPeriodTimecard) => {
   const additionalHours = timecard.workedHours.TotalAdditionalHours;
-  const _11PercentRateHours = getGreaterDuration(
+  if (additionalHours.isZero() || additionalHours.isNegative()) return timecard;
+  const _11PercentRateHours = getLowerDuration(
     additionalHours,
-    Duration.ofMinutes(Number((timecard.contract.weeklyTotalWorkedHours.toMinutes() / 0.1).toFixed(2)))
+    Duration.ofMinutes(Number((timecard.contract.weeklyTotalWorkedHours.toMinutes() * 0.1).toFixed(2)))
   );
-  const _25PerCentRateHours = getGreaterDuration(additionalHours, _11PercentRateHours);
+  const _25PerCentRateHours = additionalHours.minus(_11PercentRateHours);
   return timecard
     .register('ElevenPercentRateComplementary', _11PercentRateHours)
     .register('TwentyFivePercentRateComplementary', _25PerCentRateHours);

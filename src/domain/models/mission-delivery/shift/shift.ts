@@ -102,9 +102,9 @@ export class Shift implements ValueObject, IShift {
     return this.startTime.plus(this.duration);
   }
 
-  debugFormat(): string {
-    return `Shift ${this.id} client ${this.clientId} employee ${this.employeeId || 'unknown'} ${this.startTime.format(
-      DateTimeFormatter.ofPattern('hh:mm dd/MM/yy')
-    )} -> ${this.startTime.plus(this.duration).format(DateTimeFormatter.ofPattern('hh:mm dd/MM/yy'))}`;
+  debug(): string {
+    return `${this.startTime.format(DateTimeFormatter.ofPattern('dd/MM/yy: HH:mm'))} -> ${this.startTime
+      .plus(this.duration)
+      .format(DateTimeFormatter.ofPattern('HH:mm'))}`;
   }
 }

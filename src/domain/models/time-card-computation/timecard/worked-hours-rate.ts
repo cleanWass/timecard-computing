@@ -24,8 +24,9 @@ export const HoursTypeCodes = {
 
   TotalWeekly: 'H', // Horaire Total
   TotalTheoretical: 'HT', // Horaire Théorique Total
-  // TotalSupplementary: 'HS', // Horaire Supplémentaire Total
-  // TotalComplementary: 'HC', // Horaire Complémentaire Total
+  TotalLeaves: 'HL', // Horaire Congé Total
+  TotalLeavesUnpaid: 'HLU', // Horaire Congé Non Payé
+  TotalLeavesPaid: 'HLP', // Horaire Congé Payé
   TotalAdditionalHours: 'HA', // Horaire Additionnel Total
   TotalNormalAvailable: 'HNA', // Horaire Normal Disponible
 } as const;

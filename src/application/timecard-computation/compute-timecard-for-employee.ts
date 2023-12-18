@@ -16,11 +16,14 @@ import { TheoreticalShift } from '../../domain/models/mission-delivery/shift/the
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
-import { getFirstDayOfWeek, getGreaterDuration } from '../../~shared/util/joda-helper';
+import { formatDuration, getFirstDayOfWeek, getGreaterDuration, getLowerDuration } from '../../~shared/util/joda-helper';
 import { computeSupplementaryHours } from './full-time-computation/full-time-computation';
 import { computeComplementaryHours } from './partial-time-computation/partial-time-computation';
-import type { WPTimecardComputation } from './util/types';
-import { groupShiftsByWorkingPeriods, splitPeriodIntoWorkingPeriods } from './util/working-period-computation';
+import {
+  groupLeavePeriodsByWorkingPeriods,
+  groupShiftsByWorkingPeriods,
+  splitPeriodIntoWorkingPeriods,
+} from './util/working-period-computation';
 
 const computeTotalHoursByWorkingPeriod = (groupedShifts: Map<WorkingPeriod, List<Shift>>) =>
   E.right(groupedShifts.map(gs => gs.reduce((acc, sh) => acc.plus(sh.duration), Duration.ZERO)));
@@ -37,22 +40,34 @@ const computeTotalHoursWorked = (timecard: WorkingPeriodTimecard) =>
     timecard.shifts.reduce((acc, sh) => acc.plus(sh.duration), Duration.ZERO)
   );
 
+const computeLeavesHours = (timecard: WorkingPeriodTimecard) => {
+  const computeDuration = (condition: (l: Leave) => boolean = () => true) =>
+    timecard.leaves.filter(condition).reduce((acc, sh) => acc.plus(sh.duration), Duration.ZERO);
+
+  const leavesTotalDuration = computeDuration();
+  const leavesPaidDuration = computeDuration(leave => ['Paid', 'Holiday'].includes(leave.reason));
+  const leavesUnpaidDuration = computeDuration(leave => leave.reason === 'Unpaid');
+
+  return timecard
+    .register('TotalLeaves', leavesTotalDuration)
+    .register('TotalLeavesPaid', leavesPaidDuration)
+    .register('TotalLeavesUnpaid', leavesUnpaidDuration);
+};
+
 const computeTotalAdditionalHours = (timecard: WorkingPeriodTimecard) => {
   const {
     contract: { weeklyTotalWorkedHours },
-    workedHours: {
-      TotalNormalAvailable: totalNormalAvailableHours,
-      TotalTheoretical: totalTheoreticalHours,
-      TotalWeekly: totalWeeklyHours,
-    },
+    workedHours: { TotalNormalAvailable, TotalTheoretical, TotalWeekly, TotalLeavesPaid },
   } = timecard;
-  const totalEffectiveHours = totalWeeklyHours.plus(totalTheoreticalHours);
-
+  const totalEffectiveHours = TotalWeekly.plus(TotalTheoretical).plus(TotalLeavesPaid);
   const totalAdditionalHours = totalEffectiveHours.minus(weeklyTotalWorkedHours);
+
   if (totalAdditionalHours.isNegative()) return timecard.register('TotalAdditionalHours', Duration.ZERO);
-  const totalNormalHours = getGreaterDuration(totalNormalAvailableHours, totalAdditionalHours);
+  const totalNormalHours = getLowerDuration(TotalNormalAvailable, totalAdditionalHours);
+
   return timecard
     .register('TotalNormal', totalNormalHours)
+    .register('TotalNormalAvailable', TotalNormalAvailable.minus(totalNormalHours))
     .register('TotalAdditionalHours', getGreaterDuration(totalAdditionalHours.minus(totalNormalHours), Duration.ZERO));
 };
 
@@ -87,12 +102,12 @@ const initializeWorkingPeriodTimecard = ({
 
 // TODO passer en option
 
-const generateTheoreticalShift = (timecard: WorkingPeriodTimecard) =>
-  List(
+const generateTheoreticalShift = (timecard: WorkingPeriodTimecard) => {
+  return List(
     timecard.workingPeriod.period
       .with({
         start: getFirstDayOfWeek(timecard.workingPeriod.period.start),
-        end: getFirstDayOfWeek(timecard.workingPeriod.period.start).plus(timecard.contract.overtimeAveragingPeriod),
+        end: getFirstDayOfWeek(timecard.workingPeriod.period.start).plusDays(timecard.contract.overtimeAveragingPeriod.toDays()),
       })
       .toLocalDateArray()
       .filter(d => !timecard.workingPeriod.period.contains(d))
@@ -109,6 +124,7 @@ const generateTheoreticalShift = (timecard: WorkingPeriodTimecard) =>
           .toArray()
       )
   );
+};
 
 const generateTheoreticalShiftIfPartialWeek = (wpTimecard: WorkingPeriodTimecard) => {
   if (wpTimecard.workingPeriod.isComplete(wpTimecard.contract)) return wpTimecard;
@@ -125,10 +141,13 @@ const computeTotalNormalHoursAvailable = (timecard: WorkingPeriodTimecard) => {
     .filter(leave => leave.reason === 'Paid' || leave.reason === 'Holiday')
     .reduce((sum, shift) => sum.plus(shift.duration), Duration.ZERO);
 
-  return timecard.register('TotalNormalAvailable', normalHoursFromLeaves);
+  const normalHoursFromTheoreticalShifts = timecard.theoreticalShift.reduce((sum, shift) => sum.plus(shift.duration), Duration.ZERO);
+
+  return timecard.register('TotalNormalAvailable', normalHoursFromLeaves.plus(normalHoursFromTheoreticalShifts));
 };
 
-const isShiftDuringLeavePeriod = (shift: Shift) => (leave: LeavePeriod) => leave.getInterval().contains(Instant.from(shift.startTime));
+const isShiftDuringLeavePeriod = (shift: Shift) => (leave: LeavePeriod) =>
+  leave.getInterval().contains(Instant.from(shift.startTime.atZone(ZoneId.of('Europe/Paris'))));
 
 export const getCuratedShifts = (leave: LeavePeriod, shift: Shift) => {
   return pipe(
@@ -168,16 +187,17 @@ const filterShifts = (timecard: WorkingPeriodTimecard) => {
 
 const curateLeaves = (timecard: WorkingPeriodTimecard) => {
   const leaves = timecard.leavePeriods.flatMap(leavePeriod =>
-    timecard.shifts.filter(leavePeriod.containsShift).map(shift => {
-      let intersection = leavePeriod.getInterval().intersection(shift.getInterval());
-      return Leave.build({
-        reason: leavePeriod.reason,
-        startTime: LocalDateTime.ofInstant(intersection.start(), ZoneId.of('Europe/Paris')),
-        duration: intersection.toDuration(),
-      });
-    })
+    timecard.shifts
+      .filter(s => leavePeriod.containsShift(s))
+      .map(shift => {
+        let intersection = leavePeriod.getInterval().intersection(shift.getInterval());
+        return Leave.build({
+          reason: leavePeriod.reason,
+          startTime: LocalDateTime.ofInstant(intersection.start(), ZoneId.of('Europe/Paris')),
+          duration: intersection.toDuration(),
+        });
+      })
   );
-
   return timecard.with({ leaves });
 };
 
@@ -210,7 +230,6 @@ export const computeWorkingPeriodTimecard: (
   contract: EmploymentContract,
   employee: Employee
 ) => WorkingPeriodTimecard = (workingPeriod, shifts, leavePeriods, contract, employee) => {
-  console.log('entering computeWorkingPeriodTimecard');
   return pipe(
     {
       contract,
@@ -220,42 +239,18 @@ export const computeWorkingPeriodTimecard: (
       leavePeriods,
     },
     initializeWorkingPeriodTimecard,
-    t => {
-      console.log('after initializeWorkingPeriodTimecard');
-      return t;
-    },
     curateLeaves,
-    t => {
-      console.log('after curateLeaves');
-      return t;
-    },
     filterShifts,
-    t => {
-      console.log('after filterShifts', t);
-      return t;
-    },
     generateTheoreticalShiftIfPartialWeek,
-    t => {
-      console.log('after generateTheoreticalShiftIfPartialWeek');
-      return t;
-    },
     computeTotalNormalHoursAvailable,
-    t => {
-      console.log('after computeTotalNormalHoursAvailable');
-      return t;
-    },
     computeTotalHoursWorked,
-    t => {
-      console.log('after computeTotalHoursWorked');
-      return t;
-    },
+    computeLeavesHours,
     computeTotalAdditionalHours,
-    t => {
-      console.log('after computeTotalAdditionalHours');
-      return t;
-    },
-    computeComplementaryHours,
-    computeSupplementaryHours
+    t => (t.contract.isFullTime() ? computeSupplementaryHours(t) : computeComplementaryHours(t))
+    // t => {
+    //   t.debug();
+    //   return t;
+    // }
     // computeSurchargedHours
   );
 };
@@ -277,9 +272,8 @@ export const computeTimecardForEmployee =
       E.Do,
       E.bind('workingPeriods', () => splitPeriodIntoWorkingPeriods(contracts, period)),
       E.bindW('groupedShifts', ({ workingPeriods }) => groupShiftsByWorkingPeriods(shifts, workingPeriods)),
-      E.bindW('groupedLeaves', () => E.right(Map<WorkingPeriod, List<LeavePeriod>>())),
-      E.bindW('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) => {
-        console.log('entering timecard computation');
+      E.bindW('groupedLeavePeriods', ({ workingPeriods }) => groupLeavePeriodsByWorkingPeriods(leavePeriods, workingPeriods)),
+      E.bindW('timecards', ({ workingPeriods, groupedShifts, groupedLeavePeriods }) => {
         return pipe(
           workingPeriods.toArray().map(wp =>
             pipe(
@@ -289,7 +283,7 @@ export const computeTimecardForEmployee =
                 computeWorkingPeriodTimecard(
                   workingPeriod,
                   groupedShifts.get(workingPeriod, List<Shift>()),
-                  groupedLeaves.get(workingPeriod, List<LeavePeriod>()),
+                  groupedLeavePeriods.get(workingPeriod, List<LeavePeriod>()),
                   contract,
                   employee
                 )

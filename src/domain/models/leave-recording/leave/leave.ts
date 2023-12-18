@@ -1,4 +1,4 @@
-import { Duration, Instant, LocalDateTime, ZoneId } from '@js-joda/core';
+import { DateTimeFormatter, Duration, Instant, LocalDateTime, ZoneId } from '@js-joda/core';
 import { Map, ValueObject } from 'immutable';
 import { TypeProps } from '../../../../~shared/util/types';
 import { Shift } from '../../mission-delivery/shift/shift';
@@ -38,5 +38,11 @@ export class Leave implements ValueObject {
       Instant.from(this.startTime.atZone(ZoneId.of('Europe/Paris'))),
       Instant.from(this.getEndTime().atZone(ZoneId.of('Europe/Paris')))
     );
+  }
+
+  debug(): string {
+    return `${this.startTime.format(DateTimeFormatter.ofPattern('HH:mm dd/MM/yy'))} -> ${this.getEndTime().format(
+      DateTimeFormatter.ofPattern('HH:mm dd/MM/yy')
+    )}`;
   }
 }
