@@ -1,4 +1,4 @@
-import { DateTimeFormatter, Duration, Instant, LocalDateTime, ZoneId } from '@js-joda/core';
+import { DateTimeFormatter, Duration, Instant, LocalDateTime, LocalTime, ZoneId } from '@js-joda/core';
 import { Interval } from '@js-joda/extra';
 import { Map, ValueObject } from 'immutable';
 import { TypeProps } from '../../../../~shared/util/types';
@@ -105,6 +105,10 @@ export class Shift implements ValueObject, IShift {
 
   getEndTime(): LocalDateTime {
     return this.startTime.plus(this.duration);
+  }
+
+  isNightShift(): boolean {
+    return this.startTime.toLocalTime().isAfter(LocalTime.of(20, 0)) || this.startTime.toLocalTime().isBefore(LocalTime.of(6, 0));
   }
 
   debug(): string {

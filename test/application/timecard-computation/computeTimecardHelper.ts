@@ -81,16 +81,17 @@ const weeklyPlanning24Hours = DayOfWeek.values()
   .set(MONDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
   .set(TUESDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
   .set(WEDNESDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
-  .set(THURSDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]));
-// .set(FRIDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
-// .set(SUNDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]));
+  // .set(THURSDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
+  // .set(FRIDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
+  .set(SUNDAY, Set([new LocalTimeSlot(LocalTime.of(23, 59), LocalTime.of(23, 59))]));
 
 const weeklyPlanning28Hours = DayOfWeek.values()
   .reduce((acc, day) => acc.set(day, Set<LocalTimeSlot>()), Map<DayOfWeek, Set<LocalTimeSlot>>())
   .set(TUESDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(15))]))
   .set(WEDNESDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(15))]))
-  .set(THURSDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(15))]))
-  .set(FRIDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(15))]));
+  // .set(THURSDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(15))]))
+  .set(FRIDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(15))]))
+  .set(SUNDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(15))]));
 
 export const cas1 = {
   contracts: List([
@@ -102,7 +103,7 @@ export const cas1 = {
       overtimeAveragingPeriod: Duration.ofDays(7),
       weeklyNightShiftHours: Duration.ofHours(0),
       weeklyTotalWorkedHours: Duration.ofHours(24),
-      workedDays: Set([MONDAY, TUESDAY, WEDNESDAY, THURSDAY]),
+      workedDays: Set([MONDAY, TUESDAY, WEDNESDAY, SUNDAY]),
       weeklyPlanning: weeklyPlanning24Hours,
       subType: 'complement_heure',
       extraDuration: Duration.ofHours(5),
@@ -115,7 +116,7 @@ export const cas1 = {
       overtimeAveragingPeriod: Duration.ofDays(7),
       weeklyNightShiftHours: Duration.ofHours(0),
       weeklyTotalWorkedHours: Duration.ofHours(35),
-      workedDays: Set([MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]),
+      workedDays: Set([MONDAY, TUESDAY, WEDNESDAY, FRIDAY, SUNDAY]),
       weeklyPlanning: weeklyPlanning35Hours,
     }),
   ]),

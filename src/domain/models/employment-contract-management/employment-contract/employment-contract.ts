@@ -79,7 +79,7 @@ export class EmploymentContract implements ValueObject {
   }
 
   isNightWorker(): boolean {
-    return this.weeklyNightShiftHours.toHours() > 0;
+    return this.weeklyPlanning.some(slots => slots.some(slot => slot.isNight()));
   }
 
   isSundayWorker(): boolean {

@@ -49,7 +49,7 @@ const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
 
 // TODO
 const computeNightShiftHours = (timecard: WorkingPeriodTimecard) => {
-  const nightHours = timecard.contract.weeklyNightShiftHours;
+  const getNightShifts = timecard.shifts.filter(shift => shift.isNightShift());
   return timecard;
 };
 // TODO

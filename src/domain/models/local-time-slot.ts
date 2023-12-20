@@ -128,6 +128,10 @@ export class LocalTimeSlot implements ValueObject {
     );
   }
 
+  isNight() {
+    return this.startTime.isAfter(LocalTime.of(20, 0)) || this.endTime.isBefore(LocalTime.of(6, 0));
+  }
+
   debug() {
     return `${this.startTime.format(DateTimeFormatter.ofPattern('HH:mm'))} -> ${this.endTime.format(DateTimeFormatter.ofPattern('HH:mm'))}`;
   }

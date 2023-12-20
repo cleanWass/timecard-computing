@@ -100,7 +100,9 @@ export class WorkingPeriodTimecard implements ValueObject {
       `
         WorkingPeriodTimecard ${this.id} for ${this.employee.firstName} ${this.employee.lastName} (${this.employee.id})
         Period: ${this.workingPeriod.period.toFormattedString()}
-        Contract: ${formatDuration(this.contract.weeklyTotalWorkedHours)} / week
+        Contract: ${formatDuration(this.contract.weeklyTotalWorkedHours)} / week - NightWorker : ${
+          this.contract.isNightWorker() ? 'Yes' : 'No'
+        } - SundayWorker : ${this.contract.isSundayWorker() ? 'Yes' : 'No'}
         WorkedHours: 
             ${this.workedHours
               .toSeq()
