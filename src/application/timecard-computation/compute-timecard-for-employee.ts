@@ -5,7 +5,6 @@ import '@js-joda/timezone';
 
 import { Employee } from '../../domain/models/employee-registration/employee/employee';
 import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
-import { Leave } from '../../domain/models/leave-recording/leave/leave';
 import { LeavePeriod } from '../../domain/models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { Shift } from '../../domain/models/mission-delivery/shift/shift';
@@ -13,7 +12,7 @@ import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
 import { computeExtraHoursByRate, computeTotalAdditionalHours } from './computation/additionnal-hours-computation';
-import { computeLeavesHours, computeTotalHoursWorked, computeTotalNormalHoursAvailable } from './computation/computeTotalHoursWorked';
+import { computeLeavesHours, computeTotalNormalHoursAvailable, normalHoursComputation } from './computation/normal-hours-computation';
 import { computeSurchargedHours } from './computation/surcharged-hours-computation';
 import {
   groupLeavePeriodsByWorkingPeriods,
@@ -21,7 +20,7 @@ import {
   splitPeriodIntoWorkingPeriods,
 } from './computation/working-period-computation';
 import { curateLeaves, filterShifts } from './curation/shifts-and-period-curation';
-import { generateTheoreticalShiftIfPartialWeek } from './generateTheoreticalShiftIfPartialWeek';
+import { generateTheoreticalShiftIfPartialWeek } from './generation/theoretical-shifts-generation';
 
 const findContract = (contracts: List<EmploymentContract>) => (workingPeriod: WorkingPeriod) =>
   pipe(
@@ -92,7 +91,7 @@ export const computeWorkingPeriodTimecard: (
     filterShifts,
     generateTheoreticalShiftIfPartialWeek,
     computeTotalNormalHoursAvailable,
-    computeTotalHoursWorked,
+    normalHoursComputation,
     computeLeavesHours,
     computeTotalAdditionalHours,
     computeExtraHoursByRate,
@@ -152,21 +151,7 @@ export const computeTimecardForEmployee =
           workingPeriods,
           groupedShifts,
           timecards,
-          // totalAdditionalHours,
         };
       })
     );
   };
-
-// TODO
-// - [x] filter contracts
-// - [x] filter shifts
-// - [x] filter leaves
-// - [x] group shifts by contract
-// - [ ] group leaves by contract
-// - [X] divide contract period into periods
-// - [X] match shift and leaves to periods
-// - [ ] determiner complement d'heures, heures complementaires, heures supplementaires
-// - [ ] ressortir les heures majorées (nuit, dimanche, férié)
-// - [ ] calculer les tickets restaurants
-// - [ ] computeTimecardForEmployee

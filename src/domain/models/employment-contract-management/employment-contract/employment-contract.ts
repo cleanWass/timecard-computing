@@ -26,23 +26,6 @@ export class EmploymentContract implements ValueObject {
     );
   }
 
-  // public static buildFromJSON(json: any) {
-  //   return new EmploymentContract(
-  //     'ee',
-  //     'qqq',
-  //     LocalDate.parse(json.startDate),
-  //     pipe(
-  //       json.endDate,
-  //       O.map((d: string) => LocalDate.parse(d))
-  //     ),
-  //     Duration.ofDays(7),
-  //     Duration.parse(json.weeklyHours),
-  //     Duration.ofHours(7),
-  //     Set(Object.keys(json.planning).map(d => DayOfWeek[d])),
-  //     json.planning
-  //   );
-  // }
-
   private readonly _vo: ValueObject;
 
   private constructor(
@@ -93,6 +76,14 @@ export class EmploymentContract implements ValueObject {
         O.match(() => defaultEndDate, identity)
       )
     );
+  }
+
+  isNightWorker(): boolean {
+    return this.weeklyNightShiftHours.toHours() > 0;
+  }
+
+  isSundayWorker(): boolean {
+    return this.workedDays.includes(DayOfWeek.SUNDAY);
   }
 
   isExtraHours(): boolean {

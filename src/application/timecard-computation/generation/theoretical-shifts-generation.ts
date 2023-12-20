@@ -1,9 +1,9 @@
-import { Duration, LocalDateTime } from '@js-joda/core';
+import { LocalDateTime } from '@js-joda/core';
 import { List, Set } from 'immutable';
-import { LocalTimeSlot } from '../../domain/models/local-time-slot';
-import { TheoreticalShift } from '../../domain/models/mission-delivery/shift/theorical-shift';
-import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
-import { getFirstDayOfWeek } from '../../~shared/util/joda-helper';
+import { LocalTimeSlot } from '../../../domain/models/local-time-slot';
+import { TheoreticalShift } from '../../../domain/models/mission-delivery/shift/theorical-shift';
+import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { getFirstDayOfWeek, getTotalDuration } from '../../../~shared/util/joda-helper';
 
 const generateTheoreticalShift = (timecard: WorkingPeriodTimecard) => {
   return List(
@@ -33,8 +33,5 @@ export const generateTheoreticalShiftIfPartialWeek = (wpTimecard: WorkingPeriodT
   if (wpTimecard.workingPeriod.isComplete(wpTimecard.contract)) return wpTimecard;
 
   const theoreticalShifts = generateTheoreticalShift(wpTimecard);
-  return wpTimecard.with({ theoreticalShifts }).register(
-    'TotalTheoretical',
-    theoreticalShifts.reduce((acc, sh) => acc.plus(sh.duration), Duration.ZERO)
-  );
+  return wpTimecard.with({ theoreticalShifts }).register('TotalTheoretical', getTotalDuration(theoreticalShifts));
 };

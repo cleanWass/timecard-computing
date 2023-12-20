@@ -1,4 +1,4 @@
-import { DayOfWeek, Duration, LocalDate } from '@js-joda/core';
+import { DayOfWeek, LocalDate } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import { List, Set } from 'immutable';
@@ -9,6 +9,7 @@ import { LocalTimeSlot } from '../../../domain/models/local-time-slot';
 import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { HolidayComputationService } from '../../../domain/service/holiday-computation/holiday-computation-service';
+import { getTotalDuration } from '../../../~shared/util/joda-helper';
 
 const isShiftDuringPlanning = (shift: Shift, planning: EmploymentContract['weeklyPlanning']) =>
   planning.get(shift.startTime.dayOfWeek(), Set<LocalTimeSlot>()).some(timeSlot => shift.getTimeSlot().isConcurrentOf(timeSlot));
@@ -20,14 +21,8 @@ const computeSundayHours = (timecard: WorkingPeriodTimecard) => {
   );
 
   return timecard
-    .register(
-      'SundayContract',
-      sundayShiftsGroupedByRate.get('SundayContract', List<Shift>()).reduce((acc, shift) => acc.plus(shift.duration), Duration.ZERO)
-    )
-    .register(
-      'SundayAdditional',
-      sundayShiftsGroupedByRate.get('SundayAdditional', List<Shift>()).reduce((acc, shift) => acc.plus(shift.duration), Duration.ZERO)
-    );
+    .register('SundayContract', getTotalDuration(sundayShiftsGroupedByRate.get('SundayContract', List<Shift>())))
+    .register('SundayAdditional', getTotalDuration(sundayShiftsGroupedByRate.get('SundayAdditional', List<Shift>())));
 };
 
 const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
@@ -48,18 +43,8 @@ const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
     isShiftDuringPlanning(shift, timecard.contract.weeklyPlanning) ? 'HolidaySurchargedH' : 'HolidaySurchargedP'
   );
   return timecard
-    .register(
-      'HolidaySurchargedH',
-      shiftsDuringHolidaysGroupedByRate
-        .get('HolidaySurchargedH', List<Shift>())
-        .reduce((acc, shift) => acc.plus(shift.duration), Duration.ZERO)
-    )
-    .register(
-      'HolidaySurchargedP',
-      shiftsDuringHolidaysGroupedByRate
-        .get('HolidaySurchargedP', List<Shift>())
-        .reduce((acc, shift) => acc.plus(shift.duration), Duration.ZERO)
-    );
+    .register('HolidaySurchargedH', getTotalDuration(shiftsDuringHolidaysGroupedByRate.get('HolidaySurchargedH', List<Shift>())))
+    .register('HolidaySurchargedP', getTotalDuration(shiftsDuringHolidaysGroupedByRate.get('HolidaySurchargedP', List<Shift>())));
 };
 
 // TODO
