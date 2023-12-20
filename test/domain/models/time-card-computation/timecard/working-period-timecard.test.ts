@@ -26,7 +26,7 @@ describe('WorkingPeriodTimecard', () => {
       period: new LocalDateRange(LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 9)),
     }),
     workedHours: new WorkedHoursResume(),
-    theoreticalShift: List(),
+    theoreticalShifts: List(),
     shifts: List(),
     leaves: List(),
     leavePeriods: List(),

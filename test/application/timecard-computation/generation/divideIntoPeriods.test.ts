@@ -2,7 +2,7 @@ import { pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/lib/Option';
 import { List, Map, Set } from 'immutable';
 import { DayOfWeek, Duration, LocalDate, LocalTime } from '@js-joda/core';
-import { divideContractsIntoPeriods } from '../../../../src/application/timecard-computation/util/divide-into-periods';
+import { divideContractsIntoPeriods } from '../../../../src/application/timecard-computation/generation/divide-into-periods';
 import { EmployeeId } from '../../../../src/domain/models/employee-registration/employee/employee-id';
 import { EmploymentContract } from '../../../../src/domain/models/employment-contract-management/employment-contract/employment-contract';
 import { EmploymentContractId } from '../../../../src/domain/models/employment-contract-management/employment-contract/employment-contract-id';

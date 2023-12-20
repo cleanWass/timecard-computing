@@ -21,9 +21,9 @@ export class WorkingPeriodTimecard implements ValueObject {
     workingPeriod: WorkingPeriod;
 
     shifts: List<Shift>;
-    theoreticalShift?: List<TheoreticalShift>;
+    theoreticalShifts?: List<TheoreticalShift>;
 
-    leaves: List<Leave>;
+    leaves?: List<Leave>;
     leavePeriods: List<LeavePeriod>;
 
     workedHours?: WorkedHoursResumeType;
@@ -35,7 +35,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.workingPeriod,
       params.workedHours ?? new WorkedHoursResume(),
       params.shifts,
-      params.leaves,
+      params.leaves ?? List<Leave>(),
       params.leavePeriods,
       List<TheoreticalShift>()
     );
@@ -55,7 +55,7 @@ export class WorkingPeriodTimecard implements ValueObject {
     public readonly leaves: List<Leave>,
     public readonly leavePeriods: List<LeavePeriod>,
 
-    public readonly theoreticalShift: List<TheoreticalShift>
+    public readonly theoreticalShifts: List<TheoreticalShift>
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
       .set('id', this.id)
@@ -66,7 +66,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       .set('shifts', this.shifts)
       .set('leaves', this.leaves)
       .set('leavePeriods', this.leavePeriods)
-      .set('theoreticalShift', this.theoreticalShift);
+      .set('theoreticalShifts', this.theoreticalShifts);
   }
 
   equals(other: unknown): boolean {
@@ -87,7 +87,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.shifts ?? this.shifts,
       params.leaves ?? this.leaves,
       params.leavePeriods ?? this.leavePeriods,
-      params.theoreticalShift ?? this.theoreticalShift
+      params.theoreticalShifts ?? this.theoreticalShifts
     );
   }
 
@@ -110,7 +110,7 @@ export class WorkingPeriodTimecard implements ValueObject {
         Leaves: ${this.leaves.map(l => l.debug()).join(' | ')}
         LeavePeriods: ${this.leavePeriods.map(l => l.debug()).join(' | ')}
         Shifts: ${this.shifts.map(s => s.debug()).join(' | ')}
-        TheoreticalShifts: ${this.theoreticalShift.map(s => s.debug()).join(' | ')}
+        TheoreticalShifts: ${this.theoreticalShifts.map(s => s.debug()).join(' | ')}
       `
     );
   }

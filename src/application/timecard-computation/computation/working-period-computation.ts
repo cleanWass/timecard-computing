@@ -2,7 +2,7 @@ import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import { List, Map } from 'immutable';
 import { LeavePeriod } from '../../../domain/models/leave-recording/leave/leave-period';
-import { divideIntoPeriods } from './divide-into-periods';
+import { divideIntoPeriods } from '../generation/divide-into-periods';
 import { EmploymentContract } from '../../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { Shift } from '../../../domain/models/mission-delivery/shift/shift';

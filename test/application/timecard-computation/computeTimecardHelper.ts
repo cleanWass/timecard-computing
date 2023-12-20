@@ -94,17 +94,19 @@ const weeklyPlanning28Hours = DayOfWeek.values()
 
 export const cas1 = {
   contracts: List([
-    // EmploymentContract.build({
-    //   id: '24h',
-    //   employeeId: 'Yves',
-    //   startDate: LocalDate.of(2023, 11, 1),
-    //   endDate: O.some(LocalDate.of(2023, 11, 15)),
-    //   overtimeAveragingPeriod: Duration.ofDays(7),
-    //   weeklyNightShiftHours: Duration.ofHours(0),
-    //   weeklyTotalWorkedHours: Duration.ofHours(24),
-    //   workedDays: Set([MONDAY, TUESDAY, WEDNESDAY, THURSDAY]),
-    //   weeklyPlanning: weeklyPlanning24Hours,
-    // }),
+    EmploymentContract.build({
+      id: '24h',
+      employeeId: 'Yves',
+      startDate: LocalDate.of(2023, 11, 1),
+      endDate: O.some(LocalDate.of(2023, 11, 15)),
+      overtimeAveragingPeriod: Duration.ofDays(7),
+      weeklyNightShiftHours: Duration.ofHours(0),
+      weeklyTotalWorkedHours: Duration.ofHours(24),
+      workedDays: Set([MONDAY, TUESDAY, WEDNESDAY, THURSDAY]),
+      weeklyPlanning: weeklyPlanning24Hours,
+      subType: 'complement_heure',
+      extraDuration: Duration.ofHours(5),
+    }),
     EmploymentContract.build({
       id: '35h',
       employeeId: 'Yves',
@@ -115,7 +117,6 @@ export const cas1 = {
       weeklyTotalWorkedHours: Duration.ofHours(35),
       workedDays: Set([MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]),
       weeklyPlanning: weeklyPlanning35Hours,
-      subType: 'acroissement',
     }),
   ]),
   shifts: List([
@@ -125,7 +126,7 @@ export const cas1 = {
     buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 16, 8, 0), Duration.ofHours(7)),
     buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 17, 8, 0), Duration.ofHours(7)),
     // buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 18, 8, 0), Duration.ofHours(3)),
-    buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 19, 8, 0), Duration.ofHours(10)),
+    buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 19, 8, 0), Duration.ofHours(6)),
   ]),
   leavePeriods: List([
     // LeavePeriod.build({
