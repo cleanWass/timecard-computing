@@ -1,9 +1,10 @@
-import { Duration, Instant, LocalDateTime, ZoneId } from '@js-joda/core';
+import { DayOfWeek, Duration, Instant, LocalDate, LocalDateTime, ZoneId } from '@js-joda/core';
 import { Interval } from '@js-joda/extra';
 import * as E from 'fp-ts/Either';
 import { identity, pipe } from 'fp-ts/function';
 import { List, Map, Set } from 'immutable';
 import '@js-joda/timezone';
+import forceRight from '../../../test/~shared/util/forceRight';
 
 import { Employee } from '../../domain/models/employee-registration/employee/employee';
 import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
@@ -15,6 +16,7 @@ import { Shift } from '../../domain/models/mission-delivery/shift/shift';
 import { TheoreticalShift } from '../../domain/models/mission-delivery/shift/theorical-shift';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
+import { HolidayComputationService } from '../../domain/service/holiday-computation/holiday-computation-service';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
 import { formatDuration, getFirstDayOfWeek, getGreaterDuration, getLowerDuration } from '../../~shared/util/joda-helper';
 import { computeSupplementaryHours } from './full-time-computation/full-time-computation';
@@ -65,6 +67,18 @@ const computeTotalAdditionalHours = (timecard: WorkingPeriodTimecard) => {
   if (totalAdditionalHours.isNegative()) return timecard.register('TotalAdditionalHours', Duration.ZERO);
   const totalNormalHours = getLowerDuration(TotalNormalAvailable, totalAdditionalHours);
 
+  // console.log(`
+  // -------------------------------------
+  // TotalLeavesPaid: ${formatDuration(TotalLeavesPaid)}
+  // TotalTheoretical: ${formatDuration(TotalTheoretical)}
+  // totalAdditionalHours: ${formatDuration(totalAdditionalHours)}
+  // TotalWeekly: ${formatDuration(TotalWeekly)}
+  // totalEffectiveHours: ${formatDuration(totalEffectiveHours)}
+  // TotalNormalAvailable: ${formatDuration(TotalNormalAvailable)}
+  // -------------------------------------
+  // totalNormalHours: ${formatDuration(totalNormalHours)}
+  // -------------------------------------
+  // `);
   return timecard
     .register('TotalNormal', totalNormalHours)
     .register('TotalNormalAvailable', TotalNormalAvailable.minus(totalNormalHours))
@@ -141,9 +155,10 @@ const computeTotalNormalHoursAvailable = (timecard: WorkingPeriodTimecard) => {
     .filter(leave => leave.reason === 'Paid' || leave.reason === 'Holiday')
     .reduce((sum, shift) => sum.plus(shift.duration), Duration.ZERO);
 
-  const normalHoursFromTheoreticalShifts = timecard.theoreticalShift.reduce((sum, shift) => sum.plus(shift.duration), Duration.ZERO);
+  // POURQUOI CA MARCHE PAS
+  // const normalHoursFromTheoreticalShifts = timecard.theoreticalShift.reduce((sum, shift) => sum.plus(shift.duration), Duration.ZERO);
 
-  return timecard.register('TotalNormalAvailable', normalHoursFromLeaves.plus(normalHoursFromTheoreticalShifts));
+  return timecard.register('TotalNormalAvailable', normalHoursFromLeaves);
 };
 
 const isShiftDuringLeavePeriod = (shift: Shift) => (leave: LeavePeriod) =>
@@ -210,13 +225,67 @@ const curateLeaves = (timecard: WorkingPeriodTimecard) => {
 // [x] calculer la majoration des heures additionnelles selon contrat HC10 11 25 | HS 25 50
 // [ ] calculer les majorations pour dimanche / jour férié / nuit
 
+// [ ] refacto en différents files
+// [ ] calcul des surcharges dimanches t habituel vs ponctuel
+// [ ] simulateur dans lapp de preview
+// [ ] arrondir les taux HC 11 25
+// [ ] calculer la date d'ancienneté
+// [ ] jour férié si date dancienneté suffisante
+// [ ] export si tout ok
+// [ ] pour l'export un contrat par ligne, idem si avenant ou complement d'heure. faire la somme des deux dans ce cas
+// [ ] arrondir les heures et les passer en centièmes
+
 const computeSundayHours = (timecard: WorkingPeriodTimecard) => {
-  throw new Error('Function not implemented.');
-  return timecard;
+  const sundayShifts = timecard.shifts.filter(shift => shift.startTime.dayOfWeek() === DayOfWeek.SUNDAY);
+  const sundayShiftsGroupedByRate = sundayShifts.groupBy(shift =>
+    isShiftDuringPlanning(shift, timecard.contract.weeklyPlanning) ? 'SundayContract' : 'SundayAdditional'
+  );
+
+  return timecard
+    .register(
+      'SundayContract',
+      sundayShiftsGroupedByRate.get('SundayContract', List<Shift>()).reduce((acc, shift) => acc.plus(shift.duration), Duration.ZERO)
+    )
+    .register(
+      'SundayAdditional',
+      sundayShiftsGroupedByRate.get('SundayAdditional', List<Shift>()).reduce((acc, shift) => acc.plus(shift.duration), Duration.ZERO)
+    );
 };
+
+function isShiftDuringPlanning(shift: Shift, planning: EmploymentContract['weeklyPlanning']) {
+  return planning.get(shift.startTime.dayOfWeek(), Set<LocalTimeSlot>()).some(timeSlot => shift.getTimeSlot().isConcurrentOf(timeSlot));
+}
+
 const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
-  throw new Error('Function not implemented.');
-  return timecard;
+  const holidayDates = new HolidayComputationService().computeHolidaysForLocale(
+    'FR-75',
+    forceRight(LocalDateRange.of(timecard.workingPeriod.period.start, timecard.workingPeriod.period.end)),
+    Set([LocalDate.of(2023, 11, 16)])
+  );
+  const shiftsDuringHolidays = pipe(
+    holidayDates,
+    E.map(holidays => timecard.shifts.filter(shift => holidays.includes(shift.startTime.toLocalDate()))),
+    E.getOrElse(e => {
+      console.log(e);
+      return List<Shift>();
+    })
+  );
+  const shiftsDuringHolidaysGroupedByRate = shiftsDuringHolidays.groupBy(shift =>
+    isShiftDuringPlanning(shift, timecard.contract.weeklyPlanning) ? 'HolidaySurchargedH' : 'HolidaySurchargedP'
+  );
+  return timecard
+    .register(
+      'HolidaySurchargedH',
+      shiftsDuringHolidaysGroupedByRate
+        .get('HolidaySurchargedH', List<Shift>())
+        .reduce((acc, shift) => acc.plus(shift.duration), Duration.ZERO)
+    )
+    .register(
+      'HolidaySurchargedP',
+      shiftsDuringHolidaysGroupedByRate
+        .get('HolidaySurchargedP', List<Shift>())
+        .reduce((acc, shift) => acc.plus(shift.duration), Duration.ZERO)
+    );
 };
 
 // TODO
@@ -246,12 +315,12 @@ export const computeWorkingPeriodTimecard: (
     computeTotalHoursWorked,
     computeLeavesHours,
     computeTotalAdditionalHours,
-    t => (t.contract.isFullTime() ? computeSupplementaryHours(t) : computeComplementaryHours(t))
+    t => (t.contract.isFullTime() ? computeSupplementaryHours(t) : computeComplementaryHours(t)),
     // t => {
     //   t.debug();
     //   return t;
     // }
-    // computeSurchargedHours
+    computeSurchargedHours
   );
 };
 

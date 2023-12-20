@@ -11,62 +11,17 @@ import { LocalDateRange } from '../../../src/domain/models/local-date-range';
 import { Shift } from '../../../src/domain/models/mission-delivery/shift/shift';
 import { ClientId } from '../../../src/domain/models/sales-contract-management/client/client-id';
 
-const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY } = DayOfWeek;
+const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY } = DayOfWeek;
 const mondayToFriday = Set.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY);
 const mondayToSaturday = Set.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY);
 
-const weeklyPlanning28Hours = DayOfWeek.values()
-  .reduce((acc, day) => acc.set(day, Set<LocalTimeSlot>()), Map<DayOfWeek, Set<LocalTimeSlot>>())
-  .set(
-    MONDAY,
-    Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)), new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0))])
-  )
-  .set(
-    TUESDAY,
-    Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)), new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0))])
-  )
-  .set(
-    WEDNESDAY,
-    Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)), new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0))])
-  )
-  .set(
-    THURSDAY,
-    Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)), new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0))])
-  );
-const weeklyPlanning24Hours = DayOfWeek.values()
-  .reduce((acc, day) => acc.set(day, Set<LocalTimeSlot>()), Map<DayOfWeek, Set<LocalTimeSlot>>())
-  .set(MONDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
-  .set(TUESDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
-  .set(WEDNESDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
-  .set(THURSDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]));
-
 const weeklyPlanning35Hours = DayOfWeek.values()
   .reduce((acc, day) => acc.set(day, Set<LocalTimeSlot>()), Map<DayOfWeek, Set<LocalTimeSlot>>())
-  .set(
-    MONDAY,
-    Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)), new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0))])
-  )
-  .set(
-    TUESDAY,
-    Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)), new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0))])
-  )
-  .set(
-    WEDNESDAY,
-    Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)), new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0))])
-  )
-  .set(
-    THURSDAY,
-    Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)), new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0))])
-  )
-  .set(
-    FRIDAY,
-    Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)), new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0))])
-  )
-
-  .set(
-    SATURDAY,
-    Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)), new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0))])
-  );
+  .set(MONDAY, Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(15, 30))]))
+  .set(TUESDAY, Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(15, 30))]))
+  .set(WEDNESDAY, Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(15, 30))]))
+  .set(THURSDAY, Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(15, 30))]))
+  .set(FRIDAY, Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(15, 30))]));
 
 const OneWeekContract = EmploymentContract.build({
   id: 'contract-1-week',
@@ -77,7 +32,7 @@ const OneWeekContract = EmploymentContract.build({
   weeklyNightShiftHours: Duration.ofHours(0),
   weeklyTotalWorkedHours: Duration.ofHours(24),
   workedDays: mondayToFriday,
-  weeklyPlanning: weeklyPlanning28Hours,
+  weeklyPlanning: weeklyPlanning35Hours,
 });
 const OneMonthContract = EmploymentContract.build({
   id: 'contract-1-month',
@@ -121,36 +76,72 @@ export const buildShift = (clientId: ClientId, employeeId: EmployeeId) => (start
 
 export const contracts = { OneMonthContract, OneWeekContract, IrrelevantContract };
 
-export const planning = { weeklyPlanning35Hours, weeklyPlanning28Hours };
+const weeklyPlanning24Hours = DayOfWeek.values()
+  .reduce((acc, day) => acc.set(day, Set<LocalTimeSlot>()), Map<DayOfWeek, Set<LocalTimeSlot>>())
+  .set(MONDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
+  .set(TUESDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
+  .set(WEDNESDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
+  .set(THURSDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]));
+// .set(FRIDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]))
+// .set(SUNDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(14))]));
+
+const weeklyPlanning28Hours = DayOfWeek.values()
+  .reduce((acc, day) => acc.set(day, Set<LocalTimeSlot>()), Map<DayOfWeek, Set<LocalTimeSlot>>())
+  .set(TUESDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(15))]))
+  .set(WEDNESDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(15))]))
+  .set(THURSDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(15))]))
+  .set(FRIDAY, Set([new LocalTimeSlot(LocalTime.of(8), LocalTime.of(15))]));
 
 export const cas1 = {
   contracts: List([
+    // EmploymentContract.build({
+    //   id: '24h',
+    //   employeeId: 'Yves',
+    //   startDate: LocalDate.of(2023, 11, 1),
+    //   endDate: O.some(LocalDate.of(2023, 11, 15)),
+    //   overtimeAveragingPeriod: Duration.ofDays(7),
+    //   weeklyNightShiftHours: Duration.ofHours(0),
+    //   weeklyTotalWorkedHours: Duration.ofHours(24),
+    //   workedDays: Set([MONDAY, TUESDAY, WEDNESDAY, THURSDAY]),
+    //   weeklyPlanning: weeklyPlanning24Hours,
+    // }),
     EmploymentContract.build({
-      id: 'contract-1-month',
+      id: '35h',
       employeeId: 'Yves',
-      startDate: LocalDate.of(2023, 11, 1),
+      startDate: LocalDate.of(2023, 11, 15),
       endDate: O.some(LocalDate.of(2023, 11, 30)),
       overtimeAveragingPeriod: Duration.ofDays(7),
       weeklyNightShiftHours: Duration.ofHours(0),
-      weeklyTotalWorkedHours: Duration.ofHours(24),
-      workedDays: Set([MONDAY, TUESDAY, WEDNESDAY, THURSDAY]),
-      weeklyPlanning: weeklyPlanning24Hours,
+      weeklyTotalWorkedHours: Duration.ofHours(35),
+      workedDays: Set([MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]),
+      weeklyPlanning: weeklyPlanning35Hours,
+      subType: 'acroissement',
     }),
   ]),
   shifts: List([
     buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 13, 8, 0), Duration.ofHours(6)),
-    buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 14, 8, 0), Duration.ofHours(6)),
-    buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 15, 8, 0), Duration.ofHours(6)),
-    buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 16, 8, 0), Duration.ofHours(6)),
-    buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 17, 8, 0), Duration.ofHours(2)),
+    buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 14, 8, 0), Duration.ofHours(8)),
+    buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 15, 8, 0), Duration.ofHours(7)),
+    buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 16, 8, 0), Duration.ofHours(7)),
+    buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 17, 8, 0), Duration.ofHours(7)),
+    // buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 18, 8, 0), Duration.ofHours(3)),
+    buildShift('bic', 'Yves')(LocalDateTime.of(2023, 11, 19, 8, 0), Duration.ofHours(10)),
   ]),
   leavePeriods: List([
     // LeavePeriod.build({
     //   id: '1',
     //   startTime: LocalTime.of(8),
-    //   endTime: LocalTime.of(14),
+    //   endTime: LocalTime.of(20),
     //   period: new LocalDateRange(LocalDate.of(2023, 11, 16), LocalDate.of(2023, 11, 16)),
     //   reason: 'Holiday',
+    //   comment: O.none,
+    // }),
+    // LeavePeriod.build({
+    //   id: '2',
+    //   startTime: LocalTime.of(0),
+    //   endTime: LocalTime.of(23),
+    //   period: new LocalDateRange(LocalDate.of(2023, 11, 17), LocalDate.of(2023, 11, 17)),
+    //   reason: 'Unpaid',
     //   comment: O.none,
     // }),
   ]),
@@ -162,3 +153,4 @@ export const cas1 = {
     phoneNumber: '0600000000',
   }),
 };
+export const planning = { weeklyPlanning35Hours, weeklyPlanning28Hours };

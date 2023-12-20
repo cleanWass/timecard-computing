@@ -5,7 +5,7 @@ import { getGreaterDuration, getLowerDuration } from '../../../~shared/util/joda
 
 const computeSurchargeWithExtraHours = (timecard: WorkingPeriodTimecard) => {
   const additionalHours = timecard.workedHours.TotalAdditionalHours;
-  const _10PerCentRateHours = getGreaterDuration(additionalHours, timecard.contract.extraDuration);
+  const _10PerCentRateHours = getLowerDuration(additionalHours, timecard.contract.extraDuration);
   const _25PerCentRateHours = getGreaterDuration(additionalHours.minus(_10PerCentRateHours), Duration.ZERO);
   return timecard
     .register('TenPercentRateComplementary', _10PerCentRateHours)

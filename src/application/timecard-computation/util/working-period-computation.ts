@@ -43,7 +43,7 @@ export const groupShiftsByWorkingPeriods = (shifts: List<Shift>, workingPeriods:
         (groupedShifts, workingPeriod) =>
           groupedShifts.set(
             workingPeriod,
-            shifts.filter(({ startTime }) => workingPeriod.period.includesDate(startTime.toLocalDate().plusDays(1)))
+            shifts.filter(({ startTime }) => workingPeriod.period.includesDate(startTime.toLocalDate()))
           ),
         Map<WorkingPeriod, List<Shift>>()
       )

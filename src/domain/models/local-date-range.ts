@@ -41,7 +41,7 @@ export class LocalDateRange implements ValueObject {
   }
 
   includesDate(date: LocalDate): boolean {
-    return ((this.start.equals(date) || this.start.isBefore(date)) && this.end.isAfter(date)) || this.end.isEqual(date);
+    return (this.start.equals(date) || this.start.isBefore(date)) && this.end.isAfter(date);
   }
 
   includesRange(range: LocalDateRange): boolean {

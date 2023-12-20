@@ -1,4 +1,4 @@
-import { Duration, Instant, LocalDate, LocalDateTime, LocalTime } from '@js-joda/core';
+import { DateTimeFormatter, Duration, Instant, LocalDate, LocalDateTime, LocalTime } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { Map, Set, ValueObject } from 'immutable';
 import { IllegalArgumentError } from '../~shared/error/illegal-argument-error';
@@ -126,6 +126,10 @@ export class LocalTimeSlot implements ValueObject {
       Instant.from(LocalDateTime.of(startDate, this.startTime)),
       Instant.from(LocalDateTime.of(endDate ?? startDate, this.endTime))
     );
+  }
+
+  debug() {
+    return `${this.startTime.format(DateTimeFormatter.ofPattern('HH:mm'))} -> ${this.endTime.format(DateTimeFormatter.ofPattern('HH:mm'))}`;
   }
 
   private includesAddendEnd(addend: LocalTimeSlot) {

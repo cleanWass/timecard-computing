@@ -22,13 +22,13 @@ export const HoursTypeCodes = {
   HolidaySurchargedH: 'MAJOFERIEH', // Majoration Férié Habituel
   HolidaySurchargedP: 'MAJOFERIEP', // Majoration Férié Ponctuel
 
-  TotalWeekly: 'H', // Horaire Total
-  TotalTheoretical: 'HT', // Horaire Théorique Total
-  TotalLeaves: 'HL', // Horaire Congé Total
-  TotalLeavesUnpaid: 'HLU', // Horaire Congé Non Payé
-  TotalLeavesPaid: 'HLP', // Horaire Congé Payé
-  TotalAdditionalHours: 'HA', // Horaire Additionnel Total
-  TotalNormalAvailable: 'HNA', // Horaire Normal Disponible
+  TotalWeekly: 'Heures total', // Horaire Total
+  TotalTheoretical: 'Heures théoriques normal', // Horaire Théorique Total
+  TotalLeaves: 'Heures congé total', // Horaire Congé Total
+  TotalLeavesUnpaid: 'Heures Congés non payés', // Horaire Congé Non Payé
+  TotalLeavesPaid: 'Heures Congés payés', // Horaire Congé Payé
+  TotalAdditionalHours: 'Heures additionnelles', // Horaire Additionnel Total
+  TotalNormalAvailable: 'Heures disponibles normales', // Horaire Normal Disponible
 } as const;
 
 export type WorkedHoursRate = keyof typeof HoursTypeCodes;

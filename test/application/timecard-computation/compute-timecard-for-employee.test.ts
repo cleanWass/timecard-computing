@@ -95,7 +95,7 @@ describe('getCuratedShifts', () => {
       result,
       E.match(
         error => console.log(`error : ${error.message}`),
-        t => console.log(`1 timecard : ${t.timecards.first('').debug()}`)
+        t => t.timecards.forEach(t => t.debug())
       )
     );
   });

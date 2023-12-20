@@ -1,6 +1,6 @@
 import { DateTimeFormatter, DayOfWeek, Duration, LocalDateTime, TemporalAdjusters } from '@js-joda/core';
 import { List, Map, Set, ValueObject } from 'immutable';
-import { formatDuration } from '../../../../~shared/util/joda-helper';
+import { formatDuration, formatDurationAs100 } from '../../../../~shared/util/joda-helper';
 import { Employee } from '../../employee-registration/employee/employee';
 import { EmploymentContract } from '../../employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../leave-recording/leave/leave';
@@ -9,7 +9,7 @@ import { LocalTimeSlot } from '../../local-time-slot';
 import { Shift } from '../../mission-delivery/shift/shift';
 import { TheoreticalShift } from '../../mission-delivery/shift/theorical-shift';
 import { WorkingPeriod } from '../working-period/working-period';
-import { WorkedHoursRate, WorkedHoursResume, WorkedHoursResumeType } from './worked-hours-rate';
+import { HoursTypeCodes, WorkedHoursRate, WorkedHoursResume, WorkedHoursResumeType } from './worked-hours-rate';
 
 type WorkingPeriodTimecardId = string;
 
@@ -101,11 +101,12 @@ export class WorkingPeriodTimecard implements ValueObject {
         WorkingPeriodTimecard ${this.id} for ${this.employee.firstName} ${this.employee.lastName} (${this.employee.id})
         Period: ${this.workingPeriod.period.toFormattedString()}
         Contract: ${formatDuration(this.contract.weeklyTotalWorkedHours)} / week
-        WorkedHours: ${this.workedHours
-          .toSeq()
-          .map((duration, rate) => (duration.isZero() ? `` : `${rate} -> ${formatDuration(duration)}`))
-          .filter(s => s)
-          .join('\n')}
+        WorkedHours: 
+            ${this.workedHours
+              .toSeq()
+              .map((duration, rate) => (duration.isZero() ? `` : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`))
+              .filter(s => s)
+              .join('\n\t\t\t')}
         Leaves: ${this.leaves.map(l => l.debug()).join(' | ')}
         LeavePeriods: ${this.leavePeriods.map(l => l.debug()).join(' | ')}
         Shifts: ${this.shifts.map(s => s.debug()).join(' | ')}

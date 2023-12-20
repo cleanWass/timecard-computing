@@ -3,6 +3,7 @@ import { Interval } from '@js-joda/extra';
 import { Map, ValueObject } from 'immutable';
 import { TypeProps } from '../../../../~shared/util/types';
 import { EmployeeId } from '../../employee-registration/employee/employee-id';
+import { LocalTimeSlot } from '../../local-time-slot';
 import { ClientId } from '../../sales-contract-management/client/client-id';
 import { RequirementId } from '../../sales-contract-management/requirement/requirement-id';
 import { ServiceContractId } from '../../sales-contract-management/service-contract/service-contract-id';
@@ -92,6 +93,10 @@ export class Shift implements ValueObject, IShift {
       Instant.from(LocalDateTime.from(this.startTime).atZone(ZoneId.of('Europe/Paris'))),
       Instant.from(LocalDateTime.from(this.startTime.plus(this.duration)).atZone(ZoneId.of('Europe/Paris')))
     );
+  }
+
+  getTimeSlot() {
+    return new LocalTimeSlot(this.startTime.toLocalTime(), this.getEndTime().toLocalTime());
   }
 
   getStartTime(): LocalDateTime {
