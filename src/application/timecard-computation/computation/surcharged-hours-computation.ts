@@ -1,4 +1,4 @@
-import { DayOfWeek, LocalDate } from '@js-joda/core';
+import { DayOfWeek, Duration, LocalDate, LocalTime } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import { List, Set } from 'immutable';
@@ -16,13 +16,8 @@ const isShiftDuringPlanning = (shift: Shift, planning: EmploymentContract['weekl
 
 const computeSundayHours = (timecard: WorkingPeriodTimecard) => {
   const sundayShifts = timecard.shifts.filter(shift => shift.startTime.dayOfWeek() === DayOfWeek.SUNDAY);
-  const sundayShiftsGroupedByRate = sundayShifts.groupBy(shift =>
-    isShiftDuringPlanning(shift, timecard.contract.weeklyPlanning) ? 'SundayContract' : 'SundayAdditional'
-  );
 
-  return timecard
-    .register('SundayContract', getTotalDuration(sundayShiftsGroupedByRate.get('SundayContract', List<Shift>())))
-    .register('SundayAdditional', getTotalDuration(sundayShiftsGroupedByRate.get('SundayAdditional', List<Shift>())));
+  return timecard.register(timecard.contract.isSundayWorker() ? 'SundayContract' : 'SundayAdditional', getTotalDuration(sundayShifts));
 };
 
 const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
@@ -49,9 +44,19 @@ const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
 
 // TODO
 const computeNightShiftHours = (timecard: WorkingPeriodTimecard) => {
-  const getNightShifts = timecard.shifts.filter(shift => shift.isNightShift());
-  return timecard;
+  const getEarlyNightShifts = timecard.shifts.map(
+    shift => shift.getTimeSlot().commonRange(timecard.contract.weeklyNightShiftHours[0])?.duration()
+  );
+
+  const getLateNightShifts = timecard.shifts.map(
+    shift => shift.getTimeSlot().commonRange(timecard.contract.weeklyNightShiftHours[1])?.duration()
+  );
+  return timecard.register(
+    timecard.contract.isNightWorker() ? 'NightShiftContract' : 'NightShiftAdditional',
+    getEarlyNightShifts.concat(getLateNightShifts).reduce((acc, duration) => acc.plus(duration || Duration.ZERO), Duration.ZERO)
+  );
 };
+
 // TODO
 export const computeSurchargedHours = (timecard: WorkingPeriodTimecard) =>
   pipe(timecard, computeNightShiftHours, computeSundayHours, computeHolidayHours);

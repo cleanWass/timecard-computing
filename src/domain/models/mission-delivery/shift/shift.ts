@@ -107,10 +107,6 @@ export class Shift implements ValueObject, IShift {
     return this.startTime.plus(this.duration);
   }
 
-  isNightShift(): boolean {
-    return this.startTime.toLocalTime().isAfter(LocalTime.of(20, 0)) || this.startTime.toLocalTime().isBefore(LocalTime.of(6, 0));
-  }
-
   debug(): string {
     return `${this.startTime.format(DateTimeFormatter.ofPattern('dd/MM/yy: HH:mm'))} -> ${this.startTime
       .plus(this.duration)

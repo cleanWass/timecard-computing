@@ -98,7 +98,11 @@ export class LocalTimeSlot implements ValueObject {
   }
 
   overlaps(addend: LocalTimeSlot) {
-    return this.endOverlaps(addend) || this.startOverlaps(addend);
+    return (
+      Math.min(this.endTime.toSecondOfDay(), addend.endTime.toSecondOfDay()) -
+        Math.max(this.startTime.toSecondOfDay(), addend.startTime.toSecondOfDay()) >=
+      0
+    );
   }
 
   overlapsInclusive(addend: LocalTimeSlot) {
@@ -128,8 +132,15 @@ export class LocalTimeSlot implements ValueObject {
     );
   }
 
+  commonRange(rangeToTest: LocalTimeSlot) {
+    if (!this.overlaps(rangeToTest)) return null;
+    const start = this.startTime.isBefore(rangeToTest.startTime) ? rangeToTest.startTime : this.startTime;
+    const end = this.endTime.isBefore(rangeToTest.endTime) ? this.endTime : rangeToTest.endTime;
+    return new LocalTimeSlot(start, end);
+  }
+
   isNight() {
-    return this.startTime.isAfter(LocalTime.of(20, 0)) || this.endTime.isBefore(LocalTime.of(6, 0));
+    return this.endTime.isAfter(LocalTime.of(20, 0)) || this.startTime.isBefore(LocalTime.of(6, 0));
   }
 
   debug() {
