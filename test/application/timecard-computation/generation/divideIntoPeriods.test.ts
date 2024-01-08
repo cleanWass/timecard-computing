@@ -27,7 +27,6 @@ const consecutivePeriods =
 
 const clone = (base: EmploymentContract, params?: Partial<Parameters<typeof EmploymentContract.build>[0]>) =>
   EmploymentContract.build({
-    id: params?.id ?? base.id,
     employeeId: params?.employeeId ?? base.employeeId,
     startDate: params?.startDate ?? base.startDate,
     endDate: params?.endDate ?? base.endDate,
@@ -39,12 +38,10 @@ const clone = (base: EmploymentContract, params?: Partial<Parameters<typeof Empl
   });
 
 const _1WeekContract = EmploymentContract.build({
-  id: 'contract-1-week',
   employeeId: 'gms',
   startDate: LocalDate.parse('2023-01-02'),
   endDate: O.some(LocalDate.parse('2023-01-09')),
   overtimeAveragingPeriod: Duration.ofDays(7),
-  weeklyNightShiftHours: Duration.ofHours(0),
   weeklyTotalWorkedHours: Duration.ofHours(35),
   workedDays: mondayToFriday,
   weeklyPlanning: DayOfWeek.values()

@@ -1,6 +1,6 @@
-import { DayOfWeek, Duration, LocalDate, LocalTime } from '@js-joda/core';
+import { DayOfWeek, Duration, LocalDate, LocalDateTime, LocalTime } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
-import { pipe } from 'fp-ts/function';
+import { identity, pipe } from 'fp-ts/function';
 import { List, Set } from 'immutable';
 import forceRight from '../../../../test/~shared/util/forceRight';
 import { EmploymentContract } from '../../../domain/models/employment-contract-management/employment-contract/employment-contract';
@@ -10,6 +10,8 @@ import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { HolidayComputationService } from '../../../domain/service/holiday-computation/holiday-computation-service';
 import { getTotalDuration } from '../../../~shared/util/joda-helper';
+// cleaner travailleur de nuit et shift hors planning => majoration nuit ponctuelle
+// si travailleur événementielle ou hotellerie et travailleur de nuit,
 
 const isShiftDuringPlanning = (shift: Shift, planning: EmploymentContract['weeklyPlanning']) =>
   planning.get(shift.startTime.dayOfWeek(), Set<LocalTimeSlot>()).some(timeSlot => shift.getTimeSlot().isConcurrentOf(timeSlot));
@@ -23,8 +25,7 @@ const computeSundayHours = (timecard: WorkingPeriodTimecard) => {
 const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
   const holidayDates = new HolidayComputationService().computeHolidaysForLocale(
     'FR-75',
-    forceRight(LocalDateRange.of(timecard.workingPeriod.period.start, timecard.workingPeriod.period.end)),
-    Set([LocalDate.of(2023, 11, 16)])
+    forceRight(LocalDateRange.of(timecard.workingPeriod.period.start, timecard.workingPeriod.period.end))
   );
   const shiftsDuringHolidays = pipe(
     holidayDates,
@@ -42,19 +43,34 @@ const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
     .register('HolidaySurchargedP', getTotalDuration(shiftsDuringHolidaysGroupedByRate.get('HolidaySurchargedP', List<Shift>())));
 };
 
-// TODO
 const computeNightShiftHours = (timecard: WorkingPeriodTimecard) => {
-  const getEarlyNightShifts = timecard.shifts.map(
-    shift => shift.getTimeSlot().commonRange(timecard.contract.weeklyNightShiftHours[0])?.duration()
-  );
+  const { shifts, contract } = timecard;
+  const nightShifts = shifts
+    .map(shift => {
+      const commonRange = shift.getTimeSlot().commonRange(contract.weeklyNightShiftHours[0]);
+      if (!commonRange) return null;
+      return shift.with({ startTime: shift.startTime.with(commonRange.startTime), duration: commonRange.duration() });
+    })
+    .filter(identity)
+    .concat(
+      shifts
+        .map(shift => {
+          const commonRange = shift.getTimeSlot().commonRange(contract.weeklyNightShiftHours[1]);
+          if (!commonRange) return null;
+          return shift.with({ startTime: shift.startTime.with(commonRange.startTime), duration: commonRange.duration() });
+        })
+        .filter(identity)
+    );
 
-  const getLateNightShifts = timecard.shifts.map(
-    shift => shift.getTimeSlot().commonRange(timecard.contract.weeklyNightShiftHours[1])?.duration()
-  );
-  return timecard.register(
-    timecard.contract.isNightWorker() ? 'NightShiftContract' : 'NightShiftAdditional',
-    getEarlyNightShifts.concat(getLateNightShifts).reduce((acc, duration) => acc.plus(duration || Duration.ZERO), Duration.ZERO)
-  );
+  return timecard
+    .register(
+      'NightShiftContract',
+      getTotalDuration(nightShifts.filter(s => contract.getNightOrdinary().includes(s.startTime.dayOfWeek())))
+    )
+    .register(
+      'NightShiftAdditional',
+      getTotalDuration(nightShifts.filter(s => !contract.getNightOrdinary().includes(s.startTime.dayOfWeek())))
+    );
 };
 
 // TODO

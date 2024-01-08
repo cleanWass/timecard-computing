@@ -5,6 +5,7 @@ import * as O from 'fp-ts/Option';
 import { List, Map, Set } from 'immutable';
 import zod from 'zod';
 import { Employee } from '../../domain/models/employee-registration/employee/employee';
+import { ContractSubType } from '../../domain/models/employment-contract-management/employment-contract/contract-sub-type';
 import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import { LeavePeriod } from '../../domain/models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../domain/models/local-date-range';
@@ -13,7 +14,7 @@ import { Shift } from '../../domain/models/mission-delivery/shift/shift';
 import { ExtractEitherRightType, keys } from '../../~shared/util/types';
 
 const daySchema = zod.enum(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
-const periodSchema = zod.object({ start: zod.string(), end: zod.string() });
+const periodSchema = zod.object({ start: zod.string(), end: zod.string().nullish() });
 const shiftsFromJSONSchema = zod
   .object({
     date: zod.string().min(1),
@@ -52,8 +53,9 @@ const employeeWithTimecardSchema = zod
         contract: zod.object({
           period: periodSchema,
           type: zod.string(),
-          subType: zod.string(),
+          subType: zod.string().optional(),
           weeklyHours: zod.string(),
+          extraDuration: zod.string().optional(),
         }),
         planning: zod.record(
           daySchema,
@@ -92,14 +94,14 @@ const employeeWithTimecardSchema = zod
     }),
     planning: raw.planning.map(p =>
       EmploymentContract.build({
-        id: 'TODO',
         employeeId: raw.cleaner.id,
         startDate: LocalDate.parse(p.contract.period.start),
-        endDate: O.some(LocalDate.parse(p.contract.period.end)),
+        endDate: O.fromNullable(p.contract.period.end ? LocalDate.parse(p.contract.period.end) : null),
         overtimeAveragingPeriod: Duration.ofDays(7),
-        weeklyNightShiftHours: Duration.ofHours(0),
         weeklyTotalWorkedHours: Duration.parse(p.contract.weeklyHours),
         workedDays: Set(keys(p.planning).map(d => DayOfWeek[d])),
+        subType: p.contract.subType as ContractSubType,
+        extraDuration: Duration.parse(p.contract.extraDuration ?? 'PT0M'),
         weeklyPlanning: keys(p.planning).reduce((acc, day) => {
           const slots = p.planning[day].map(slot => {
             let startTime = LocalTime.parse(slot.startTime);
@@ -123,7 +125,7 @@ export const parsePayload = (payload: unknown) =>
     employeeWithTimecardSchema.safeParse(payload),
     E.fromPredicate(
       parsedJSON => parsedJSON.success,
-      e => new Error('Error while parsing payload')
+      e => new Error(`success : ${e.success} \n Error while parsing payload ${e['error']}`)
     ),
     E.map(parsedJSON => (parsedJSON.success ? parsedJSON.data : null)),
     E.map(raw => ({

@@ -1,11 +1,16 @@
-import { LocalDate } from '@js-joda/core';
-import Immutable, { List, Record } from 'immutable';
+import { Duration, LocalDate } from '@js-joda/core';
+import Immutable, { get, List, Record } from 'immutable';
 import { Employee } from '../../../../../src/domain/models/employee-registration/employee/employee';
 import { LocalDateRange } from '../../../../../src/domain/models/local-date-range';
-import { WorkedHoursResume } from '../../../../../src/domain/models/time-card-computation/timecard/worked-hours-rate';
+import {
+  HoursTypeCodes,
+  WorkedHoursRate,
+  WorkedHoursResume,
+  WorkedHoursResumeType,
+} from '../../../../../src/domain/models/time-card-computation/timecard/worked-hours-rate';
 import { WorkingPeriodTimecard } from '../../../../../src/domain/models/time-card-computation/timecard/working-period-timecard';
 import { WorkingPeriod } from '../../../../../src/domain/models/time-card-computation/working-period/working-period';
-import { ClassAttributes } from '../../../../../src/~shared/util/types';
+import { ClassAttributes, keys } from '../../../../../src/~shared/util/types';
 import { contracts } from '../../../../application/timecard-computation/computeTimecardHelper';
 
 const employee1 = Employee.build({
@@ -67,6 +72,7 @@ describe('WorkingPeriodTimecard', () => {
           }),
         })
         .generateTheoreticalShifts(contract);
+
       expect(theoreticalShift.size).toBe(0);
     });
   });

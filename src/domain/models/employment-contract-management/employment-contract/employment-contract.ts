@@ -11,13 +11,18 @@ import type { ContractSubType } from './contract-sub-type';
 
 export class EmploymentContract implements ValueObject {
   private static nightShiftTimeSlots: [LocalTimeSlot, LocalTimeSlot] = [
-    new LocalTimeSlot(LocalTime.MIN, LocalTime.of(4, 0)),
-    new LocalTimeSlot(LocalTime.of(20, 0), LocalTime.MAX),
+    new LocalTimeSlot(LocalTime.MIN, LocalTime.of(6, 0)),
+    new LocalTimeSlot(LocalTime.of(21, 0), LocalTime.MAX),
   ];
 
-  public static build(params: ClassAttributes<EmploymentContract>) {
+  public static build(params: Omit<ClassAttributes<EmploymentContract>, 'id'>) {
     return new EmploymentContract(
-      params.id,
+      params.startDate.toString() +
+        pipe(
+          params.endDate,
+          O.map(d => d.toString()),
+          O.getOrElse(() => '')
+        ).toString(),
       params.employeeId,
       params.startDate,
       params.endDate,
@@ -47,7 +52,7 @@ export class EmploymentContract implements ValueObject {
     public readonly weeklyNightShiftHours?: [LocalTimeSlot, LocalTimeSlot]
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
-      .set('id', this.id)
+      .set('id', id)
       .set('employeeId', this.employeeId)
       .set('startDate', this.startDate)
       .set(
@@ -84,8 +89,8 @@ export class EmploymentContract implements ValueObject {
     );
   }
 
-  isNightWorker(): boolean {
-    return this.weeklyPlanning.some(slots => slots.some(slot => slot.isNight()));
+  getNightOrdinary() {
+    return this.weeklyPlanning.reduce((days, slots, day) => (slots.some(slot => slot.isNight()) ? days.add(day) : days), Set<DayOfWeek>());
   }
 
   isSundayWorker(): boolean {

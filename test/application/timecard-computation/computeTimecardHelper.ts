@@ -24,7 +24,6 @@ const weeklyPlanning35Hours = DayOfWeek.values()
   .set(FRIDAY, Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(15, 30))]));
 
 const OneWeekContract = EmploymentContract.build({
-  id: 'contract-1-week',
   employeeId: 'gms',
   startDate: LocalDate.of(2023, 1, 2),
   endDate: O.some(LocalDate.of(2023, 1, 9)),
@@ -34,7 +33,6 @@ const OneWeekContract = EmploymentContract.build({
   weeklyPlanning: weeklyPlanning35Hours,
 });
 const OneMonthContract = EmploymentContract.build({
-  id: 'contract-1-month',
   employeeId: 'gms',
   startDate: LocalDate.parse('2023-01-10'),
   endDate: O.some(LocalDate.parse('2023-02-10')),
@@ -45,7 +43,6 @@ const OneMonthContract = EmploymentContract.build({
 });
 
 const IrrelevantContract = EmploymentContract.build({
-  id: 'irrelevant-contract',
   employeeId: 'gms',
   startDate: LocalDate.parse('2023-05-10'),
   endDate: O.some(LocalDate.parse('2023-06-10')),
@@ -93,7 +90,6 @@ const weeklyPlanning28Hours = DayOfWeek.values()
 export const cas1 = {
   contracts: List([
     EmploymentContract.build({
-      id: '24h',
       employeeId: 'Yves',
       startDate: LocalDate.of(2023, 11, 1),
       endDate: O.some(LocalDate.of(2023, 11, 15)),
@@ -105,7 +101,6 @@ export const cas1 = {
       extraDuration: Duration.ofHours(5),
     }),
     EmploymentContract.build({
-      id: '35h',
       employeeId: 'Yves',
       startDate: LocalDate.of(2023, 11, 15),
       endDate: O.some(LocalDate.of(2023, 11, 30)),

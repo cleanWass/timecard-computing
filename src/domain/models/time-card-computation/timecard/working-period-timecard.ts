@@ -1,6 +1,7 @@
 import { DateTimeFormatter, DayOfWeek, Duration, LocalDateTime, TemporalAdjusters } from '@js-joda/core';
 import { List, Map, Set, ValueObject } from 'immutable';
 import { formatDuration, formatDurationAs100 } from '../../../../~shared/util/joda-helper';
+import { keys } from '../../../../~shared/util/types';
 import { Employee } from '../../employee-registration/employee/employee';
 import { EmploymentContract } from '../../employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../leave-recording/leave/leave';
@@ -100,9 +101,9 @@ export class WorkingPeriodTimecard implements ValueObject {
       `
         WorkingPeriodTimecard ${this.id} for ${this.employee.firstName} ${this.employee.lastName} (${this.employee.id})
         Period: ${this.workingPeriod.period.toFormattedString()}
-        Contract: ${formatDuration(this.contract.weeklyTotalWorkedHours)} / week - NightWorker : ${
-          this.contract.isNightWorker() ? 'Yes' : 'No'
-        } - SundayWorker : ${this.contract.isSundayWorker() ? 'Yes' : 'No'}
+        Contract: ${formatDuration(this.contract.weeklyTotalWorkedHours)} / week - NightWorker : ${this.contract
+          .getNightOrdinary()
+          .join(', ')} - SundayWorker : ${this.contract.isSundayWorker() ? 'Yes' : 'No'}
         WorkedHours: 
             ${this.workedHours
               .toSeq()
@@ -113,7 +114,25 @@ export class WorkingPeriodTimecard implements ValueObject {
         LeavePeriods: ${this.leavePeriods.map(l => l.debug()).join(' | ')}
         Shifts: ${this.shifts.map(s => s.debug()).join(' | ')}
         TheoreticalShifts: ${this.theoreticalShifts.map(s => s.debug()).join(' | ')}
+        _____
+        planning: ${this.contract.weeklyPlanning.map((slots, day) => `${day} -> ${slots.map(s => s.debug()).join(' | ')}`).join('\n\t\t')}
       `
+    );
+  }
+
+  static getTotal(list: List<WorkingPeriodTimecard>) {
+    return list.reduce(
+      (total, timecard) =>
+        new WorkedHoursResume(
+          keys(HoursTypeCodes).reduce(
+            (acc, key) => {
+              acc[key] = total[key].plus(timecard.workedHours[key]);
+              return acc;
+            },
+            {} as { [k in WorkedHoursRate]: Duration }
+          )
+        ),
+      new WorkedHoursResume()
     );
   }
 

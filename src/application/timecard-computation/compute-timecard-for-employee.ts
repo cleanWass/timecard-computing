@@ -62,14 +62,14 @@ const initializeWorkingPeriodTimecard = ({
 // [ ] calculer les majorations pour dimanche / jour férié / nuit
 
 // [x] refacto en différents files
-// [ ] calcul des surcharges dimanches t habituel vs ponctuel
+// [x] calcul des surcharges dimanches t habituel vs ponctuel
 // [ ] simulateur dans lapp de preview
 // [ ] arrondir les taux HC 11 25
-// [ ] calculer la date d'ancienneté othman
+// [x] calculer la date d'ancienneté othman
 // [ ] jour férié si date dancienneté suffisante
 // [ ] export si tout ok
 // [ ] pour l'export un contrat par ligne, idem si avenant ou complement d'heure. faire la somme des deux dans ce cas
-// [ ] arrondir les heures et les passer en centièmes
+// [x] arrondir les heures et les passer en centièmes
 
 export const computeWorkingPeriodTimecard: (
   workingPeriod: WorkingPeriod,
@@ -95,17 +95,12 @@ export const computeWorkingPeriodTimecard: (
     computeLeavesHours,
     computeTotalAdditionalHours,
     computeExtraHoursByRate,
-    // t => {
-    //   t.debug();
-    //   return t;
-    // }
     computeSurchargedHours
   );
 };
 
-export const computeTimecardForEmployee =
-  (period: LocalDateRange) =>
-  ({
+export const computeTimecardForEmployee = (period: LocalDateRange) => {
+  return ({
     employee,
     shifts,
     contracts,
@@ -151,7 +146,9 @@ export const computeTimecardForEmployee =
           workingPeriods,
           groupedShifts,
           timecards,
+          contracts,
         };
       })
     );
   };
+};
