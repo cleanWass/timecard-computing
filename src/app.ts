@@ -58,9 +58,15 @@ app.post('/timecard', async (req, res) => {
   const {
     cleanerId,
     period: { startDate, endDate },
-  } = req.body;
+    // } = req.body;
+  } = {
+    cleanerId: '003AX000004s8BDYAY', //ivete
+    // cleanerId: '003AX00000468tkYAA',
+    // cleanerId: '003AX000003gtHMYAY',
+    period: { startDate: '2023-11-20', endDate: '2023-12-18' },
+  };
 
-  const period = new LocalDateRange(LocalDate.parse('2023-11-01'), LocalDate.parse('2023-11-30'));
+  const period = new LocalDateRange(LocalDate.parse(startDate), LocalDate.parse(endDate));
 
   await pipe(
     TE.tryCatch(
@@ -68,6 +74,10 @@ app.post('/timecard', async (req, res) => {
       e => new Error(`Fetching from care data parser went wrong ${e}`)
     ),
     TE.chainW(flow(parsePayload, TE.fromEither)),
+    TE.map(t => {
+      console.log('log intermediaire', t);
+      return t;
+    }),
     TE.map(flow(formatPayload, computeTimecardForEmployee(period))),
     TE.fold(
       e => {
@@ -78,7 +88,7 @@ app.post('/timecard', async (req, res) => {
         if (isRight(result)) {
           return T.of(res.status(200).json(result.right));
         } else {
-          console.error('Error in TE.fold: Expected Right, but got Left');
+          console.error('Error in TE.fold: Expected Right, but got Left', result.left);
           return T.of(res.status(500).json({ error: 'Unexpected result format' }));
         }
       }

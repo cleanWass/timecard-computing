@@ -92,25 +92,27 @@ const employeeWithTimecardSchema = zod
         comment: O.some('TODO'),
       });
     }),
-    planning: raw.planning.map(p =>
-      EmploymentContract.build({
+    planning: raw.planning.map(p => {
+      const extraDuration = Duration.parse(p.contract.extraDuration ?? 'PT0M');
+      return EmploymentContract.build({
         employeeId: raw.cleaner.id,
         startDate: LocalDate.parse(p.contract.period.start),
         endDate: O.fromNullable(p.contract.period.end ? LocalDate.parse(p.contract.period.end) : null),
         overtimeAveragingPeriod: Duration.ofDays(7),
-        weeklyTotalWorkedHours: Duration.parse(p.contract.weeklyHours),
+        weeklyTotalWorkedHours: Duration.parse(p.contract.weeklyHours).minus(extraDuration),
         workedDays: Set(keys(p.planning).map(d => DayOfWeek[d])),
         subType: p.contract.subType as ContractSubType,
-        extraDuration: Duration.parse(p.contract.extraDuration ?? 'PT0M'),
-        weeklyPlanning: keys(p.planning).reduce((acc, day) => {
-          const slots = p.planning[day].map(slot => {
-            let startTime = LocalTime.parse(slot.startTime);
-            return new LocalTimeSlot(startTime, Duration.parse(slot.duration).addTo(startTime));
-          });
+        extraDuration: extraDuration,
+        weeklyPlanning: daySchema.options.reduce((acc, day) => {
+          const slots =
+            p.planning[day]?.map(slot => {
+              let startTime = LocalTime.parse(slot.startTime);
+              return new LocalTimeSlot(startTime, Duration.parse(slot.duration).addTo(startTime));
+            }) || Set<LocalTimeSlot>();
           return acc.set(DayOfWeek[day], Set(slots));
         }, Map<DayOfWeek, Set<LocalTimeSlot>>()),
-      })
-    ),
+      });
+    }),
   }));
 
 export const formatPayload = (data: ExtractEitherRightType<typeof parsePayload>) => ({

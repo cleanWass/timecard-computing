@@ -18,6 +18,7 @@ import { RepositoryFailedCall } from './~shared/error/RepositoryFailedCall';
 import { formatDurationAs100 } from './~shared/util/joda-helper';
 
 const ws = fs.createWriteStream('export.csv');
+const errorFile = fs.createWriteStream('export_error.csv');
 
 const headers = [
   'Matricule',
@@ -36,8 +37,10 @@ const headers = [
 ] as const;
 
 const csvStream = format({ headers: [...headers] });
+const errorCsvStream = format({ headers: [...headers] });
 
 csvStream.pipe(ws).on('end', () => process.exit());
+errorCsvStream.pipe(ws).on('end', () => process.exit());
 
 const period = new LocalDateRange(LocalDate.parse('2023-11-20'), LocalDate.parse('2023-12-17'));
 
@@ -154,6 +157,7 @@ const timecards = pipe(
               E.mapLeft(e => {
                 failed++;
                 console.log(`${firstName} ${lastName} error : `);
+                errorCsvStream.write({ Matricule: firstName + ' ' + lastName, error: e.message });
                 return e;
               }),
               E.map(row => {
