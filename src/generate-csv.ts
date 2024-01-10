@@ -3,8 +3,8 @@ import * as E from 'fp-ts/Either';
 import { flow, pipe } from 'fp-ts/function';
 import * as T from 'fp-ts/Task';
 import * as TE from 'fp-ts/TaskEither';
-import { Map } from 'immutable';
-import { fetchAllCleaners, fetchDataForEmployee } from './app';
+import { Map, Set } from 'immutable';
+import { fetchEmployeeWithActiveContractDuringPeriod, fetchDataForEmployee } from './app';
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
 import { WorkingPeriodTimecard } from './domain/models/time-card-computation/timecard/working-period-timecard';
@@ -37,10 +37,10 @@ const headers = [
 ] as const;
 
 const csvStream = format({ headers: [...headers] });
-const errorCsvStream = format({ headers: [...headers] });
+const errorCsvStream = format({ headers: ['Matricule', 'error'] });
 
 csvStream.pipe(ws).on('end', () => process.exit());
-errorCsvStream.pipe(ws).on('end', () => process.exit());
+errorCsvStream.pipe(errorFile).on('end', () => process.exit());
 
 const period = new LocalDateRange(LocalDate.parse('2023-11-20'), LocalDate.parse('2023-12-17'));
 
@@ -48,99 +48,28 @@ let total = 0;
 let failed = 0;
 let successful = 0;
 
-const timecards1 = pipe(
-  TE.tryCatch(
-    () => fetchAllCleaners(),
-    e => new Error(`Fetching from care data parser went wrong ${e}`)
-  ),
-  TE.chain(cleaners => {
-    total = cleaners.length;
-    return pipe(
-      cleaners,
-      TE.traverseSeqArray(({ id, firstName, lastName }) =>
-        pipe(
-          TE.tryCatch(
-            () => fetchDataForEmployee(id, period),
-            e => {
-              failed++;
-              return new RepositoryFailedCall(`Fetching data went wrong for cleanerID: ${id} ==> ${e}`);
-            }
-          ),
-          TE.chainW(flow(parsePayload, TE.fromEither)),
-          TE.map(
-            flow(
-              formatPayload,
-              computeTimecardForEmployee(period),
-              E.mapLeft(e => {
-                console.log(`${firstName} ${lastName} error: ${e}`);
-                failed++;
-                return e;
-              }),
-              E.map(row => {
-                const groupedTc = row.timecards.groupBy(tc => tc.contract);
-
-                groupedTc.forEach((tcs, contract) => {
-                  csvStream.write({
-                    Matricule: row.employee.id || '0',
-                    Salarié: row.employee.firstName + ' ' + row.employee.lastName || '0',
-                    Période: contract.period(row.period.end).toFormattedString(),
-                    HN: formatDurationAs100(tcs.reduce((res, tc) => res.plus(tc.workedHours.TotalNormal), Duration.ZERO)) || '0',
-                    HC10:
-                      formatDurationAs100(tcs.reduce((res, tc) => res.plus(tc.workedHours.TenPercentRateComplementary), Duration.ZERO)) ||
-                      '0',
-                    HC11:
-                      formatDurationAs100(
-                        tcs.reduce((res, tc) => res.plus(tc.workedHours.ElevenPercentRateComplementary), Duration.ZERO)
-                      ) || '0',
-                    HC25:
-                      formatDurationAs100(
-                        tcs.reduce((res, tc) => res.plus(tc.workedHours.TwentyFivePercentRateComplementary), Duration.ZERO)
-                      ) || '0',
-                    HS25:
-                      formatDurationAs100(
-                        tcs.reduce((res, tc) => res.plus(tc.workedHours.TwentyFivePercentRateSupplementary), Duration.ZERO)
-                      ) || '0',
-                    HS50:
-                      formatDurationAs100(tcs.reduce((res, tc) => res.plus(tc.workedHours.FiftyPercentRateSupplementary), Duration.ZERO)) ||
-                      '0',
-                    HNuit: formatDurationAs100(tcs.reduce((res, tc) => res.plus(tc.workedHours.NightShiftContract), Duration.ZERO)) || '0',
-                    MajoNuit100:
-                      formatDurationAs100(tcs.reduce((res, tc) => res.plus(tc.workedHours.NightShiftAdditional), Duration.ZERO)) || '0',
-                    HDim: formatDurationAs100(tcs.reduce((res, tc) => res.plus(tc.workedHours.SundayContract), Duration.ZERO)) || '0',
-                    MajoDim100:
-                      formatDurationAs100(tcs.reduce((res, tc) => res.plus(tc.workedHours.SundayAdditional), Duration.ZERO)) || '0',
-                  });
-                });
-                console.log(`${row.employee.firstName} ${row.employee.lastName} OK ${successful}/${total} (error : ${failed})`);
-                successful++;
-                return row;
-              })
-            )
-          )
-        )
-      )
-    );
-  }),
-  TE.fold(
-    e => {
-      console.error(e);
-      return T.never;
-    },
-    result => {
-      return T.of(result);
-    }
-  )
-);
-
+console.log(period.toFormattedString());
 const timecards = pipe(
   TE.tryCatch(
-    () => fetchAllCleaners(),
-    e => new Error(`Fetching from care data parser went wrong ${e}`)
+    () => fetchEmployeeWithActiveContractDuringPeriod(period),
+    e => {
+      console.log(`Fetching from bridge went wrong`, e);
+      return new Error(`Fetching from care data parser went wrong ${e}`);
+    }
   ),
   TE.chainW(cleaners => {
-    total = cleaners.length;
+    const curatedCleaner = cleaners
+      .reduce((acc, current) => (acc.some(t => t.cleanerid === current.cleanerid) ? acc : [...acc, current]), [])
+      .map(({ cleanerid: id, silae_id: silaeId, cleanerfullname: fullName, type }) => ({
+        silaeId,
+        id,
+        fullName,
+        type,
+      }));
+    console.log('curatedCleaner', curatedCleaner.slice(90, 100));
+    total = curatedCleaner.length;
     return pipe(
-      cleaners.map(({ id, firstName, lastName }) =>
+      curatedCleaner.map(({ id, fullName }) =>
         pipe(
           TE.tryCatch(
             () => fetchDataForEmployee(id, period),
@@ -156,8 +85,8 @@ const timecards = pipe(
               computeTimecardForEmployee(period),
               E.mapLeft(e => {
                 failed++;
-                console.log(`${firstName} ${lastName} error : `);
-                errorCsvStream.write({ Matricule: firstName + ' ' + lastName, error: e.message });
+                console.log(`${fullName} ${id} error : `);
+                errorCsvStream.write({ Matricule: `${fullName} ${id}`, error: e.message });
                 return e;
               }),
               E.map(row => {
@@ -209,6 +138,7 @@ async function main() {
   try {
     const cleanersData = await timecards();
     csvStream.end();
+    errorCsvStream.end();
     // await writeCsvData(cleanersData);
     console.log('total', total);
     console.log('failed', failed);

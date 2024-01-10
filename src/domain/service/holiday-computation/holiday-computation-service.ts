@@ -58,7 +58,7 @@ export class HolidayComputationService {
   }
 
   private computeFrIdfDates(period: LocalDateRange, additionalDates = Set<LocalDate>()): Set<LocalDate> {
-    const numberOfDays = period.start.until(period.end, ChronoUnit.DAYS);
+    const numberOfDays = period?.start.until(period.end, ChronoUnit.DAYS);
     const daysInPeriod = Set(
       Array.from(new Array(numberOfDays))
         .map((_, index) => index)

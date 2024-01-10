@@ -1,4 +1,4 @@
-import { LocalDate } from '@js-joda/core';
+import { DateTimeFormatter, LocalDate } from '@js-joda/core';
 import axios from 'axios';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -39,18 +39,36 @@ export const fetchDataForEmployee = (employeeId: string, { start, end }: LocalDa
       },
     })
     .then(r => r.data)
-    .catch(e => console.log(e));
+    .catch(e => console.log(`error while fetching for ${employeeId} ${e.response.data}`));
 
-export const fetchAllCleaners = () =>
-  axios.post('http://localhost:3000/cleaners').then(
-    r =>
-      r.data as {
-        id: string;
-        type: string;
-        firstName: string;
-        lastName: string;
-      }[]
-  );
+// TODO Blow this. This is a tmp ugly hack to make it work
+export const fetchEmployeeWithActiveContractDuringPeriod = (range: LocalDateRange) => {
+  const token = 'zkrgnflp124jffdlj449FkAAZ'; // TODO env
+  const baseURl = 'https://cleany-help-rh.herokuapp.com'; // TODO env
+
+  const url = `${baseURl}/bases/${range.start.format(DateTimeFormatter.ofPattern('yyyy-MM-dd'))}/${range.end.format(
+    DateTimeFormatter.ofPattern('yyyy-MM-dd')
+  )}}/${token}`;
+
+  return axios.get(url).then(r => {
+    return r.data.bases as {
+      cleanerid: string;
+      type: string;
+      firstName: string;
+      lastName: string;
+      cleanerfullname: string;
+      silae_id: string;
+      // function: string;
+      // contract_worked_time: string;
+      // hourly_rate: string;
+      // nb_worked_days: number;
+      // contract_start_date: string;
+      // contract_end_date: null | string;
+      // contract_type: string;
+      // contract_subtype: string;
+    }[];
+  });
+};
 
 app.post('/timecard', async (req, res) => {
   const { body, params } = req;
@@ -60,9 +78,7 @@ app.post('/timecard', async (req, res) => {
     period: { startDate, endDate },
     // } = req.body;
   } = {
-    cleanerId: '003AX000004s8BDYAY', //ivete
-    // cleanerId: '003AX00000468tkYAA',
-    // cleanerId: '003AX000003gtHMYAY',
+    cleanerId: '003AX000004TCdsYAG', //ivete
     period: { startDate: '2023-11-20', endDate: '2023-12-18' },
   };
 
@@ -86,6 +102,10 @@ app.post('/timecard', async (req, res) => {
       },
       result => {
         if (isRight(result)) {
+          console.log(
+            'result',
+            result.right.timecards.forEach(t => t.debug())
+          );
           return T.of(res.status(200).json(result.right));
         } else {
           console.error('Error in TE.fold: Expected Right, but got Left', result.left);
@@ -118,7 +138,7 @@ app.post('/payroll', async (req, res) => {
 
   const timecards = await pipe(
     TE.tryCatch(
-      () => fetchAllCleaners(),
+      () => fetchEmployeeWithActiveContractDuringPeriod(period),
       e => new Error(`Fetching from care data parser went wrong ${e}`)
     ),
     TE.chain(cleaners => {
