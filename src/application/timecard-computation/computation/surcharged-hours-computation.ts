@@ -25,7 +25,7 @@ const computeSundayHours = (timecard: WorkingPeriodTimecard) => {
 const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
   const holidayDates = new HolidayComputationService().computeHolidaysForLocale(
     'FR-75',
-    forceRight(LocalDateRange.of(timecard.workingPeriod.period.start, timecard.workingPeriod.period.end))
+    new LocalDateRange(timecard.workingPeriod.period.start, timecard.workingPeriod.period.end)
   );
   const shiftsDuringHolidays = pipe(
     holidayDates,
