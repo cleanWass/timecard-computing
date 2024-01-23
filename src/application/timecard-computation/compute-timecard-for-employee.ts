@@ -1,4 +1,5 @@
 import * as E from 'fp-ts/Either';
+import * as O from 'fp-ts/Option';
 import { pipe } from 'fp-ts/function';
 import { List } from 'immutable';
 import '@js-joda/timezone';
@@ -136,13 +137,24 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
             )
             .toArray(),
           E.sequenceArray,
-          E.map(tcs => List(tcs))
+          E.map(tcs =>
+            List(tcs).map(({ contract, id, leaves, shifts: shiftsTc, workedHours, workingPeriod: { period } }) => ({
+              id,
+              contract: {
+                ...contract,
+                endDate: O.getOrElse(() => undefined)(contract.endDate),
+              },
+              shifts: shiftsTc,
+              leaves,
+              workedHours,
+              period,
+            }))
+          )
         );
       }),
       E.map(({ timecards, workingPeriods, groupedShifts }) => {
         return {
           employee,
-          period,
           workingPeriods,
           groupedShifts,
           timecards,

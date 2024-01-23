@@ -102,10 +102,6 @@ app.post('/timecard', async (req, res) => {
       },
       result => {
         if (isRight(result)) {
-          console.log(
-            'result',
-            result.right.timecards.forEach(t => t.debug())
-          );
           return T.of(res.status(200).json(result.right));
         } else {
           console.error('Error in TE.fold: Expected Right, but got Left', result.left);
