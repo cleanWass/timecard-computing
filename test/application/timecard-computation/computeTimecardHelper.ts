@@ -141,6 +141,8 @@ export const cas1 = {
     id: 'Yves',
     firstName: 'Yves',
     lastName: 'Martin',
+    seniorityDate: LocalDate.of(2022, 1, 1),
+
     email: 'yves@martin.com',
     phoneNumber: '0600000000',
   }),

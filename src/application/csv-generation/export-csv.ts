@@ -7,7 +7,9 @@ import { formatDurationAs100 } from '../../~shared/util/joda-helper';
 import { ExtractEitherRightType, keys } from '../../~shared/util/types';
 import { computeTimecardForEmployee } from '../timecard-computation/compute-timecard-for-employee';
 
-function formatObjectDurations(rawObject: { [key in Exclude<(typeof headers)[number], 'Matricule' | 'Salarié' | 'Période'>]: Duration }) {
+function formatObjectDurations(rawObject: {
+  [key in Exclude<(typeof headers)[number], 'Matricule' | 'Salarié' | 'Période' | 'NbTicket'>]: Duration;
+}) {
   return keys(rawObject).reduce((res, code) => {
     const value = Math.round(((rawObject[code] || Duration.ZERO).toMinutes() / 15) * 15);
     return { ...res, [code]: formatDurationAs100(Duration.ofMinutes(value)) };
@@ -17,8 +19,8 @@ function formatObjectDurations(rawObject: { [key in Exclude<(typeof headers)[num
 export function formatCsv(row: ExtractEitherRightType<ReturnType<typeof computeTimecardForEmployee>>) {
   const listTcs = List(row.timecards);
   const groupedTc = listTcs.groupBy(tc => tc.contract);
-  const totalTcs = WorkingPeriodTimecard.getTotal(listTcs);
-
+  const totalTcs = WorkingPeriodTimecard.getTotalWorkedHours(listTcs);
+  const totalMealTickets = WorkingPeriodTimecard.getTotalMealTickets(listTcs);
   return {
     Matricule: row.employee.id || '0',
     Salarié: row.employee.firstName + ' ' + row.employee.lastName || '0',
@@ -35,5 +37,6 @@ export function formatCsv(row: ExtractEitherRightType<ReturnType<typeof computeT
       HDim: totalTcs.SundayContract,
       MajoDim100: totalTcs.SundayAdditional,
     }),
+    NbTicket: totalMealTickets,
   };
 }

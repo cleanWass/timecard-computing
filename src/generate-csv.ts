@@ -31,6 +31,7 @@ export const headers = [
   'MajoNuit100',
   'HDim',
   'MajoDim100',
+  'NbTicket',
 ] as const;
 
 const csvStream = format({ headers: [...headers] });

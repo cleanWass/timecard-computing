@@ -28,6 +28,7 @@ export class WorkingPeriodTimecard implements ValueObject {
     leavePeriods: List<LeavePeriod>;
 
     workedHours?: WorkedHoursResumeType;
+    mealTickets?: number;
   }) {
     return new WorkingPeriodTimecard(
       `${WorkingPeriodTimecard.count++}`,
@@ -38,7 +39,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.shifts,
       params.leaves ?? List<Leave>(),
       params.leavePeriods,
-      List<TheoreticalShift>()
+      List<TheoreticalShift>(),
+      params.mealTickets ?? 0
     );
   }
 
@@ -56,7 +58,8 @@ export class WorkingPeriodTimecard implements ValueObject {
     public readonly leaves: List<Leave>,
     public readonly leavePeriods: List<LeavePeriod>,
 
-    public readonly theoreticalShifts: List<TheoreticalShift>
+    public readonly theoreticalShifts: List<TheoreticalShift>,
+    public readonly mealTickets: number
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
       .set('id', this.id)
@@ -67,7 +70,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       .set('shifts', this.shifts)
       .set('leaves', this.leaves)
       .set('leavePeriods', this.leavePeriods)
-      .set('theoreticalShifts', this.theoreticalShifts);
+      .set('theoreticalShifts', this.theoreticalShifts)
+      .set('mealTickets', this.mealTickets);
   }
 
   equals(other: unknown): boolean {
@@ -88,7 +92,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.shifts ?? this.shifts,
       params.leaves ?? this.leaves,
       params.leavePeriods ?? this.leavePeriods,
-      params.theoreticalShifts ?? this.theoreticalShifts
+      params.theoreticalShifts ?? this.theoreticalShifts,
+      params.mealTickets ?? this.mealTickets
     );
   }
 
@@ -120,7 +125,11 @@ export class WorkingPeriodTimecard implements ValueObject {
     );
   }
 
-  static getTotal(list: List<WorkingPeriodTimecard>) {
+  static getTotalMealTickets(list: List<WorkingPeriodTimecard>) {
+    return list.reduce((total, timecard) => total + timecard.mealTickets, 0);
+  }
+
+  static getTotalWorkedHours(list: List<WorkingPeriodTimecard>) {
     return list.reduce(
       (total, timecard) =>
         new WorkedHoursResume(

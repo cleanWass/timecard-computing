@@ -33,6 +33,7 @@ const employeeSchema = zod.object({
   id: zod.string(),
   firstName: zod.string(),
   lastName: zod.string(),
+  seniorityDate: zod.string(),
   email: zod.string().optional(),
   phone: zod.string().optional(),
   address: zod
@@ -45,7 +46,9 @@ const employeeSchema = zod.object({
 });
 const employeeWithTimecardSchema = zod
   .object({
-    cleaner: employeeSchema.transform(cleaner => Employee.build({ ...{ id: '', firstName: '', lastName: '' }, ...cleaner })),
+    cleaner: employeeSchema.transform(cleaner =>
+      Employee.build({ ...{ id: '', firstName: '', lastName: '' }, ...cleaner, seniorityDate: LocalDate.parse(cleaner.seniorityDate) })
+    ),
     shifts: zod.array(shiftsFromJSONSchema).nullish(),
     leaves: zod.array(leavesFromJSONSchema).nullish(),
     planning: zod.array(

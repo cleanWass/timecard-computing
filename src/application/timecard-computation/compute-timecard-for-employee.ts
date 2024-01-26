@@ -13,6 +13,7 @@ import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
 import { computeExtraHoursByRate, computeTotalAdditionalHours } from './computation/additionnal-hours-computation';
+import { computeMealTickets } from './computation/meal-tickets-computation';
 import { computeLeavesHours, computeTotalNormalHoursAvailable, normalHoursComputation } from './computation/normal-hours-computation';
 import { computeSurchargedHours } from './computation/surcharged-hours-computation';
 import {
@@ -96,7 +97,8 @@ export const computeWorkingPeriodTimecard: (
     computeLeavesHours,
     computeTotalAdditionalHours,
     computeExtraHoursByRate,
-    computeSurchargedHours
+    computeSurchargedHours,
+    computeMealTickets
   );
 };
 

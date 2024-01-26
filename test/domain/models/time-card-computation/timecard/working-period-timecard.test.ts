@@ -17,6 +17,7 @@ const employee1 = Employee.build({
   id: '1',
   firstName: 'Wass',
   lastName: 'Krif',
+  seniorityDate: LocalDate.of(2022, 1, 1),
 });
 
 describe('WorkingPeriodTimecard', () => {
@@ -35,6 +36,7 @@ describe('WorkingPeriodTimecard', () => {
     shifts: List(),
     leaves: List(),
     leavePeriods: List(),
+    mealTickets: 0,
   };
 
   beforeEach(() => {
