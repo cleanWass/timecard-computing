@@ -136,24 +136,12 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
               )
             )
             .toArray(),
-          E.sequenceArray,
-          E.map(tcs =>
-            List(tcs).map(({ contract, id, leaves, shifts: shiftsTc, workedHours, workingPeriod: { period } }) => ({
-              id,
-              contract: {
-                ...contract,
-                endDate: O.getOrElse(() => undefined)(contract.endDate),
-              },
-              shifts: shiftsTc,
-              leaves,
-              workedHours,
-              period,
-            }))
-          )
+          E.sequenceArray
         );
       }),
       E.map(({ timecards, workingPeriods, groupedShifts }) => {
         return {
+          period,
           employee,
           workingPeriods,
           groupedShifts,
