@@ -2,13 +2,15 @@ import { Duration } from '@js-joda/core';
 import { List } from 'immutable';
 import { HoursTypeCodes } from '../../domain/models/time-card-computation/timecard/worked-hours-rate';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { headers } from '../../generate-csv';
 import { formatDurationAs100 } from '../../~shared/util/joda-helper';
 import { ExtractEitherRightType, keys } from '../../~shared/util/types';
 import { computeTimecardForEmployee } from '../timecard-computation/compute-timecard-for-employee';
 
 function formatObjectDurations(rawObject: { [key in Exclude<(typeof headers)[number], 'Matricule' | 'Salarié' | 'Période'>]: Duration }) {
   return keys(rawObject).reduce((res, code) => {
-    return { ...res, [code]: formatDurationAs100(rawObject[HoursTypeCodes[code]]) || '0' };
+    const value = Math.round(((rawObject[code] || Duration.ZERO).toMinutes() / 15) * 15);
+    return { ...res, [code]: formatDurationAs100(Duration.ofMinutes(value)) };
   }, {});
 }
 

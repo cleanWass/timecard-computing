@@ -13,11 +13,11 @@ export const HoursTypeCodes = {
   TwentyFivePercentRateSupplementary: 'HS25', // Horaire supplémentaire 25%
   FiftyPercentRateSupplementary: 'HS50', // Horaire supplémentaire 50%
 
-  SundayContract: 'Dim H', // Dimanche Habituel
-  SundayAdditional: 'Dim P', // Dimanche Ponctuel
+  SundayContract: 'HDim', // Dimanche Habituel
+  SundayAdditional: 'MajoDim100', // Dimanche Ponctuel
 
-  NightShiftContract: 'Nuit H', // Nuit Habituel
-  NightShiftAdditional: 'Nuit P', // Nuit Ponctuel
+  NightShiftContract: 'HNuit', // Nuit Habituel
+  NightShiftAdditional: 'MajoNuit100', // Nuit Ponctuel
 
   HolidaySurchargedH: 'MAJOFERIEH', // Majoration Férié Habituel
   HolidaySurchargedP: 'MAJOFERIEP', // Majoration Férié Ponctuel

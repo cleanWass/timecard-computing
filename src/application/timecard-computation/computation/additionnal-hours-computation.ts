@@ -17,7 +17,7 @@ const computeSurchargeWithoutExtraHours = (timecard: WorkingPeriodTimecard) => {
   if (additionalHours.isZero() || additionalHours.isNegative()) return timecard;
   const _11PercentRateHours = getLowerDuration(
     additionalHours,
-    Duration.ofSeconds(Number((timecard.contract.weeklyTotalWorkedHours.toMinutes() * 0.1 * 60).toFixed(2)))
+    Duration.ofMinutes(Math.floor(Number(timecard.contract.weeklyTotalWorkedHours.toMinutes() * 0.1) / 15) * 15)
   );
   const _25PerCentRateHours = additionalHours.minus(_11PercentRateHours);
   return timecard
@@ -64,7 +64,10 @@ export const computeTotalAdditionalHours = (timecard: WorkingPeriodTimecard) => 
   return timecard
     .register('TotalNormal', totalNormalHours)
     .register('TotalNormalAvailable', TotalNormalAvailable.minus(totalNormalHours))
-    .register('TotalAdditionalHours', getGreaterDuration(totalAdditionalHours.minus(totalNormalHours), Duration.ZERO));
+    .register(
+      'TotalAdditionalHours',
+      Duration.ofMinutes(Math.ceil(getGreaterDuration(totalAdditionalHours.minus(totalNormalHours), Duration.ZERO).toMinutes() / 15) * 15)
+    );
 };
 
 export const computeExtraHoursByRate = (timecard: WorkingPeriodTimecard) =>
