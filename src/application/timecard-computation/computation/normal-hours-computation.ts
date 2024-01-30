@@ -1,12 +1,6 @@
-import * as E from 'fp-ts/Either';
-import { List, Map } from 'immutable';
 import { Leave } from '../../../domain/models/leave-recording/leave/leave';
-import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
-import { WorkingPeriod } from '../../../domain/models/time-card-computation/working-period/working-period';
-import { getTotalDuration } from '../../../~shared/util/joda-helper';
-
-const computeTotalHoursByWorkingPeriod = (groupedShifts: Map<WorkingPeriod, List<Shift>>) => E.right(groupedShifts.map(getTotalDuration));
+import { formatDurationAs100, getTotalDuration } from '../../../~shared/util/joda-helper';
 
 export const normalHoursComputation = (timecard: WorkingPeriodTimecard) =>
   timecard.register('TotalWeekly', getTotalDuration(timecard.shifts));
@@ -15,17 +9,16 @@ export const computeLeavesHours = (timecard: WorkingPeriodTimecard) => {
   const computeDuration = (condition: (l: Leave) => boolean = () => true) => getTotalDuration(timecard.leaves.filter(condition));
 
   const leavesTotalDuration = computeDuration();
-  const leavesPaidDuration = computeDuration(leave => ['PAID', 'HOLIDAY'].includes(leave.reason));
-  const leavesUnpaidDuration = computeDuration(leave => leave.reason === 'UNPAID');
+  const holidaysLeavesDuration = computeDuration(leave => leave.absenceType === 'HOLIDAY');
+  const leavesPaidDuration = computeDuration(leave => leave.compensation === 'PAID');
+  const leavesUnpaidDuration = computeDuration(leave => leave.compensation === 'UNPAID');
 
   return timecard
     .register('TotalLeaves', leavesTotalDuration)
+    .register('TotalHolidayLeaves', holidaysLeavesDuration)
     .register('TotalLeavesPaid', leavesPaidDuration)
     .register('TotalLeavesUnpaid', leavesUnpaidDuration);
 };
 
 export const computeTotalNormalHoursAvailable = (timecard: WorkingPeriodTimecard) =>
-  timecard.register(
-    'TotalNormalAvailable',
-    getTotalDuration(timecard.leaves.filter(leave => leave.reason === 'PAID' || leave.reason === 'HOLIDAY'))
-  );
+  timecard.register('TotalNormalAvailable', getTotalDuration(timecard.leaves.filter(leave => leave.compensation === 'PAID')));

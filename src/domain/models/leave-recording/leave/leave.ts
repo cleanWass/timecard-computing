@@ -1,24 +1,41 @@
-import { DateTimeFormatter, Duration, Instant, LocalDateTime, ZoneId } from '@js-joda/core';
+import { DateTimeFormatter, Duration, Instant, LocalDate, LocalDateTime, LocalTime, ZoneId } from '@js-joda/core';
+import { Interval } from '@js-joda/extra';
 import { Map, ValueObject } from 'immutable';
 import { TypeProps } from '../../../../~shared/util/types';
-import { Shift } from '../../mission-delivery/shift/shift';
-import { LeaveReason } from './leave-reason';
+import { LeaveReason, PaidLeaveReason, UnpaidLeaveReason } from './leave-reason';
 import '@js-joda/timezone';
-import { Interval } from '@js-joda/extra';
 
-export class Leave implements ValueObject {
-  public static build(params: { reason: LeaveReason; startTime: LocalDateTime; duration: Duration }) {
-    return new Leave(params.reason, params.startTime, params.duration);
+interface ILeave {
+  date: LocalDate;
+  startTime: LocalTime;
+  endTime: LocalTime;
+  duration: Duration;
+  compensation: LeaveReason;
+  absenceType: PaidLeaveReason | UnpaidLeaveReason;
+}
+
+export class Leave implements ValueObject, ILeave {
+  public static build({ compensation, date, duration, endTime, startTime, absenceType }: ILeave) {
+    return new Leave(date, startTime, endTime, duration, compensation, absenceType);
   }
 
   private readonly _vo: ValueObject;
 
   private constructor(
-    public readonly reason: LeaveReason,
-    public readonly startTime: LocalDateTime,
-    public readonly duration: Duration
+    public readonly date: LocalDate,
+    public readonly startTime: LocalTime,
+    public readonly endTime: LocalTime,
+    public readonly duration: Duration,
+    public readonly compensation: LeaveReason,
+    public readonly absenceType: PaidLeaveReason | UnpaidLeaveReason
   ) {
-    this._vo = Map<string, TypeProps<Leave>>().set('reason', this.reason).set('startTime', this.startTime).set('duration', this.duration);
+    this._vo = Map<string, TypeProps<Leave>>()
+      .set('date', this.date)
+      .set('startTime', this.startTime)
+      .set('endTime', this.endTime)
+      .set('duration', this.duration)
+      .set('compensation', this.compensation)
+      .set('absenceType', this.absenceType);
   }
 
   equals(other: unknown): boolean {
@@ -29,19 +46,34 @@ export class Leave implements ValueObject {
     return this._vo.hashCode();
   }
 
-  getEndTime(): LocalDateTime {
-    return this.startTime.plus(this.duration);
+  getStartDateTime(): LocalDateTime {
+    return LocalDateTime.of(this.date, this.startTime);
+  }
+
+  getEndDateTime(): LocalDateTime {
+    return LocalDateTime.of(this.date, this.endTime);
   }
 
   getInterval(): Interval {
     return Interval.of(
-      Instant.from(this.startTime.atZone(ZoneId.of('Europe/Paris'))),
-      Instant.from(this.getEndTime().atZone(ZoneId.of('Europe/Paris')))
+      Instant.from(this.getStartDateTime().atZone(ZoneId.of('Europe/Paris'))),
+      Instant.from(this.getEndDateTime().atZone(ZoneId.of('Europe/Paris')))
+    );
+  }
+
+  with(params: Partial<Leave>): Leave {
+    return new Leave(
+      params.date ?? this.date,
+      params.startTime ?? this.startTime,
+      params.endTime ?? this.endTime,
+      params.duration ?? this.duration,
+      params.compensation ?? this.compensation,
+      params.absenceType ?? this.absenceType
     );
   }
 
   debug(): string {
-    return `${this.startTime.format(DateTimeFormatter.ofPattern('HH:mm dd/MM/yy'))} -> ${this.getEndTime().format(
+    return `${this.getStartDateTime().format(DateTimeFormatter.ofPattern('HH:mm dd/MM/yy'))} -> ${this.getEndDateTime().format(
       DateTimeFormatter.ofPattern('HH:mm dd/MM/yy')
     )}`;
   }

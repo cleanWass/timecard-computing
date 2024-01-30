@@ -35,7 +35,6 @@ describe('WorkingPeriodTimecard', () => {
     theoreticalShifts: List(),
     shifts: List(),
     leaves: List(),
-    leavePeriods: List(),
     mealTickets: 0,
   };
 

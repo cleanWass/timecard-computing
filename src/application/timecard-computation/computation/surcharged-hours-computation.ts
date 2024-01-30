@@ -31,7 +31,7 @@ const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
     holidayDates,
     E.map(holidays => timecard.shifts.filter(shift => holidays.includes(shift.startTime.toLocalDate()))),
     E.getOrElse(e => {
-      console.log(e);
+      // console.log(e);
       return List<Shift>();
     })
   );

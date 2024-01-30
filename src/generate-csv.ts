@@ -80,58 +80,63 @@ const timecards = pipe(
   }),
   TE.chainW(cleaners => {
     return pipe(
-      [
-        {
-          id: '0030Y00000EQNcqQAH',
-          fullName: 'Aissatou TRAORE',
-        },
-        {
-          id: '0031n000020GrXvAAK',
-          fullName: 'Badhily Bidane',
-        },
-      ].map(({ id, fullName }) =>
-        // cleaners
-        //   .sort((a, b) => (a.silaeId > b.silaeId ? -1 : 1))
-        //   .map(({ id, fullName }) =>
-        pipe(
-          TE.tryCatch(
-            () => fetchDataForEmployee(id, period),
-            e => {
-              log.failed++;
-              return new RepositoryFailedCall(`Fetching from care data parser went wrong for cleanerID: ${id} ==> ${e}`);
-            }
-          ),
-          TE.chainW(flow(parsePayload, TE.fromEither)),
-          TE.map(
-            flow(
-              formatPayload,
-              computeTimecardForEmployee(period),
-              E.mapLeft(e => {
+      // [
+      //   {
+      //     id: '0030Y000016qx4RQAQ',
+      //     fullName: 'Brahim EL MOUDE0N',
+      //   },
+      // {
+      //   id: '0030Y00000EQNcqQAH',
+      //   fullName: 'Aissatou TRAORE',
+      // },
+      // {
+      //   id: '0031n000020GrXvAAK',
+      //   fullName: 'Badhily Bidane',
+      // },
+      // ].map(({ id, fullName }) =>
+      cleaners
+        .sort((a, b) => Number.parseInt(a.silaeId) - Number.parseInt(b.silaeId))
+        .map(({ id, fullName }) =>
+          pipe(
+            TE.tryCatch(
+              () => fetchDataForEmployee(id, period),
+              e => {
                 log.failed++;
-                console.log(`${fullName} ${id} error : `);
-                errorCsvStream.write({ Matricule: `${fullName} ${id}`, error: e.message });
-                return e;
-              }),
-              E.map(t => {
-                t.timecards.forEach(e => e.debug());
-                return t;
-              }),
-              E.map(formatCsv),
-              E.map(row => {
-                csvStream.write(row);
+                return new RepositoryFailedCall(`Fetching from care data parser went wrong for cleanerID: ${id} ==> ${e}`);
+              }
+            ),
+            TE.chainW(flow(parsePayload, TE.fromEither)),
 
-                log.successful++;
-                console.log(`${row.Salarié}  OK ${log.successful}/${log.total} (error : ${log.failed})`);
-                return row;
-              })
+            TE.map(
+              flow(
+                formatPayload,
+                computeTimecardForEmployee(period),
+                E.mapLeft(e => {
+                  log.failed++;
+                  console.log(`${fullName} ${id} error : `);
+                  errorCsvStream.write({ Matricule: `${fullName} ${id}`, error: e.message });
+                  return e;
+                }),
+                E.map(t => {
+                  t.timecards.forEach(e => e.debug());
+                  return t;
+                }),
+                E.map(formatCsv),
+                E.map(row => {
+                  csvStream.write(row);
+
+                  log.successful++;
+                  console.log(`${row.Salarié} - ${row['Silae Id']} -  OK ${log.successful}/${log.total} (error : ${log.failed})`);
+                  return row;
+                })
+              )
+            ),
+            TE.foldW(
+              failed => TE.right(failed),
+              result => TE.right(result)
             )
-          ),
-          TE.foldW(
-            failed => TE.right(failed),
-            result => TE.right(result)
           )
-        )
-      ),
+        ),
       TE.sequenceSeqArray
     );
   }),

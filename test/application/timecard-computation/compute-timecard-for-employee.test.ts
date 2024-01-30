@@ -5,6 +5,7 @@ import { pipe } from 'fp-ts/function';
 import { List } from 'immutable';
 import * as O from 'fp-ts/Option';
 import { getCuratedShifts } from '../../../src/application/timecard-computation/curation/shifts-and-period-curation';
+import { Leave } from '../../../src/domain/models/leave-recording/leave/leave';
 import { LocalDateRange } from '../../../src/domain/models/local-date-range';
 import { LeavePeriod } from '../../../src/domain/models/leave-recording/leave/leave-period';
 import { Shift } from '../../../src/domain/models/mission-delivery/shift/shift';
@@ -21,13 +22,14 @@ describe('getCuratedShifts', () => {
     clientId: '',
     employeeId: '',
   });
-  let leave = LeavePeriod.build({
-    id: '1',
-    period: new LocalDateRange(LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 1)),
-    comment: O.some('eee'),
-    endTime: LocalTime.of(17, 0),
-    reason: 'PAID',
+  let leave = Leave.build({
+    date: LocalDate.of(2023, 1, 1),
     startTime: LocalTime.of(9, 0),
+    endTime: LocalTime.of(17, 0),
+    duration: Duration.ofHours(8),
+
+    absenceType: 'PAYED_LEAVE',
+    compensation: 'PAID',
   });
 
   beforeEach(() => {
@@ -36,9 +38,11 @@ describe('getCuratedShifts', () => {
       startTime: LocalDateTime.of(2023, 1, 1, 9, 0),
     });
     leave = leave.with({
-      period: new LocalDateRange(LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 1)),
-      endTime: LocalTime.of(17, 0),
+      date: LocalDate.of(2023, 1, 1),
       startTime: LocalTime.of(9, 0),
+
+      endTime: LocalTime.of(17, 0),
+      duration: Duration.ofHours(8),
     });
   });
   it('returns original shift when no overlap with leave', () => {
@@ -48,13 +52,14 @@ describe('getCuratedShifts', () => {
       startTime: LocalDateTime.of(2023, 1, 1, 9, 0),
     });
     leave = leave.with({
-      id: '1',
       startTime: LocalTime.of(8, 0),
       endTime: LocalTime.of(18, 0),
-      period: new LocalDateRange(LocalDate.of(2023, 1, 2), LocalDate.of(2023, 1, 2)),
+      date: LocalDate.of(2023, 1, 2),
     });
 
     const result = getCuratedShifts(leave, shift);
+    console.log(result.map(s => s.debug()).join('\n'));
+
     expect(result.size).toEqual(List([shift]).size);
   });
 
@@ -65,12 +70,14 @@ describe('getCuratedShifts', () => {
       startTime: LocalDateTime.of(2023, 1, 1, 9, 0),
     });
     leave = leave.with({
-      id: '1',
+      date: LocalDate.of(2023, 1, 1),
       startTime: LocalTime.of(12, 0),
       endTime: LocalTime.of(14, 0),
+      duration: Duration.ofHours(2),
     });
 
     const result = getCuratedShifts(leave, shift);
+    console.log(result.map(s => s.debug()).join('\n'));
     expect(result.size).toEqual(2);
   });
 
@@ -81,23 +88,53 @@ describe('getCuratedShifts', () => {
       startTime: LocalDateTime.of(2023, 1, 1, 9, 0),
     });
     leave = leave.with({
-      id: '1',
+      date: LocalDate.of(2023, 1, 1),
       startTime: LocalTime.of(8, 0),
       endTime: LocalTime.of(18, 0),
+      duration: Duration.ofHours(10),
     });
 
     const result = getCuratedShifts(leave, shift);
+    console.log(result.map(s => s.debug()).join('\n'));
+
     expect(result.size).toEqual(0);
   });
 
-  it('test if computes timecard for employee works', () => {
-    const result = computeTimecardForEmployee(new LocalDateRange(LocalDate.of(2023, 11, 13), LocalDate.of(2023, 11, 20)))(cas1);
-    pipe(
-      result,
-      E.match(
-        error => console.log(`error : ${error.message}`),
-        t => t.timecards.forEach(t => t.debug())
-      )
-    );
+  it('returns truncated shift when leave overlaps start of shift ', () => {
+    const shiftExpected = shift.with({
+      id: '1-before Leave 1',
+      duration: Duration.ofHours(8),
+      startTime: LocalDateTime.of(2023, 1, 1, 9, 0),
+    });
+    leave = leave.with({
+      date: LocalDate.of(2023, 1, 1),
+      startTime: LocalTime.of(8, 0),
+      endTime: LocalTime.of(12, 0),
+      duration: Duration.ofHours(4),
+    });
+
+    const result = getCuratedShifts(leave, shift);
+    console.log(result.map(s => s.debug()).join('\n'));
+
+    expect(result.size).toEqual(1);
+  });
+
+  it('returns truncated shift when leave overlaps end of shift ', () => {
+    const shiftExpected = shift.with({
+      id: '1-before Leave 1',
+      duration: Duration.ofHours(5),
+      startTime: LocalDateTime.of(2023, 1, 1, 9, 0),
+    });
+    leave = leave.with({
+      date: LocalDate.of(2023, 1, 1),
+      startTime: LocalTime.of(14, 0),
+      endTime: LocalTime.of(17, 0),
+      duration: Duration.ofHours(3),
+    });
+
+    const result = getCuratedShifts(leave, shift);
+    console.log(result.map(s => s.debug()).join('\n'));
+
+    expect(result.size).toEqual(1);
   });
 });

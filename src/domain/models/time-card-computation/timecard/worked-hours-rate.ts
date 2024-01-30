@@ -24,11 +24,12 @@ export const HoursTypeCodes = {
 
   TotalWeekly: 'Heures total', // Horaire Total
   TotalTheoretical: 'Heures théoriques normal', // Horaire Théorique Total
-  TotalLeaves: 'Heures congé total', // Horaire Congé Total
-  TotalLeavesUnpaid: 'Heures Congés non payés', // Horaire Congé Non Payé
-  TotalLeavesPaid: 'Heures Congés payés', // Horaire Congé Payé
+  TotalLeaves: 'Heures congés total', // Horaire Congé Total
+  TotalHolidayLeaves: 'Heures congés fériés', // Horaire Congé Férié
+  TotalLeavesUnpaid: 'Heures congés non payés', // Horaire Congé Non Payé
+  TotalLeavesPaid: 'Heures congés payés', // Horaire Congé Payé
   TotalAdditionalHours: 'Heures additionnelles', // Horaire Additionnel Total
-  TotalNormalAvailable: 'Heures disponibles normales', // Horaire Normal Disponible
+  TotalNormalAvailable: 'Heures normales disponibles restantes', // Horaire Normal Disponibles restantes
 } as const;
 
 export type WorkedHoursRate = keyof typeof HoursTypeCodes;

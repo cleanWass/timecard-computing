@@ -24,8 +24,7 @@ export class WorkingPeriodTimecard implements ValueObject {
     shifts: List<Shift>;
     theoreticalShifts?: List<TheoreticalShift>;
 
-    leaves?: List<Leave>;
-    leavePeriods: List<LeavePeriod>;
+    leaves: List<Leave>;
 
     workedHours?: WorkedHoursResumeType;
     mealTickets?: number;
@@ -38,7 +37,6 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.workedHours ?? new WorkedHoursResume(),
       params.shifts,
       params.leaves ?? List<Leave>(),
-      params.leavePeriods,
       List<TheoreticalShift>(),
       params.mealTickets ?? 0
     );
@@ -56,7 +54,6 @@ export class WorkingPeriodTimecard implements ValueObject {
     public readonly shifts: List<Shift>,
 
     public readonly leaves: List<Leave>,
-    public readonly leavePeriods: List<LeavePeriod>,
 
     public readonly theoreticalShifts: List<TheoreticalShift>,
     public readonly mealTickets: number
@@ -69,7 +66,6 @@ export class WorkingPeriodTimecard implements ValueObject {
       .set('workedHours', this.workedHours)
       .set('shifts', this.shifts)
       .set('leaves', this.leaves)
-      .set('leavePeriods', this.leavePeriods)
       .set('theoreticalShifts', this.theoreticalShifts)
       .set('mealTickets', this.mealTickets);
   }
@@ -91,7 +87,6 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.workedHours ?? this.workedHours,
       params.shifts ?? this.shifts,
       params.leaves ?? this.leaves,
-      params.leavePeriods ?? this.leavePeriods,
       params.theoreticalShifts ?? this.theoreticalShifts,
       params.mealTickets ?? this.mealTickets
     );
@@ -114,9 +109,8 @@ export class WorkingPeriodTimecard implements ValueObject {
               .toSeq()
               .map((duration, rate) => (duration.isZero() ? `` : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`))
               .filter(s => s)
-              .join('\n\t\t\t')}
+              .join('\n\t\t')}
         Leaves: ${this.leaves.map(l => l.debug()).join(' | ')}
-        LeavePeriods: ${this.leavePeriods.map(l => l.debug()).join(' | ')}
         Shifts: ${this.shifts.map(s => s.debug()).join(' | ')}
         TheoreticalShifts: ${this.theoreticalShifts.map(s => s.debug()).join(' | ')}
         _____

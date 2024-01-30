@@ -90,10 +90,6 @@ app.post('/timecard', async (req, res) => {
       e => new Error(`Fetching from care data parser went wrong ${e}`)
     ),
     TE.chainW(flow(parsePayload, TE.fromEither)),
-    TE.map(t => {
-      console.log('log intermediaire', t);
-      return t;
-    }),
     TE.map(flow(formatPayload, computeTimecardForEmployee(period))),
     TE.fold(
       e => {

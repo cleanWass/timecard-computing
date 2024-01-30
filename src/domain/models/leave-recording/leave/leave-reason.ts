@@ -1,6 +1,13 @@
 export type LeaveReason = 'PAID' | 'UNPAID' | 'HOLIDAY';
 
-export type PaidLeaveReason = 'CLOSED_SITE' | 'COMMUTE INJURY' | 'FAMILY_LEAVE' | 'PAYED_LEAVE' | 'SICK_CHILD' | 'TRAINING_LEAVE';
+export type PaidLeaveReason =
+  | 'HOLIDAY'
+  | 'CLOSED_SITE'
+  | 'COMMUTE INJURY'
+  | 'FAMILY_LEAVE'
+  | 'PAYED_LEAVE'
+  | 'SICK_CHILD'
+  | 'TRAINING_LEAVE';
 
 export const isPaidLeaveReason = (reason: string): reason is PaidLeaveReason =>
   ['CLOSED_SITE', 'COMMUTE INJURY', 'FAMILY_LEAVE', 'PAYED_LEAVE', 'SICK_CHILD', 'TRAINING_LEAVE'].includes(reason);
