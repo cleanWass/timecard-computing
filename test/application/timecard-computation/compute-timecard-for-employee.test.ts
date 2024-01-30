@@ -26,7 +26,7 @@ describe('getCuratedShifts', () => {
     period: new LocalDateRange(LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 1)),
     comment: O.some('eee'),
     endTime: LocalTime.of(17, 0),
-    reason: 'Paid',
+    reason: 'PAID',
     startTime: LocalTime.of(9, 0),
   });
 

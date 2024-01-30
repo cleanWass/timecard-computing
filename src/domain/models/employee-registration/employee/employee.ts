@@ -8,6 +8,7 @@ export class Employee implements ValueObject {
     firstName: string;
     lastName: string;
     seniorityDate: LocalDate;
+    silaeId: string;
     email?: string;
     phoneNumber?: string;
     address?: {
@@ -21,6 +22,7 @@ export class Employee implements ValueObject {
       params.firstName,
       params.lastName,
       params.seniorityDate,
+      params.silaeId,
       params.email,
       params.phoneNumber,
       params.address
@@ -38,6 +40,7 @@ export class Employee implements ValueObject {
     public readonly firstName: string,
     public readonly lastName: string,
     public readonly seniorityDate: LocalDate,
+    public readonly silaeId: string,
     public readonly email?: string,
     public readonly phoneNumber?: string,
     public readonly address?: { city?: string; street?: string; postalCode?: string }
@@ -46,6 +49,7 @@ export class Employee implements ValueObject {
       .set('id', this.id)
       .set('firstName', this.firstName)
       .set('lastName', this.lastName)
+      .set('silaeId', this.silaeId)
       .set('seniorityDate', this.seniorityDate)
       .set('email', this.email)
       .set('phoneNumber', this.phoneNumber)

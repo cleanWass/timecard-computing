@@ -15,8 +15,8 @@ export const computeLeavesHours = (timecard: WorkingPeriodTimecard) => {
   const computeDuration = (condition: (l: Leave) => boolean = () => true) => getTotalDuration(timecard.leaves.filter(condition));
 
   const leavesTotalDuration = computeDuration();
-  const leavesPaidDuration = computeDuration(leave => ['Paid', 'Holiday'].includes(leave.reason));
-  const leavesUnpaidDuration = computeDuration(leave => leave.reason === 'Unpaid');
+  const leavesPaidDuration = computeDuration(leave => ['PAID', 'HOLIDAY'].includes(leave.reason));
+  const leavesUnpaidDuration = computeDuration(leave => leave.reason === 'UNPAID');
 
   return timecard
     .register('TotalLeaves', leavesTotalDuration)
@@ -27,5 +27,5 @@ export const computeLeavesHours = (timecard: WorkingPeriodTimecard) => {
 export const computeTotalNormalHoursAvailable = (timecard: WorkingPeriodTimecard) =>
   timecard.register(
     'TotalNormalAvailable',
-    getTotalDuration(timecard.leaves.filter(leave => leave.reason === 'Paid' || leave.reason === 'Holiday'))
+    getTotalDuration(timecard.leaves.filter(leave => leave.reason === 'PAID' || leave.reason === 'HOLIDAY'))
   );

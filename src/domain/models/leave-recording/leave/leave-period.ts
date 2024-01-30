@@ -71,7 +71,7 @@ export class LeavePeriod implements ValueObject, ILeavePeriod {
   getInterval(): Interval {
     return Interval.of(
       Instant.from(LocalDateTime.of(this.period.start, this.startTime).atZone(ZoneId.of('Europe/Paris'))),
-      Instant.from(LocalDateTime.of(this.period.end, this.endTime).atZone(ZoneId.of('Europe/Paris')))
+      Instant.from(LocalDateTime.of(this.period.end.minusDays(1), this.endTime).atZone(ZoneId.of('Europe/Paris')))
     );
   }
 
@@ -82,6 +82,8 @@ export class LeavePeriod implements ValueObject, ILeavePeriod {
   debug(): string {
     return `${LocalDateTime.of(this.period.start, this.startTime).format(
       DateTimeFormatter.ofPattern('HH:mm dd/MM/yy')
-    )} -> ${LocalDateTime.of(this.period.end, this.endTime).format(DateTimeFormatter.ofPattern('HH:mm dd/MM/yy'))}`;
+    )} -> ${LocalDateTime.of(this.period.end.minusDays(1), this.endTime).format(DateTimeFormatter.ofPattern('HH:mm dd/MM/yy'))} --> ${
+      this.reason
+    }`;
   }
 }

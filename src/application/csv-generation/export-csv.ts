@@ -8,7 +8,7 @@ import { ExtractEitherRightType, keys } from '../../~shared/util/types';
 import { computeTimecardForEmployee } from '../timecard-computation/compute-timecard-for-employee';
 
 function formatObjectDurations(rawObject: {
-  [key in Exclude<(typeof headers)[number], 'Matricule' | 'Salarié' | 'Période' | 'NbTicket'>]: Duration;
+  [key in Exclude<(typeof headers)[number], 'Matricule' | 'Salarié' | 'Période' | 'NbTicket' | 'Silae Id'>]: Duration;
 }) {
   return keys(rawObject).reduce((res, code) => {
     const value = Math.round(((rawObject[code] || Duration.ZERO).toMinutes() / 15) * 15);
@@ -24,6 +24,7 @@ export function formatCsv(row: ExtractEitherRightType<ReturnType<typeof computeT
   return {
     Matricule: row.employee.id || '0',
     Salarié: row.employee.firstName + ' ' + row.employee.lastName || '0',
+    'Silae Id': row.employee.silaeId || '0',
     Période: row.contracts.first().period(row.period.end).toFormattedString(),
     ...formatObjectDurations({
       HN: totalTcs.TotalNormal,

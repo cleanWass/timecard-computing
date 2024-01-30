@@ -19,6 +19,7 @@ const errorFile = fs.createWriteStream('export_error.csv');
 
 export const headers = [
   'Matricule',
+  'Silae Id',
   'Salarié',
   'Période',
   'HN',
@@ -46,7 +47,8 @@ const log = {
   successful: 0,
 };
 
-const period = new LocalDateRange(LocalDate.parse('2023-11-20'), LocalDate.parse('2023-12-17'));
+// const period = new LocalDateRange(LocalDate.parse('2023-11-20'), LocalDate.parse('2023-12-17'));
+const period = new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDate.parse('2024-01-21'));
 
 const timecards = pipe(
   TE.tryCatch(
@@ -72,13 +74,25 @@ const timecards = pipe(
       )
   ),
   TE.map(cleaners => {
-    console.log('cleaners', cleaners.slice(0, 10));
+    // console.log('cleaners', cleaners.slice(0, 10));
     log.total = cleaners.length;
     return cleaners;
   }),
   TE.chainW(cleaners => {
     return pipe(
-      cleaners.map(({ id, fullName }) =>
+      [
+        {
+          id: '0030Y00000EQNcqQAH',
+          fullName: 'Aissatou TRAORE',
+        },
+        {
+          id: '0031n000020GrXvAAK',
+          fullName: 'Badhily Bidane',
+        },
+      ].map(({ id, fullName }) =>
+        // cleaners
+        //   .sort((a, b) => (a.silaeId > b.silaeId ? -1 : 1))
+        //   .map(({ id, fullName }) =>
         pipe(
           TE.tryCatch(
             () => fetchDataForEmployee(id, period),
@@ -97,6 +111,10 @@ const timecards = pipe(
                 console.log(`${fullName} ${id} error : `);
                 errorCsvStream.write({ Matricule: `${fullName} ${id}`, error: e.message });
                 return e;
+              }),
+              E.map(t => {
+                t.timecards.forEach(e => e.debug());
+                return t;
               }),
               E.map(formatCsv),
               E.map(row => {

@@ -8,6 +8,7 @@ import { Employee } from '../../domain/models/employee-registration/employee/emp
 import { ContractSubType } from '../../domain/models/employment-contract-management/employment-contract/contract-sub-type';
 import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import { LeavePeriod } from '../../domain/models/leave-recording/leave/leave-period';
+import { isPaidLeaveReason } from '../../domain/models/leave-recording/leave/leave-reason';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { LocalTimeSlot } from '../../domain/models/local-time-slot';
 import { Shift } from '../../domain/models/mission-delivery/shift/shift';
@@ -27,10 +28,32 @@ const leavesFromJSONSchema = zod.object({
   period: periodSchema,
   startTime: zod.string(),
   endTime: zod.string(),
+  absenceType: zod.enum([
+    'ILLNESS',
+    'CONSERVATORY_LAID_OFF',
+    'DISCIPLINARY_LAID_OFF',
+    'LEAVE ABSENCE_PAID',
+    'MATERNITY LEAVE',
+    'PARENTAL LEAVE',
+    'PATERNITY LEAVE',
+    'SABBATICAL_LEAVE',
+    'UNAUTHORIZED_LEAVE',
+    'UNAUTHORIZED_LEAVE_UNPAID',
+    'UNPAYED_LEAVE',
+    'WORK_ILLNESS',
+    'WORK_INJURY',
+    'CLOSED_SITE',
+    'COMMUTE INJURY',
+    'FAMILY_LEAVE',
+    'PAYED_LEAVE',
+    'SICK_CHILD',
+    'TRAINING_LEAVE',
+  ]),
 });
 
 const employeeSchema = zod.object({
   id: zod.string(),
+  silaeId: zod.string(),
   firstName: zod.string(),
   lastName: zod.string(),
   seniorityDate: zod.string(),
@@ -47,7 +70,11 @@ const employeeSchema = zod.object({
 const employeeWithTimecardSchema = zod
   .object({
     cleaner: employeeSchema.transform(cleaner =>
-      Employee.build({ ...{ id: '', firstName: '', lastName: '' }, ...cleaner, seniorityDate: LocalDate.parse(cleaner.seniorityDate) })
+      Employee.build({
+        ...{ id: '', firstName: '', lastName: '', silaeId: '' },
+        ...cleaner,
+        seniorityDate: LocalDate.parse(cleaner.seniorityDate),
+      })
     ),
     shifts: zod.array(shiftsFromJSONSchema).nullish(),
     leaves: zod.array(leavesFromJSONSchema).nullish(),
@@ -56,9 +83,9 @@ const employeeWithTimecardSchema = zod
         contract: zod.object({
           period: periodSchema,
           type: zod.string(),
-          subType: zod.string().optional(),
+          subType: zod.string().nullish(),
           weeklyHours: zod.string(),
-          extraDuration: zod.string().optional(),
+          extraDuration: zod.string().nullish(),
         }),
         planning: zod.record(
           daySchema,
@@ -91,7 +118,7 @@ const employeeWithTimecardSchema = zod
         startTime,
         endTime,
         period: new LocalDateRange(LocalDate.parse(leave.period.start), LocalDate.parse(leave.period.end)),
-        reason: 'Paid',
+        reason: isPaidLeaveReason(leave.absenceType) ? 'PAID' : 'UNPAID',
         comment: O.some('TODO'),
       });
     }),
@@ -133,10 +160,14 @@ export const parsePayload = (payload: unknown) =>
       e => new Error(`success : ${e.success} \n Error while parsing payload ${e['error']}`)
     ),
     E.map(parsedJSON => (parsedJSON.success ? parsedJSON.data : null)),
-    E.map(raw => ({
-      shifts: raw.shifts,
-      leavePeriods: raw.leavePeriods,
-      contracts: raw.planning,
-      employee: raw.cleaner,
-    }))
+    E.map(raw => {
+      // console.log('leave periods : ');
+      // raw.leavePeriods.forEach(lp => console.log(lp.debug()));
+      return {
+        shifts: raw.shifts,
+        leavePeriods: raw.leavePeriods,
+        contracts: raw.planning,
+        employee: raw.cleaner,
+      };
+    })
   );

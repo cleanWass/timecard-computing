@@ -31,7 +31,7 @@ app.use(
 
 export const fetchDataForEmployee = (employeeId: string, { start, end }: LocalDateRange) =>
   axios
-    .post('http://localhost:3000/extract-cleaner-data-timecard', {
+    .post('http://localhost:3000/employee-data', {
       cleanerId: employeeId,
       period: {
         startDate: start.toString(),

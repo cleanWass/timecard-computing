@@ -49,18 +49,18 @@ export const computeTotalAdditionalHours = (timecard: WorkingPeriodTimecard) => 
   if (totalAdditionalHours.isNegative()) return timecard.register('TotalAdditionalHours', Duration.ZERO);
   const totalNormalHours = getLowerDuration(TotalNormalAvailable, totalAdditionalHours);
 
-  // console.log(`
-  // -------------------------------------
-  // TotalLeavesPaid: ${formatDuration(TotalLeavesPaid)}
-  // TotalTheoretical: ${formatDuration(TotalTheoretical)}
-  // totalAdditionalHours: ${formatDuration(totalAdditionalHours)}
-  // TotalWeekly: ${formatDuration(TotalWeekly)}
-  // totalEffectiveHours: ${formatDuration(totalEffectiveHours)}
-  // TotalNormalAvailable: ${formatDuration(TotalNormalAvailable)}
-  // -------------------------------------
-  // totalNormalHours: ${formatDuration(totalNormalHours)}
-  // -------------------------------------
-  // `);
+  console.log(`
+  -------------------------------------
+  TotalLeavesPaid: ${formatDuration(TotalLeavesPaid)}
+  TotalTheoretical: ${formatDuration(TotalTheoretical)}
+  totalAdditionalHours: ${formatDuration(totalAdditionalHours)}
+  TotalWeekly: ${formatDuration(TotalWeekly)}
+  totalEffectiveHours: ${formatDuration(totalEffectiveHours)}
+  TotalNormalAvailable: ${formatDuration(TotalNormalAvailable)}
+  -------------------------------------
+  totalNormalHours: ${formatDuration(totalNormalHours)}
+  -------------------------------------
+  `);
   return timecard
     .register('TotalNormal', totalNormalHours)
     .register('TotalNormalAvailable', TotalNormalAvailable.minus(totalNormalHours))
