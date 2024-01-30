@@ -47,6 +47,7 @@ const initializeWorkingPeriodTimecard = ({
     contract,
     employee,
     workingPeriod,
+    weeklyPlanning: contract.weeklyPlannings.get(workingPeriod.period),
     shifts,
     leaves,
   });
@@ -94,28 +95,38 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
   }) => {
     return pipe(
       E.Do,
-      E.bind('workingPeriods', () => splitPeriodIntoWorkingPeriods(contracts, period)),
+      E.bind('workingPeriods', () => {
+        let splitPeriodIntoWorkingPeriods1 = splitPeriodIntoWorkingPeriods(contracts, period);
+        console.log('wps.size', E.getOrElse(() => List())(splitPeriodIntoWorkingPeriods1).size);
+        return splitPeriodIntoWorkingPeriods1;
+      }),
       E.bindW('groupedShifts', ({ workingPeriods }) => groupShiftsByWorkingPeriods(shifts, workingPeriods)),
       E.bindW('groupedLeaves', ({ workingPeriods }) => groupLeavesByWorkingPeriods(leaves, workingPeriods)),
       E.bindW('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) =>
         pipe(
-          workingPeriods
-            .map(wp =>
-              pipe(
-                wp,
-                findContract(contracts),
-                E.map(({ contract, workingPeriod }) =>
-                  computeWorkingPeriodTimecard(
-                    workingPeriod,
-                    groupedShifts.get(workingPeriod, List<Shift>()),
-                    groupedLeaves.get(workingPeriod, List<Leave>()),
-                    contract,
-                    employee
+          workingPeriods,
+          wps => {
+            return wps;
+          },
+          wps =>
+            wps
+              .map(wp =>
+                pipe(
+                  wp,
+
+                  findContract(contracts),
+                  E.map(({ contract, workingPeriod }) =>
+                    computeWorkingPeriodTimecard(
+                      workingPeriod,
+                      groupedShifts.get(workingPeriod, List<Shift>()),
+                      groupedLeaves.get(workingPeriod, List<Leave>()),
+                      contract,
+                      employee
+                    )
                   )
                 )
               )
-            )
-            .toArray(),
+              .toArray(),
           E.sequenceArray
         )
       ),

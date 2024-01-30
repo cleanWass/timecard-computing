@@ -42,8 +42,8 @@ const defaultValues = keys(HoursTypeCodes).reduce(
   {} as { [k in WorkedHoursRate]: Duration }
 );
 
-export const WorkedHoursResume = Record(defaultValues);
-export type WorkedHoursResumeType = RecordOf<typeof defaultValues>;
+export const WorkedHoursRecap = Record(defaultValues);
+export type WorkedHoursRecapType = RecordOf<typeof defaultValues>;
 //
 // const defaultValues = {
 //   TotalWeekly: Duration.ZERO,

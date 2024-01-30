@@ -6,7 +6,10 @@ import { List, Map, Set } from 'immutable';
 import zod from 'zod';
 import { Employee } from '../../domain/models/employee-registration/employee/employee';
 import { ContractSubType } from '../../domain/models/employment-contract-management/employment-contract/contract-sub-type';
-import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
+import {
+  EmploymentContract,
+  WeeklyPlanning,
+} from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../domain/models/leave-recording/leave/leave';
 import { LeavePeriod } from '../../domain/models/leave-recording/leave/leave-period';
 import { isPaidLeaveReason } from '../../domain/models/leave-recording/leave/leave-reason';
@@ -17,6 +20,8 @@ import { ExtractEitherRightType, keys } from '../../~shared/util/types';
 
 const daySchema = zod.enum(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
 const periodSchema = zod.object({ start: zod.string(), end: zod.string().nullish() });
+const closedPeriodSchema = zod.object({ start: zod.string(), end: zod.string() });
+type ClosedPeriodSchema = zod.infer<typeof closedPeriodSchema>;
 const shiftsFromJSONSchema = zod
   .object({
     date: zod.string().min(1),
@@ -70,6 +75,36 @@ const employeeSchema = zod.object({
     })
     .optional(),
 });
+
+const contractSchema = zod.object({
+  id: zod.string(),
+  period: periodSchema,
+  type: zod.string(),
+  subType: zod.string().nullish(),
+  weeklyHours: zod.string(),
+  extraDuration: zod.string().nullish(),
+});
+
+type ContractSchema = zod.infer<typeof contractSchema>;
+
+const planningSchema = zod.record(
+  daySchema,
+  zod.array(
+    zod.object({
+      startTime: zod.string(),
+      duration: zod.string(),
+    })
+  )
+);
+
+type PlanningSchema = zod.infer<typeof planningSchema>;
+
+const contractPlanningSchema = zod.object({
+  contract: contractSchema,
+  planning: planningSchema,
+  period: closedPeriodSchema,
+});
+
 const employeeWithTimecardSchema = zod
   .object({
     cleaner: employeeSchema.transform(cleaner =>
@@ -81,28 +116,15 @@ const employeeWithTimecardSchema = zod
     ),
     shifts: zod.array(shiftsFromJSONSchema).nullish(),
     leaves: zod.array(leavesFromJSONSchema).nullish(),
-    planning: zod.array(
-      zod.object({
-        contract: zod.object({
-          period: periodSchema,
-          type: zod.string(),
-          subType: zod.string().nullish(),
-          weeklyHours: zod.string(),
-          extraDuration: zod.string().nullish(),
-        }),
-        planning: zod.record(
-          daySchema,
-          zod.array(
-            zod.object({
-              startTime: zod.string(),
-              duration: zod.string(),
-            })
-          )
-        ),
-      })
-    ),
+    plannings: zod.array(contractPlanningSchema),
   })
   .transform(raw => {
+    const contractPlanningsGroupedByContractId = raw.plannings.reduce(
+      (map, curr) =>
+        map.update(curr.contract.id, List<[PlanningSchema, ClosedPeriodSchema]>(), list => list.push([curr.planning, curr.period])),
+      Map<ContractSchema['id'], List<[PlanningSchema, ClosedPeriodSchema]>>()
+    );
+
     return {
       cleaner: raw.cleaner,
       shifts: raw.shifts.map(shift =>
@@ -124,25 +146,33 @@ const employeeWithTimecardSchema = zod
           absenceType: leave.absenceType,
         })
       ),
-      planning: raw.planning.map(p => {
-        const extraDuration = Duration.parse(p.contract.extraDuration ?? 'PT0M');
+      contracts: contractPlanningsGroupedByContractId.keySeq().map(contractId => {
+        const { contract, planning, period } = raw.plannings.find(planning => planning.contract.id === contractId);
+        const extraDuration = Duration.parse(contract.extraDuration ?? 'PT0M');
         return EmploymentContract.build({
+          id: contractId,
           employeeId: raw.cleaner.id,
-          startDate: LocalDate.parse(p.contract.period.start),
-          endDate: O.fromNullable(p.contract.period.end ? LocalDate.parse(p.contract.period.end) : null),
+          startDate: LocalDate.parse(contract.period.start),
+          endDate: O.fromNullable(contract.period.end ? LocalDate.parse(contract.period.end) : null),
           overtimeAveragingPeriod: Duration.ofDays(7),
-          weeklyTotalWorkedHours: Duration.parse(p.contract.weeklyHours).minus(extraDuration),
-          workedDays: Set(keys(p.planning).map(d => DayOfWeek[d])),
-          subType: p.contract.subType as ContractSubType,
+          weeklyTotalWorkedHours: Duration.parse(contract.weeklyHours).minus(extraDuration),
+          workedDays: Set(keys(planning).map(d => DayOfWeek[d])),
+          subType: contract.subType as ContractSubType,
           extraDuration: extraDuration,
-          weeklyPlanning: daySchema.options.reduce((acc, day) => {
-            const slots =
-              p.planning[day]?.map(slot => {
-                let startTime = LocalTime.parse(slot.startTime);
-                return new LocalTimeSlot(startTime, Duration.parse(slot.duration).addTo(startTime));
-              }) || Set<LocalTimeSlot>();
-            return acc.set(DayOfWeek[day], Set(slots));
-          }, Map<DayOfWeek, Set<LocalTimeSlot>>()),
+          weeklyPlannings: contractPlanningsGroupedByContractId
+            .get(contractId, List<[PlanningSchema, ClosedPeriodSchema]>())
+            .reduce((map, curr) => {
+              const weeklyPlanning = daySchema.options.reduce((acc, day) => {
+                const slots =
+                  curr[0][day]?.map(slot => {
+                    let startTime = LocalTime.parse(slot.startTime);
+                    return new LocalTimeSlot(startTime, Duration.parse(slot.duration).addTo(startTime));
+                  }) || Set<LocalTimeSlot>();
+                return acc.set(DayOfWeek[day], Set(slots));
+              }, Map<DayOfWeek, Set<LocalTimeSlot>>());
+
+              return map.set(new LocalDateRange(LocalDate.parse(curr[1].start), LocalDate.parse(curr[1].end)), weeklyPlanning);
+            }, Map<LocalDateRange, WeeklyPlanning>()),
         });
       }),
     };
@@ -155,8 +185,8 @@ export const formatPayload = (data: ExtractEitherRightType<typeof parsePayload>)
   contracts: List(data.contracts),
 });
 
-export const parsePayload = (payload: unknown) => {
-  return pipe(
+export const parsePayload = (payload: unknown) =>
+  pipe(
     employeeWithTimecardSchema.safeParse(payload),
     E.fromPredicate(
       parsedJSON => parsedJSON.success,
@@ -168,13 +198,12 @@ export const parsePayload = (payload: unknown) => {
     ),
     E.map(parsedJSON => (parsedJSON.success ? parsedJSON.data : null)),
     E.mapLeft(e => console.log('error while parsing', e)),
-    E.map(({ leaves, planning, shifts, cleaner }) => {
+    E.map(({ leaves, contracts, shifts, cleaner }) => {
       return {
         shifts,
         leaves,
-        contracts: planning,
+        contracts,
         employee: cleaner,
       };
     })
   );
-};

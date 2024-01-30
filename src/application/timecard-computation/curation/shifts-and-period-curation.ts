@@ -52,7 +52,7 @@ export const filterShifts = (timecard: WorkingPeriodTimecard) => {
 
 export const curateLeaves = (timecard: WorkingPeriodTimecard) => {
   const holidays = timecard.leaves.filter(leave => leave.absenceType === 'HOLIDAY');
-  const planning = timecard.contract.weeklyPlanning;
+  const planning = timecard.weeklyPlanning;
 
   const holidayLeavesFromPlanning = holidays.flatMap(({ date }) =>
     planning.get(date.dayOfWeek(), Set<LocalTimeSlot>()).map(slot =>

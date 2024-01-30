@@ -5,8 +5,8 @@ import { LocalDateRange } from '../../../../../src/domain/models/local-date-rang
 import {
   HoursTypeCodes,
   WorkedHoursRate,
-  WorkedHoursResume,
-  WorkedHoursResumeType,
+  WorkedHoursRecap,
+  WorkedHoursRecapType,
 } from '../../../../../src/domain/models/time-card-computation/timecard/worked-hours-rate';
 import { WorkingPeriodTimecard } from '../../../../../src/domain/models/time-card-computation/timecard/working-period-timecard';
 import { WorkingPeriod } from '../../../../../src/domain/models/time-card-computation/working-period/working-period';
@@ -31,7 +31,7 @@ describe('WorkingPeriodTimecard', () => {
       employmentContractId: '1',
       period: new LocalDateRange(LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 9)),
     }),
-    workedHours: new WorkedHoursResume(),
+    workedHours: new WorkedHoursRecap(),
     theoreticalShifts: List(),
     shifts: List(),
     leaves: List(),

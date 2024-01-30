@@ -15,7 +15,7 @@ const generateTheoreticalShift = (timecard: WorkingPeriodTimecard) => {
       .toLocalDateArray()
       .filter(d => !timecard.workingPeriod.period.contains(d))
       .flatMap(day =>
-        timecard.contract.weeklyPlanning
+        timecard.weeklyPlanning
           .get(day.dayOfWeek(), Set<LocalTimeSlot>())
           .map(timeSlot =>
             TheoreticalShift.build({

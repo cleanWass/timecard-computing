@@ -13,7 +13,7 @@ import { getTotalDuration } from '../../../~shared/util/joda-helper';
 // cleaner travailleur de nuit et shift hors planning => majoration nuit ponctuelle
 // si travailleur événementielle ou hotellerie et travailleur de nuit,
 
-const isShiftDuringPlanning = (shift: Shift, planning: EmploymentContract['weeklyPlanning']) =>
+const isShiftDuringPlanning = (shift: Shift, planning: WorkingPeriodTimecard['weeklyPlanning']) =>
   planning.get(shift.startTime.dayOfWeek(), Set<LocalTimeSlot>()).some(timeSlot => shift.getTimeSlot().isConcurrentOf(timeSlot));
 
 const computeSundayHours = (timecard: WorkingPeriodTimecard) => {
@@ -36,7 +36,7 @@ const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
     })
   );
   const shiftsDuringHolidaysGroupedByRate = shiftsDuringHolidays.groupBy(shift =>
-    isShiftDuringPlanning(shift, timecard.contract.weeklyPlanning) ? 'HolidaySurchargedH' : 'HolidaySurchargedP'
+    isShiftDuringPlanning(shift, timecard.weeklyPlanning) ? 'HolidaySurchargedH' : 'HolidaySurchargedP'
   );
   return timecard
     .register('HolidaySurchargedH', getTotalDuration(shiftsDuringHolidaysGroupedByRate.get('HolidaySurchargedH', List<Shift>())))
@@ -65,11 +65,11 @@ const computeNightShiftHours = (timecard: WorkingPeriodTimecard) => {
   return timecard
     .register(
       'NightShiftContract',
-      getTotalDuration(nightShifts.filter(s => contract.getNightOrdinary().includes(s.startTime.dayOfWeek())))
+      getTotalDuration(nightShifts.filter(s => timecard.getNightOrdinary().includes(s.startTime.dayOfWeek())))
     )
     .register(
       'NightShiftAdditional',
-      getTotalDuration(nightShifts.filter(s => !contract.getNightOrdinary().includes(s.startTime.dayOfWeek())))
+      getTotalDuration(nightShifts.filter(s => !timecard.getNightOrdinary().includes(s.startTime.dayOfWeek())))
     );
 };
 

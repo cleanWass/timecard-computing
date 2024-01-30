@@ -22,16 +22,26 @@ const computeWorkingPeriods = (period: LocalDateRange) => (contracts: List<Emplo
       crts => !crts.isEmpty(),
       () => new TimecardComputationError('No contract matches this period 1')
     ),
-    E.map(crts =>
-      crts.reduce((wps, crt) => {
-        const commonRange = crt.period(period.end).commonRange(period);
-        return !!commonRange ? wps.concat(divideIntoPeriods(crt, commonRange.start, commonRange.end)) : wps;
-      }, List<WorkingPeriod>())
-    )
+    E.map(crts => {
+      console.log('crts', crts.size);
+      return crts.reduce(
+        (acc, { employeeId, id: employmentContractId, weeklyPlannings }) =>
+          acc.concat(
+            weeklyPlannings.keySeq().map(period =>
+              WorkingPeriod.build({
+                employeeId,
+                employmentContractId,
+                period,
+              })
+            )
+          ),
+        List<WorkingPeriod>()
+      );
+    })
   );
 
 export const splitPeriodIntoWorkingPeriods = (contracts: List<EmploymentContract>, period: LocalDateRange) =>
-  pipe(contracts, filterContractsForPeriod(period), throwIfNoContract, E.chain(computeWorkingPeriods(period)));
+  pipe(contracts, computeWorkingPeriods(period));
 
 export const groupShiftsByWorkingPeriods = (shifts: List<Shift>, workingPeriods: List<WorkingPeriod>) =>
   pipe(workingPeriods, wp =>

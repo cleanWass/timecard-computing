@@ -9,27 +9,24 @@ import { LocalTimeSlot } from '../../local-time-slot';
 import { EmploymentContractId } from './employment-contract-id';
 import type { ContractSubType } from './contract-sub-type';
 
+export type WeeklyPlanning = Map<DayOfWeek, Set<LocalTimeSlot>>;
+
 export class EmploymentContract implements ValueObject {
   private static nightShiftTimeSlots: [LocalTimeSlot, LocalTimeSlot] = [
     new LocalTimeSlot(LocalTime.MIN, LocalTime.of(6, 0)),
     new LocalTimeSlot(LocalTime.of(21, 0), LocalTime.MAX),
   ];
 
-  public static build(params: Omit<ClassAttributes<EmploymentContract>, 'id'>) {
+  public static build(params: ClassAttributes<EmploymentContract>) {
     return new EmploymentContract(
-      params.startDate.toString() +
-        pipe(
-          params.endDate,
-          O.map(d => d.toString()),
-          O.getOrElse(() => '')
-        ).toString(),
+      params.id,
       params.employeeId,
       params.startDate,
       params.endDate,
       params.overtimeAveragingPeriod,
       params.weeklyTotalWorkedHours,
       params.workedDays,
-      params.weeklyPlanning,
+      params.weeklyPlannings,
       params.subType,
       params.extraDuration ?? null,
       params.weeklyNightShiftHours ?? this.nightShiftTimeSlots
@@ -46,7 +43,7 @@ export class EmploymentContract implements ValueObject {
     public readonly overtimeAveragingPeriod: Duration,
     public readonly weeklyTotalWorkedHours: Duration,
     public readonly workedDays: Set<DayOfWeek>,
-    public readonly weeklyPlanning: Map<DayOfWeek, Set<LocalTimeSlot>>,
+    public readonly weeklyPlannings: Map<LocalDateRange, WeeklyPlanning>,
     public readonly subType?: ContractSubType,
     public readonly extraDuration?: Duration,
     public readonly weeklyNightShiftHours?: [LocalTimeSlot, LocalTimeSlot]
@@ -66,7 +63,7 @@ export class EmploymentContract implements ValueObject {
       .set('overtimeAveragingPeriod', this.overtimeAveragingPeriod.toString())
       .set('weeklyTotalWorkedHours', this.weeklyTotalWorkedHours.toString())
       .set('workedDays', this.workedDays)
-      .set('weeklyPlanning', this.weeklyPlanning)
+      .set('weeklyPlannings', this.weeklyPlannings)
       .set('subType', this.subType)
       .set('weeklyNightShiftHours', this.weeklyNightShiftHours.toString())
       .set('extraDuration', this.extraDuration?.toString() ?? null);
@@ -89,10 +86,6 @@ export class EmploymentContract implements ValueObject {
     );
   }
 
-  getNightOrdinary() {
-    return this.weeklyPlanning.reduce((days, slots, day) => (slots.some(slot => slot.isNight()) ? days.add(day) : days), Set<DayOfWeek>());
-  }
-
   isSundayWorker(): boolean {
     return this.workedDays.includes(DayOfWeek.SUNDAY);
   }
@@ -107,5 +100,21 @@ export class EmploymentContract implements ValueObject {
 
   with(params: ClassAttributes<EmploymentContract>) {
     return EmploymentContract.build(params);
+  }
+
+  debug() {
+    return `
+      id: ${this.id}
+      employeeId: ${this.employeeId}
+      period: ${this.period(LocalDate.now()).toFormattedString()} 
+      planning: ${this.weeklyPlannings
+        .map(
+          (planning, period) =>
+            `
+${period.toFormattedString()}
+${planning.map((slots, day) => `\t\t${day} -> ${slots.isEmpty() ? ' // ' : slots.map(s => s.debug()).join(' | ')}`).join('\n')}`
+        )
+        .join('\n---------\n')}
+    `;
   }
 }

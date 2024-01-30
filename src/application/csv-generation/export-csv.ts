@@ -21,6 +21,7 @@ export function formatCsv(row: ExtractEitherRightType<ReturnType<typeof computeT
   const groupedTc = listTcs.groupBy(tc => tc.contract);
   const totalTcs = WorkingPeriodTimecard.getTotalWorkedHours(listTcs);
   const totalMealTickets = WorkingPeriodTimecard.getTotalMealTickets(listTcs);
+  console.log(totalTcs);
   return {
     Matricule: row.employee.id || '0',
     Salarié: row.employee.firstName + ' ' + row.employee.lastName || '0',

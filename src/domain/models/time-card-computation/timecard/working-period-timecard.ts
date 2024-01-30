@@ -3,14 +3,14 @@ import { List, Map, Set, ValueObject } from 'immutable';
 import { formatDuration, formatDurationAs100 } from '../../../../~shared/util/joda-helper';
 import { keys } from '../../../../~shared/util/types';
 import { Employee } from '../../employee-registration/employee/employee';
-import { EmploymentContract } from '../../employment-contract-management/employment-contract/employment-contract';
+import { EmploymentContract, WeeklyPlanning } from '../../employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../leave-recording/leave/leave';
 import { LeavePeriod } from '../../leave-recording/leave/leave-period';
 import { LocalTimeSlot } from '../../local-time-slot';
 import { Shift } from '../../mission-delivery/shift/shift';
 import { TheoreticalShift } from '../../mission-delivery/shift/theorical-shift';
 import { WorkingPeriod } from '../working-period/working-period';
-import { HoursTypeCodes, WorkedHoursRate, WorkedHoursResume, WorkedHoursResumeType } from './worked-hours-rate';
+import { HoursTypeCodes, WorkedHoursRate, WorkedHoursRecap, WorkedHoursRecapType } from './worked-hours-rate';
 
 type WorkingPeriodTimecardId = string;
 
@@ -20,13 +20,14 @@ export class WorkingPeriodTimecard implements ValueObject {
     employee: Employee;
     contract: EmploymentContract;
     workingPeriod: WorkingPeriod;
+    weeklyPlanning: WeeklyPlanning;
 
     shifts: List<Shift>;
     theoreticalShifts?: List<TheoreticalShift>;
 
     leaves: List<Leave>;
 
-    workedHours?: WorkedHoursResumeType;
+    workedHours?: WorkedHoursRecapType;
     mealTickets?: number;
   }) {
     return new WorkingPeriodTimecard(
@@ -34,7 +35,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.employee,
       params.contract,
       params.workingPeriod,
-      params.workedHours ?? new WorkedHoursResume(),
+      params.workedHours ?? new WorkedHoursRecap(),
+      params.weeklyPlanning ?? Map<DayOfWeek, Set<LocalTimeSlot>>(),
       params.shifts,
       params.leaves ?? List<Leave>(),
       List<TheoreticalShift>(),
@@ -49,7 +51,8 @@ export class WorkingPeriodTimecard implements ValueObject {
     public readonly employee: Employee,
     public readonly contract: EmploymentContract,
     public readonly workingPeriod: WorkingPeriod,
-    public readonly workedHours: WorkedHoursResumeType,
+    public readonly workedHours: WorkedHoursRecapType,
+    public readonly weeklyPlanning: WeeklyPlanning,
 
     public readonly shifts: List<Shift>,
 
@@ -62,6 +65,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       .set('id', this.id)
       .set('employee', this.employee)
       .set('contract', this.contract)
+      .set('workingPeriod', this.workingPeriod)
       .set('workingPeriod', this.workingPeriod)
       .set('workedHours', this.workedHours)
       .set('shifts', this.shifts)
@@ -78,6 +82,10 @@ export class WorkingPeriodTimecard implements ValueObject {
     return this._vo.hashCode();
   }
 
+  getNightOrdinary() {
+    return this.weeklyPlanning.reduce((days, slots, day) => (slots.some(slot => slot.isNight()) ? days.add(day) : days), Set<DayOfWeek>());
+  }
+
   with(params: Partial<WorkingPeriodTimecard>): WorkingPeriodTimecard {
     return new WorkingPeriodTimecard(
       params.id ?? this.id,
@@ -85,6 +93,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.contract ?? this.contract,
       params.workingPeriod ?? this.workingPeriod,
       params.workedHours ?? this.workedHours,
+      params.weeklyPlanning ?? this.weeklyPlanning,
       params.shifts ?? this.shifts,
       params.leaves ?? this.leaves,
       params.theoreticalShifts ?? this.theoreticalShifts,
@@ -103,7 +112,7 @@ export class WorkingPeriodTimecard implements ValueObject {
         Period: ${this.workingPeriod.period.toFormattedString()}
         Contract: ${formatDuration(this.contract.weeklyTotalWorkedHours)} / week - ${this.contract.subType} ${
           this.contract.extraDuration || ''
-        } \n NightWorker : ${this.contract.getNightOrdinary().join(', ')} - SundayWorker : ${this.contract.isSundayWorker() ? 'Yes' : 'No'}
+        } \n NightWorker : ${this.getNightOrdinary().join(', ')} - SundayWorker : ${this.contract.isSundayWorker() ? 'Yes' : 'No'}
         WorkedHours: 
             ${this.workedHours
               .toSeq()
@@ -114,7 +123,7 @@ export class WorkingPeriodTimecard implements ValueObject {
         Shifts: ${this.shifts.map(s => s.debug()).join(' | ')}
         TheoreticalShifts: ${this.theoreticalShifts.map(s => s.debug()).join(' | ')}
         _____
-        planning: ${this.contract.weeklyPlanning.map((slots, day) => `${day} -> ${slots.map(s => s.debug()).join(' | ')}`).join('\n\t\t')}
+        planning: ${this.weeklyPlanning.map((slots, day) => `${day} -> ${slots.map(s => s.debug()).join(' | ')}`).join('\n\t\t')}
       `
     );
   }
@@ -126,7 +135,7 @@ export class WorkingPeriodTimecard implements ValueObject {
   static getTotalWorkedHours(list: List<WorkingPeriodTimecard>) {
     return list.reduce(
       (total, timecard) =>
-        new WorkedHoursResume(
+        new WorkedHoursRecap(
           keys(HoursTypeCodes).reduce(
             (acc, key) => {
               acc[key] = total[key].plus(timecard.workedHours[key]);
@@ -135,39 +144,12 @@ export class WorkingPeriodTimecard implements ValueObject {
             {} as { [k in WorkedHoursRate]: Duration }
           )
         ),
-      new WorkedHoursResume()
+      new WorkedHoursRecap()
     );
   }
 
   generateTheoreticalShifts(contract: EmploymentContract) {
-    let list = List(
-      this.workingPeriod.period
-        .with({
-          start: this.workingPeriod.period.start.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)),
-          end: this.workingPeriod.period.start
-            .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-            .plusDays(contract.overtimeAveragingPeriod.toDays()),
-        })
-        .toLocalDateArray()
-    ).filter(d => !this.workingPeriod.period.contains(d));
-    return list.reduce(
-      (shifts, day) =>
-        shifts.concat(
-          contract.weeklyPlanning
-            .get(day.dayOfWeek(), Set<LocalTimeSlot>())
-            .toList()
-            .map((timeSlot, index) =>
-              Shift.build({
-                id: `fictional_shift_workingPeriod-${this.id}--${index}`,
-                duration: timeSlot.duration(),
-                employeeId: this.employee.id,
-                startTime: LocalDateTime.of(day, timeSlot.startTime),
-                clientId: 'fake_client',
-              })
-            )
-        ),
-      List<Shift>()
-    );
+    return List<Shift>();
   }
 }
 
