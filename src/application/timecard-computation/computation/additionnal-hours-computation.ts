@@ -8,6 +8,7 @@ const computeSurchargeWithExtraHours = (timecard: WorkingPeriodTimecard) => {
   const _10PerCentRateHours = getLowerDuration(additionalHours, timecard.contract.extraDuration);
   const _25PerCentRateHours = getGreaterDuration(additionalHours.minus(_10PerCentRateHours), Duration.ZERO);
   return timecard
+
     .register('TenPercentRateComplementary', _10PerCentRateHours)
     .register('TwentyFivePercentRateComplementary', _25PerCentRateHours);
 };

@@ -15,30 +15,32 @@ export const throwIfNoContract = <T>(list: List<T>) =>
 export const filterContractsForPeriod = (period: LocalDateRange) => (contracts: List<EmploymentContract>) =>
   contracts.filter(contract => contract.period(period.end).overlaps(period));
 
-const computeWorkingPeriods = (period: LocalDateRange) => (contracts: List<EmploymentContract>) =>
-  pipe(
-    contracts,
-    E.fromPredicate(
-      crts => !crts.isEmpty(),
-      () => new TimecardComputationError('No contract matches this period 1')
-    ),
-    E.map(crts => {
-      console.log('crts', crts.size);
-      return crts.reduce(
-        (acc, { employeeId, id: employmentContractId, weeklyPlannings }) =>
-          acc.concat(
-            weeklyPlannings.keySeq().map(period =>
-              WorkingPeriod.build({
-                employeeId,
-                employmentContractId,
-                period,
-              })
-            )
-          ),
-        List<WorkingPeriod>()
-      );
-    })
-  );
+const computeWorkingPeriods = (period: LocalDateRange) => {
+  return (contracts: List<EmploymentContract>) => {
+    return pipe(
+      contracts,
+      E.fromPredicate(
+        crts => !crts.isEmpty(),
+        () => new TimecardComputationError('No contract matches this period 1')
+      ),
+      E.map(crts => {
+        return crts.reduce(
+          (acc, { employeeId, id: employmentContractId, weeklyPlannings }) =>
+            acc.concat(
+              weeklyPlannings.keySeq().map(period =>
+                WorkingPeriod.build({
+                  employeeId,
+                  employmentContractId,
+                  period,
+                })
+              )
+            ),
+          List<WorkingPeriod>()
+        );
+      })
+    );
+  };
+};
 
 export const splitPeriodIntoWorkingPeriods = (contracts: List<EmploymentContract>, period: LocalDateRange) =>
   pipe(contracts, computeWorkingPeriods(period));

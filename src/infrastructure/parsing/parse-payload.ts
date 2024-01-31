@@ -40,10 +40,10 @@ const leavesFromJSONSchema = zod.object({
     'ILLNESS',
     'CONSERVATORY_LAID_OFF',
     'DISCIPLINARY_LAID_OFF',
-    'LEAVE ABSENCE_PAID',
-    'MATERNITY LEAVE',
-    'PARENTAL LEAVE',
-    'PATERNITY LEAVE',
+    'LEAVE_ABSENCE_PAID',
+    'MATERNITY_LEAVE',
+    'PARENTAL_LEAVE',
+    'PATERNITY_LEAVE',
     'SABBATICAL_LEAVE',
     'UNAUTHORIZED_LEAVE',
     'UNAUTHORIZED_LEAVE_UNPAID',
@@ -188,7 +188,10 @@ export const formatPayload = (data: ExtractEitherRightType<typeof parsePayload>)
 export const parsePayload = (payload: unknown) =>
   pipe(
     payload,
-    (p) => { console.log(JSON.stringify(p)); return p; },
+    p => {
+      console.log(JSON.stringify(p));
+      return p;
+    },
     employeeWithTimecardSchema.safeParse,
     E.fromPredicate(
       parsedJSON => parsedJSON.success,

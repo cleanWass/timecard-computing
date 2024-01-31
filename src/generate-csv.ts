@@ -82,17 +82,9 @@ const timecards = pipe(
     return pipe(
       [
         {
-          id: '0030Y00000cefl1QAA',
-          fullName: 'Fofana Mansenan',
+          id: '0030Y000015opZPQAY',
+          fullName: 'KHurtoo C',
         },
-        // {
-        //   id: '0030Y00000EQNcqQAH',
-        //   fullName: 'Aissatou TRAORE',
-        // },
-        // {
-        //   id: '0031n000020GrXvAAK',
-        //   fullName: 'Badhily Bidane',
-        // },
       ].map(({ id, fullName }) =>
         // cleaners
         //   .sort((a, b) => Number.parseInt(a.silaeId) - Number.parseInt(b.silaeId))

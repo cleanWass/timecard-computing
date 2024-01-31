@@ -95,11 +95,7 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
   }) => {
     return pipe(
       E.Do,
-      E.bind('workingPeriods', () => {
-        let splitPeriodIntoWorkingPeriods1 = splitPeriodIntoWorkingPeriods(contracts, period);
-        console.log('wps.size', E.getOrElse(() => List())(splitPeriodIntoWorkingPeriods1).size);
-        return splitPeriodIntoWorkingPeriods1;
-      }),
+      E.bind('workingPeriods', () => splitPeriodIntoWorkingPeriods(contracts, period)),
       E.bindW('groupedShifts', ({ workingPeriods }) => groupShiftsByWorkingPeriods(shifts, workingPeriods)),
       E.bindW('groupedLeaves', ({ workingPeriods }) => groupLeavesByWorkingPeriods(leaves, workingPeriods)),
       E.bindW('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) =>

@@ -11,6 +11,8 @@ import type { ContractSubType } from './contract-sub-type';
 
 export type WeeklyPlanning = Map<DayOfWeek, Set<LocalTimeSlot>>;
 
+// WeeklyTotalWorkedHours is the number of hours worked in a week.  If subType == "complement_d'heures" then it should integrate extra hours
+
 export class EmploymentContract implements ValueObject {
   private static nightShiftTimeSlots: [LocalTimeSlot, LocalTimeSlot] = [
     new LocalTimeSlot(LocalTime.MIN, LocalTime.of(6, 0)),
