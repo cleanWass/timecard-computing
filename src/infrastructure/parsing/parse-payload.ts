@@ -155,7 +155,7 @@ const employeeWithTimecardSchema = zod
           startDate: LocalDate.parse(contract.period.start),
           endDate: O.fromNullable(contract.period.end ? LocalDate.parse(contract.period.end) : null),
           overtimeAveragingPeriod: Duration.ofDays(7),
-          weeklyTotalWorkedHours: Duration.parse(contract.weeklyHours).minus(extraDuration),
+          weeklyTotalWorkedHours: Duration.parse(contract.weeklyHours),
           workedDays: Set(keys(planning).map(d => DayOfWeek[d])),
           subType: contract.subType as ContractSubType,
           extraDuration: extraDuration,
@@ -187,7 +187,9 @@ export const formatPayload = (data: ExtractEitherRightType<typeof parsePayload>)
 
 export const parsePayload = (payload: unknown) =>
   pipe(
-    employeeWithTimecardSchema.safeParse(payload),
+    payload,
+    (p) => { console.log(JSON.stringify(p)); return p; },
+    employeeWithTimecardSchema.safeParse,
     E.fromPredicate(
       parsedJSON => parsedJSON.success,
       e => {

@@ -48,7 +48,7 @@ const log = {
 };
 
 // const period = new LocalDateRange(LocalDate.parse('2023-11-20'), LocalDate.parse('2023-12-17'));
-const period = new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDate.parse('2024-01-21'));
+const period = new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDate.parse('2024-01-22'));
 
 const timecards = pipe(
   TE.tryCatch(
@@ -82,8 +82,8 @@ const timecards = pipe(
     return pipe(
       [
         {
-          id: '0031n000020GWuCAAW',
-          fullName: 'Keita B',
+          id: '0030Y00000cefl1QAA',
+          fullName: 'Fofana Mansenan',
         },
         // {
         //   id: '0030Y00000EQNcqQAH',
@@ -106,7 +106,6 @@ const timecards = pipe(
             }
           ),
           TE.chainW(flow(parsePayload, TE.fromEither)),
-
           TE.map(
             flow(
               formatPayload,
@@ -126,13 +125,13 @@ const timecards = pipe(
                 csvStream.write(row);
 
                 log.successful++;
-                console.log(`${row.salarie} - ${row['Silae Id']} -  OK ${log.successful}/${log.total} (error : ${log.failed})`);
+                console.log(`${row['Salarié']} - ${row['Silae Id']} -  OK ${log.successful}/${log.total} (error : ${log.failed})`);
                 return row;
               })
             )
           ),
           TE.foldW(
-            failed => TE.right(failed),
+            failed => TE.left(failed),
             result => TE.right(result)
           )
         )

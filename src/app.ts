@@ -94,7 +94,7 @@ app.post('/timecard', async (req, res) => {
     TE.fold(
       e => {
         console.error('Error in TE.fold:', e);
-        return T.of(res.status(500).json({ error: e.message }));
+        return T.of(res.status(500).json({ error: e }));
       },
       result => {
         if (isRight(result)) {
@@ -135,7 +135,7 @@ app.post('/payroll', async (req, res) => {
     ),
     TE.chain(cleaners => {
       return pipe(
-        cleaners.slice(0, 10).map(({ id }) => getEmployeeTimecard(id, period)),
+        cleaners.slice(0, 10).map(({ cleanerid }) => getEmployeeTimecard(cleanerid, period)),
         t => t,
         TE.sequenceArray
       );
@@ -143,8 +143,8 @@ app.post('/payroll', async (req, res) => {
     TE.chainW(result => TE.fromEither(E.sequenceArray(result))),
     TE.fold(
       e => {
-        console.log(e.message);
-        return T.of(res.status(500).json({ error: e.message }));
+        console.log(e);
+        return T.of(res.status(500).json({ error: e }));
       },
       result => {
         result.forEach(cl => cl.timecards.forEach(t => t.debug()));
