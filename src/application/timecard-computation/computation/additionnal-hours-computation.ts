@@ -42,14 +42,14 @@ export const computeSupplementaryHours = (timecard: WorkingPeriodTimecard) => {
 export const computeTotalAdditionalHours = (timecard: WorkingPeriodTimecard) => {
   const {
     contract: { weeklyTotalWorkedHours },
-    workedHours: { TotalNormalAvailable, TotalTheoretical, TotalWeekly, TotalLeavesPaid },
+    workedHours: { TotalNormalAvailable, TotalTheoretical, TotalWeekly, TotalNationalHolidayLeaves },
   } = timecard;
-  const totalEffectiveHours = TotalWeekly.plus(TotalTheoretical).plus(TotalLeavesPaid);
+  const totalEffectiveHours = TotalWeekly.plus(TotalTheoretical).plus(TotalNationalHolidayLeaves);
   const totalAdditionalHours = totalEffectiveHours.minus(weeklyTotalWorkedHours).plus(timecard.contract.extraDuration || Duration.ZERO);
 
   if (totalAdditionalHours.isNegative()) return timecard.register('TotalAdditionalHours', Duration.ZERO);
   const totalNormalHours = getLowerDuration(TotalNormalAvailable, totalAdditionalHours);
-  //
+
   // console.log(`
   // -------------------------------------
   // TotalLeavesPaid: ${formatDuration(TotalLeavesPaid)}

@@ -25,7 +25,7 @@ export const HoursTypeCodes = {
   TotalWeekly: 'Heures total', // Horaire Total
   TotalTheoretical: 'Heures théoriques normal', // Horaire Théorique Total
   TotalLeaves: 'Heures congés total', // Horaire Congé Total
-  TotalHolidayLeaves: 'Heures congés fériés', // Horaire Congé Férié
+  TotalNationalHolidayLeaves: 'Heures congés jours fériés', // Horaire Congé Férié
   TotalLeavesUnpaid: 'Heures congés non payés', // Horaire Congé Non Payé
   TotalLeavesPaid: 'Heures congés payés', // Horaire Congé Payé
   TotalAdditionalHours: 'Heures additionnelles', // Horaire Additionnel Total

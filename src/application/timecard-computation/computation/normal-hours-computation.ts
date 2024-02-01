@@ -15,7 +15,7 @@ export const computeLeavesHours = (timecard: WorkingPeriodTimecard) => {
 
   return timecard
     .register('TotalLeaves', leavesTotalDuration)
-    .register('TotalHolidayLeaves', holidaysLeavesDuration)
+    .register('TotalNationalHolidayLeaves', holidaysLeavesDuration)
     .register('TotalLeavesPaid', leavesPaidDuration)
     .register('TotalLeavesUnpaid', leavesUnpaidDuration);
 };
