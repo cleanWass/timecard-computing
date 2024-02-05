@@ -1,9 +1,7 @@
-import { DayOfWeek, Duration, LocalDate, LocalDateTime, LocalTime } from '@js-joda/core';
+import { ChronoUnit, DayOfWeek, Duration, LocalTime } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { identity, pipe } from 'fp-ts/function';
 import { List, Set } from 'immutable';
-import forceRight from '../../../../test/~shared/util/forceRight';
-import { EmploymentContract } from '../../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { LocalTimeSlot } from '../../../domain/models/local-time-slot';
 import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
@@ -30,10 +28,7 @@ const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
   const shiftsDuringHolidays = pipe(
     holidayDates,
     E.map(holidays => timecard.shifts.filter(shift => holidays.includes(shift.startTime.toLocalDate()))),
-    E.getOrElse(e => {
-      // console.log(e);
-      return List<Shift>();
-    })
+    E.getOrElse(e => List<Shift>())
   );
   const shiftsDuringHolidaysGroupedByRate = shiftsDuringHolidays.groupBy(shift =>
     isShiftDuringPlanning(shift, timecard.weeklyPlanning) ? 'HolidaySurchargedH' : 'HolidaySurchargedP'
@@ -44,23 +39,33 @@ const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
 };
 
 const computeNightShiftHours = (timecard: WorkingPeriodTimecard) => {
-  const { shifts, contract } = timecard;
-  const nightShifts = shifts
+  const {
+    shifts,
+    contract: {
+      weeklyNightShiftHours: [morningSurchargedHours, nightSurchargedHours],
+    },
+  } = timecard;
+  const earlyMorningShifts = shifts
     .map(shift => {
-      const commonRange = shift.getTimeSlot().commonRange(contract.weeklyNightShiftHours[0]);
+      const commonRange = shift.getTimeSlot().commonRange(morningSurchargedHours);
       if (!commonRange) return null;
       return shift.with({ startTime: shift.startTime.with(commonRange.startTime), duration: commonRange.duration() });
+    }, List())
+    .filter(identity);
+
+  const lateNightShifts = shifts
+    .map(shift => {
+      const commonRange = shift.getTimeSlot().commonRange(nightSurchargedHours);
+      if (!commonRange) return null;
+      const duration =
+        commonRange.startTime.plus(commonRange.duration()).compareTo(LocalTime.MAX.truncatedTo(ChronoUnit.MINUTES)) === 0
+          ? commonRange.duration().plus(Duration.ofMinutes(1))
+          : commonRange.duration();
+      return shift.with({ startTime: shift.startTime.with(commonRange.startTime), duration });
     })
-    .filter(identity)
-    .concat(
-      shifts
-        .map(shift => {
-          const commonRange = shift.getTimeSlot().commonRange(contract.weeklyNightShiftHours[1]);
-          if (!commonRange) return null;
-          return shift.with({ startTime: shift.startTime.with(commonRange.startTime), duration: commonRange.duration() });
-        })
-        .filter(identity)
-    );
+    .filter(identity);
+
+  const nightShifts = earlyMorningShifts.concat(lateNightShifts);
 
   return timecard
     .register(
@@ -73,6 +78,5 @@ const computeNightShiftHours = (timecard: WorkingPeriodTimecard) => {
     );
 };
 
-// TODO
 export const computeSurchargedHours = (timecard: WorkingPeriodTimecard) =>
   pipe(timecard, computeNightShiftHours, computeSundayHours, computeHolidayHours);

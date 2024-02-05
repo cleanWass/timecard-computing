@@ -1,11 +1,10 @@
-import { DateTimeFormatter, DayOfWeek, Duration, LocalDateTime, TemporalAdjusters } from '@js-joda/core';
+import { DayOfWeek, Duration } from '@js-joda/core';
 import { List, Map, Set, ValueObject } from 'immutable';
 import { formatDuration, formatDurationAs100 } from '../../../../~shared/util/joda-helper';
 import { keys } from '../../../../~shared/util/types';
 import { Employee } from '../../employee-registration/employee/employee';
 import { EmploymentContract, WeeklyPlanning } from '../../employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../leave-recording/leave/leave';
-import { LeavePeriod } from '../../leave-recording/leave/leave-period';
 import { LocalTimeSlot } from '../../local-time-slot';
 import { Shift } from '../../mission-delivery/shift/shift';
 import { TheoreticalShift } from '../../mission-delivery/shift/theorical-shift';
@@ -119,8 +118,20 @@ export class WorkingPeriodTimecard implements ValueObject {
               .map((duration, rate) => (duration.isZero() ? `` : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`))
               .filter(s => s)
               .join('\n\t\t')}
-        Leaves: ${this.leaves.map(l => l.debug()).join(' | ')}
-        Shifts: ${this.shifts.map(s => s.debug()).join(' | ')}
+        Leaves: ${this.leaves
+          .sortBy(
+            s => s.date,
+            (a, b) => a.compareTo(b)
+          )
+          .map(l => l.debug())
+          .join(' | ')}
+        Shifts: ${this.shifts
+          .sortBy(
+            s => s.startTime,
+            (a, b) => a.compareTo(b)
+          )
+          .map(s => s.debug())
+          .join(' | ')}
         TheoreticalShifts: ${this.theoreticalShifts.map(s => s.debug()).join(' | ')}
         _____
         planning: ${this.weeklyPlanning.map((slots, day) => `${day} -> ${slots.map(s => s.debug()).join(' | ')}`).join('\n\t\t')}
@@ -146,10 +157,6 @@ export class WorkingPeriodTimecard implements ValueObject {
         ),
       new WorkedHoursRecap()
     );
-  }
-
-  generateTheoreticalShifts(contract: EmploymentContract) {
-    return List<Shift>();
   }
 }
 

@@ -1,4 +1,4 @@
-import { DateTimeFormatter, Duration, Instant, LocalDateTime, LocalTime, ZoneId } from '@js-joda/core';
+import { ChronoUnit, DateTimeFormatter, Duration, Instant, LocalDateTime, LocalTime, ZoneId } from '@js-joda/core';
 import { Interval } from '@js-joda/extra';
 import { Map, ValueObject } from 'immutable';
 import { TypeProps } from '../../../../~shared/util/types';
@@ -96,7 +96,7 @@ export class Shift implements ValueObject, IShift {
   }
 
   getTimeSlot() {
-    return new LocalTimeSlot(this.startTime.toLocalTime(), this.getEndTime().toLocalTime());
+    return new LocalTimeSlot(this.startTime.toLocalTime(), this.getEndLocalTime());
   }
 
   getStartTime(): LocalDateTime {
@@ -105,6 +105,12 @@ export class Shift implements ValueObject, IShift {
 
   getEndTime(): LocalDateTime {
     return this.startTime.plus(this.duration);
+  }
+
+  getEndLocalTime(): LocalTime {
+    return this.startTime.toLocalTime().plus(this.duration).compareTo(LocalTime.MIN) === 0
+      ? LocalTime.MAX.truncatedTo(ChronoUnit.MINUTES)
+      : this.startTime.toLocalTime().plus(this.duration);
   }
 
   debug(): string {

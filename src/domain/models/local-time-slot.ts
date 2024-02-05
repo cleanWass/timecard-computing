@@ -1,4 +1,4 @@
-import { DateTimeFormatter, Duration, Instant, LocalDate, LocalDateTime, LocalTime } from '@js-joda/core';
+import { ChronoUnit, DateTimeFormatter, Duration, Instant, LocalDate, LocalDateTime, LocalTime } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { Map, Set, ValueObject } from 'immutable';
 import { IllegalArgumentError } from '../~shared/error/illegal-argument-error';
@@ -122,7 +122,9 @@ export class LocalTimeSlot implements ValueObject {
   }
 
   duration() {
-    return Duration.between(this.startTime, this.endTime);
+    return this.endTime === LocalTime.MIN
+      ? Duration.between(this.startTime, LocalTime.MAX.truncatedTo(ChronoUnit.MINUTES)).plus(Duration.ofMinutes(1))
+      : Duration.between(this.startTime, this.endTime);
   }
 
   asInterval(startDate: LocalDate, endDate?: LocalDate): Interval {
@@ -144,7 +146,9 @@ export class LocalTimeSlot implements ValueObject {
   }
 
   debug() {
-    return `${this.startTime.format(DateTimeFormatter.ofPattern('HH:mm'))} -> ${this.endTime.format(DateTimeFormatter.ofPattern('HH:mm'))}`;
+    return `${this.startTime.format(DateTimeFormatter.ofPattern('HH:mm'))} -> ${this.endTime.format(
+      DateTimeFormatter.ofPattern('HH:mm')
+    )} (${this.duration().toMinutes()} minutes)`;
   }
 
   private includesAddendEnd(addend: LocalTimeSlot) {
