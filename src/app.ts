@@ -41,33 +41,32 @@ export const fetchDataForEmployee = (employeeId: string, { start, end }: LocalDa
     .then(r => r.data)
     .catch(e => console.log(`error while fetching for ${employeeId} ${e.response.data}`));
 
-// TODO Blow this. This is a tmp ugly hack to make it work
-export const fetchEmployeeWithActiveContractDuringPeriod = (range: LocalDateRange) => {
+export const fetchEmployeeWithActiveContractDuringPeriod = ({ start, end }: LocalDateRange) => {
   const token = 'zkrgnflp124jffdlj449FkAAZ'; // TODO env
   const baseURl = 'https://cleany-help-rh.herokuapp.com'; // TODO env
 
-  const url = `${baseURl}/bases/${range.start.format(DateTimeFormatter.ofPattern('yyyy-MM-dd'))}/${range.end.format(
+  const url = 'http://localhost:3000/active-cleaners';
+
+  const url1 = `${baseURl}/bases/${start.format(DateTimeFormatter.ofPattern('yyyy-MM-dd'))}/${end.format(
     DateTimeFormatter.ofPattern('yyyy-MM-dd')
   )}}/${token}`;
 
-  return axios.get(url).then(r => {
-    return r.data.bases as {
-      cleanerid: string;
-      type: string;
-      firstName: string;
-      lastName: string;
-      cleanerfullname: string;
-      silae_id: string;
-      // function: string;
-      // contract_worked_time: string;
-      // hourly_rate: string;
-      // nb_worked_days: number;
-      // contract_start_date: string;
-      // contract_end_date: null | string;
-      // contract_type: string;
-      // contract_subtype: string;
-    }[];
-  });
+  return axios
+    .post(url, {
+      period: {
+        startDate: start.toString(),
+        endDate: end.toString(),
+      },
+    })
+    .then(r => {
+      return r.data as {
+        id: string;
+        type: string;
+        firstName: string;
+        lastName: string;
+        silaeId: string;
+      }[];
+    });
 };
 
 app.post('/timecard', async (req, res) => {
@@ -76,7 +75,6 @@ app.post('/timecard', async (req, res) => {
   const {
     cleanerId,
     period: { startDate, endDate },
-    // } = req.body;
   } = {
     cleanerId: '003AX000004TCdsYAG', //ivete
     period: { startDate: '2023-11-20', endDate: '2023-12-18' },
@@ -135,7 +133,7 @@ app.post('/payroll', async (req, res) => {
     ),
     TE.chain(cleaners => {
       return pipe(
-        cleaners.slice(0, 10).map(({ cleanerid }) => getEmployeeTimecard(cleanerid, period)),
+        cleaners.slice(0, 10).map(({ id }) => getEmployeeTimecard(id, period)),
         t => t,
         TE.sequenceArray
       );
