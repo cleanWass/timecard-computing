@@ -188,10 +188,10 @@ export const formatPayload = (data: ExtractEitherRightType<typeof parsePayload>)
 export const parsePayload = (payload: unknown) =>
   pipe(
     payload,
-    p => {
-      console.log(JSON.stringify(p));
-      return p;
-    },
+    // p => {
+    //   console.log(JSON.stringify(p));
+    //   return p;
+    // },
     employeeWithTimecardSchema.safeParse,
     E.fromPredicate(
       parsedJSON => parsedJSON.success,

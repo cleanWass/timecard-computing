@@ -32,7 +32,7 @@ export class LocalDateRange implements ValueObject {
 
   toFormattedString() {
     return `${this.start.format(DateTimeFormatter.ofPattern('dd/MM/yy'))} -> ${this.end
-      .minusDays(1)
+      // .minusDays(1)
       .format(DateTimeFormatter.ofPattern('dd/MM/yy'))}`;
   }
 

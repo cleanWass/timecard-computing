@@ -105,6 +105,10 @@ export class LocalTimeSlot implements ValueObject {
     );
   }
 
+  contains(other: LocalTimeSlot) {
+    return this.startTime.isBefore(other.startTime) && this.endTime.isAfter(other.endTime);
+  }
+
   overlapsInclusive(addend: LocalTimeSlot) {
     return this.endOverlapsInclusive(addend) || this.startOverlapsInclusive(addend);
   }
