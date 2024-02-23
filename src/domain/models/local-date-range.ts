@@ -6,7 +6,7 @@ import { IllegalArgumentError } from '../~shared/error/illegal-argument-error';
 export class LocalDateRange implements ValueObject {
   public static of(
     start: LocalDate, // inclusive
-    end: LocalDate // exclusive
+    end: LocalDate, // exclusive
   ): E.Either<IllegalArgumentError, LocalDateRange> {
     return end.isAfter(start)
       ? E.right(new LocalDateRange(start, end))
@@ -17,7 +17,7 @@ export class LocalDateRange implements ValueObject {
 
   constructor(
     public readonly start: LocalDate,
-    public readonly end: LocalDate
+    public readonly end: LocalDate,
   ) {
     this.valueObject = Map<string, LocalDate>().set('start', this.start).set('end', this.end);
   }
@@ -30,10 +30,11 @@ export class LocalDateRange implements ValueObject {
     return this.valueObject.hashCode();
   }
 
-  toFormattedString() {
-    return `${this.start.format(DateTimeFormatter.ofPattern('dd/MM/yy'))} -> ${this.end
-      // .minusDays(1)
-      .format(DateTimeFormatter.ofPattern('dd/MM/yy'))}`;
+  toFormattedString(exclusiveEndDate = true) {
+    const endDate = exclusiveEndDate ? this.end : this.end.minusDays(1);
+    return `${this.start.format(DateTimeFormatter.ofPattern('dd/MM/yy'))} -> ${endDate.format(
+      DateTimeFormatter.ofPattern('dd/MM/yy'),
+    )}`;
   }
 
   contains(date: LocalDate): boolean {
@@ -61,7 +62,7 @@ export class LocalDateRange implements ValueObject {
   }
 
   toLocalDateArray(): Array<LocalDate> {
-    return Array.from([...Array(this.numberOfDays() || 0)].keys()).map(current => this.start.plusDays(current));
+    return Array.from([...Array(this.numberOfDays() || 0)].keys()).map((current) => this.start.plusDays(current));
   }
 
   startOverlaps(addend: LocalDateRange) {
@@ -70,7 +71,9 @@ export class LocalDateRange implements ValueObject {
 
   overlaps(rangeToTest: LocalDateRange) {
     return (
-      Math.min(this.end.toEpochDay(), rangeToTest.end.toEpochDay()) - Math.max(this.start.toEpochDay(), rangeToTest.start.toEpochDay()) >= 0
+      Math.min(this.end.toEpochDay(), rangeToTest.end.toEpochDay()) -
+        Math.max(this.start.toEpochDay(), rangeToTest.start.toEpochDay()) >=
+      0
     );
   }
 

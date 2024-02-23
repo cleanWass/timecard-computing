@@ -29,21 +29,21 @@ app.use(
   })
 );
 
-export const fetchDataForEmployee = (employeeId: string, { start, end }: LocalDateRange) =>
+export const fetchDataForEmployee = (silaeId: string, { start, end }: LocalDateRange) =>
   axios
     .post('http://localhost:3000/employee-data', {
-      cleanerId: employeeId,
+      silaeId,
       period: {
         startDate: start.toString(),
         endDate: end.toString(),
       },
     })
     .then(r => r.data)
-    .catch(e => console.log(`error while fetching for ${employeeId} ${e.response.data}`));
+    .catch(e => console.log(`error while fetching for ${silaeId} ${e.response.data}`));
 
 export const fetchEmployeeWithActiveContractDuringPeriod = ({ start, end }: LocalDateRange) => {
   const token = 'zkrgnflp124jffdlj449FkAAZ'; // TODO env
-  const baseURl = 'https://cleany-help-rh.herokuapp.com'; // TODO env
+  const baseURl = 'https://cleany-help-rh-herokuapp-com'; // TODO env
 
   const url = 'http://localhost:3000/active-cleaners';
 

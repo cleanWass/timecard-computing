@@ -1,6 +1,7 @@
 import { LocalDate } from '@js-joda/core';
 import { Map, ValueObject } from 'immutable';
 import { EmployeeId } from './employee-id';
+import { EmployeeRole } from './employee-role';
 
 export class Employee implements ValueObject {
   public static build(params: {
@@ -8,6 +9,7 @@ export class Employee implements ValueObject {
     firstName: string;
     lastName: string;
     seniorityDate: LocalDate;
+    role: EmployeeRole;
     silaeId: string;
     email?: string;
     phoneNumber?: string;
@@ -21,11 +23,12 @@ export class Employee implements ValueObject {
       params.id,
       params.firstName,
       params.lastName,
+      params.role,
       params.seniorityDate,
       params.silaeId,
       params.email,
       params.phoneNumber,
-      params.address
+      params.address,
     );
   }
 
@@ -39,17 +42,28 @@ export class Employee implements ValueObject {
     public readonly id: EmployeeId,
     public readonly firstName: string,
     public readonly lastName: string,
+    public readonly role: EmployeeRole,
     public readonly seniorityDate: LocalDate,
     public readonly silaeId: string,
     public readonly email?: string,
     public readonly phoneNumber?: string,
-    public readonly address?: { city?: string; street?: string; postalCode?: string }
+    public readonly address?: { city?: string; street?: string; postalCode?: string },
   ) {
-    this._vo = Map<string, ValueObject | string | number | boolean | LocalDate | { city?: string; street?: string; postalCode?: string }>()
+    this._vo = Map<
+      string,
+      | ValueObject
+      | EmployeeRole
+      | string
+      | number
+      | boolean
+      | LocalDate
+      | { city?: string; street?: string; postalCode?: string }
+    >()
       .set('id', this.id)
       .set('firstName', this.firstName)
       .set('lastName', this.lastName)
       .set('silaeId', this.silaeId)
+      .set('role', this.role)
       .set('seniorityDate', this.seniorityDate)
       .set('email', this.email)
       .set('phoneNumber', this.phoneNumber)
@@ -62,5 +76,9 @@ export class Employee implements ValueObject {
 
   hashCode(): number {
     return this._vo.hashCode();
+  }
+
+  debug() {
+    return `Employee ${this.silaeId} ${this.firstName} ${this.lastName} ${this.role} ${this.seniorityDate}`;
   }
 }
