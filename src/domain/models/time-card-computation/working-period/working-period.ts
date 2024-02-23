@@ -17,7 +17,7 @@ export class WorkingPeriod implements ValueObject {
     public readonly period: LocalDateRange
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
-      .set('cleanerId', this.employeeId)
+      .set('employeeId', this.employeeId)
       .set('employmentContractId', this.employmentContractId)
       .set('period', this.period);
   }
@@ -45,5 +45,4 @@ export class WorkingPeriod implements ValueObject {
       params.period ?? this.period
     );
   }
-
 }
