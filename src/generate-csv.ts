@@ -14,7 +14,8 @@ import { LocalDateRange } from './domain/models/local-date-range';
 import { formatPayload, parsePayload } from './infrastructure/parsing/parse-payload';
 import { RepositoryFailedCall } from './~shared/error/RepositoryFailedCall';
 
-const ws = fs.createWriteStream('export_février_2024.csv');
+const ws_single_line = fs.createWriteStream('export_février_2024_single_line.csv', { flags: 'a' });
+const ws_multi_lines = fs.createWriteStream('export_février_2024_multi_lines.csv', { flags: 'a' });
 const errorFile = fs.createWriteStream('export_error.csv');
 
 export const headers = [
@@ -35,10 +36,12 @@ export const headers = [
   'NbTicket',
 ] as const;
 
-const csvStream = format({ headers: [...headers] });
+const csvStreamSingle = format({ headers: [...headers] });
+const csvStreamMulti = format({ headers: [...headers] });
 const errorCsvStream = format({ headers: ['Matricule', 'error'] });
 
-csvStream.pipe(ws).on('end', () => process.exit());
+csvStreamSingle.pipe(ws_single_line).on('end', () => process.exit());
+csvStreamMulti.pipe(ws_multi_lines).on('end', () => process.exit());
 errorCsvStream.pipe(errorFile).on('end', () => process.exit());
 
 const log = {
@@ -67,7 +70,7 @@ const timecards = pipe(
       TE.right(
         cleaners
           .reduce(
-            (acc, current) => (acc.some((t) => t.id === current.id) ? acc : [...acc, current]),
+            (acc, current) => (acc.some((t) => t.silaeId === current.silaeId) ? acc : [...acc, current]),
             [] as {
               id: string;
               type: string;
@@ -86,17 +89,14 @@ const timecards = pipe(
   ),
   TE.map((cleaners) => {
     log.total = cleaners.length;
-    // console.log('has 225 ?', cleaners.map((c) => c.silaeId).sort());
-
-    console.log('cleaners', log.total);
     return cleaners;
   }),
   TE.chainW((cleaners) => {
     return pipe(
       cleaners
         .sort((a, b) => Number.parseInt(a.silaeId) - Number.parseInt(b.silaeId))
-        // .slice(190)
-        .filter((c) => [662].includes(Number.parseInt(c.silaeId)))
+        .slice(434)
+        // .filter((c) => [1246].includes(Number.parseInt(c.silaeId)))
         .map(({ silaeId, fullName }) =>
           pipe(
             TE.tryCatch(
@@ -117,15 +117,13 @@ const timecards = pipe(
                   log.failed++;
                   return e;
                 }),
-                E.map((tc) => {
-                  console.log(tc.employee.debug());
-                  tc.timecards.forEach((t) => t.debug());
-                  return tc;
-                }),
                 E.map(formatCsvGroupedByContract),
                 E.map((row) => {
-                  row.forEach((value, key) => csvStream.write(value));
-                  csvStream.write(row);
+                  if (row.size === 1) {
+                    csvStreamSingle.write(row.first());
+                  } else {
+                    row.forEach((value, key) => csvStreamMulti.write(value));
+                  }
 
                   log.successful++;
                   console.log(`${fullName} - ${silaeId} -  OK ${log.successful}/${log.total} (error : ${log.failed})`);
@@ -156,7 +154,8 @@ const timecards = pipe(
 async function main() {
   try {
     await timecards();
-    csvStream.end();
+    csvStreamSingle.end();
+    csvStreamMulti.end();
     errorCsvStream.end();
 
     console.log('total', log.total);
