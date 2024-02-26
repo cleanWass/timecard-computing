@@ -58,67 +58,68 @@ let period = periodFévrier;
 const timecards = pipe(
   TE.tryCatch(
     () => fetchEmployeeWithActiveContractDuringPeriod(period),
-    (e) => {
+    e => {
       console.log(`Fetching from bridge went wrong`, e);
       return new Error(`Fetching from care data parser went wrong ${e}`);
-    },
+    }
   ),
 
   TE.fold(
-    (e) => TE.left(e),
-    (cleaners) =>
+    e => TE.left(e),
+    cleaners =>
       TE.right(
         cleaners
           .reduce(
-            (acc, current) => (acc.some((t) => t.silaeId === current.silaeId) ? acc : [...acc, current]),
+            (acc, current) => (acc.some(t => t.silaeId === current.silaeId) ? acc : [...acc, current]),
             [] as {
               id: string;
               type: string;
               firstName: string;
               lastName: string;
               silaeId: string;
-            }[],
+            }[]
           )
           .map(({ id, silaeId, lastName, firstName, type }) => ({
             silaeId,
             id,
             fullName: `${firstName} ${lastName}`,
             type,
-          })),
-      ),
+          }))
+      )
   ),
-  TE.map((cleaners) => {
+  TE.map(cleaners => {
     log.total = cleaners.length;
     return cleaners;
   }),
-  TE.chainW((cleaners) => {
+  TE.chainW(cleaners => {
     return pipe(
       cleaners
         .sort((a, b) => Number.parseInt(a.silaeId) - Number.parseInt(b.silaeId))
         // .slice(434)
-        // .filter((c) => [642].includes(Number.parseInt(c.silaeId)))
+        // .filter(c => [563].includes(Number.parseInt(c.silaeId)))
         .map(({ silaeId, fullName }) =>
           pipe(
             TE.tryCatch(
               () => fetchDataForEmployee(silaeId, period),
-              (e) => {
+              e => {
                 log.failed++;
                 return new RepositoryFailedCall(
-                  `Fetching from care data parser went wrong for silaeId: ${silaeId} ==> ${e}`,
+                  `Fetching from care data parser went wrong for silaeId: ${silaeId} ==> ${e}`
                 );
-              },
+              }
             ),
             TE.chainW(flow(parsePayload, TE.fromEither)),
             TE.map(
               flow(
                 formatPayload,
                 computeTimecardForEmployee(period),
-                E.mapLeft((e) => {
+                E.mapLeft(e => {
                   log.failed++;
+                  console.log(e);
                   return e;
                 }),
                 E.map(formatCsvGroupedByContract),
-                E.map((row) => {
+                E.map(row => {
                   if (row.size === 1) {
                     csvStreamSingle.write(row.first());
                   } else {
@@ -128,27 +129,27 @@ const timecards = pipe(
                   log.successful++;
                   console.log(`${fullName} - ${silaeId} -  OK ${log.successful}/${log.total} (error : ${log.failed})`);
                   return row;
-                }),
-              ),
+                })
+              )
             ),
             TE.foldW(
-              (failed) => TE.left(failed),
-              (result) => TE.right(result),
-            ),
-          ),
+              failed => TE.right(failed),
+              result => TE.right(result)
+            )
+          )
         ),
-      TE.sequenceSeqArray,
+      TE.sequenceSeqArray
     );
   }),
 
   TE.fold(
-    (e) => {
+    e => {
       return T.never;
     },
-    (result) => {
+    result => {
       return T.of(result);
-    },
-  ),
+    }
+  )
 );
 
 async function main() {
@@ -166,4 +167,4 @@ async function main() {
   }
 }
 
-main().catch((e) => console.error(e));
+main().catch(e => console.error(e));

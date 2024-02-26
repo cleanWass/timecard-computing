@@ -101,8 +101,8 @@ const planningSchema = zod.record(
     zod.object({
       startTime: zod.string(),
       duration: zod.string(),
-    }),
-  ),
+    })
+  )
 );
 
 type PlanningSchema = zod.infer<typeof planningSchema>;
@@ -115,38 +115,38 @@ const contractPlanningSchema = zod.object({
 
 const employeeWithTimecardSchema = zod
   .object({
-    cleaner: employeeSchema.transform((cleaner) =>
+    cleaner: employeeSchema.transform(cleaner =>
       Employee.build({
         ...{ id: '', firstName: '', lastName: '', silaeId: '', role: 'Hotel Staff' },
         ...cleaner,
         seniorityDate: LocalDate.parse(cleaner.seniorityDate),
-      }),
+      })
     ),
     shifts: zod.array(shiftsFromJSONSchema).nullish(),
     leaves: zod.array(leavesFromJSONSchema).nullish(),
     plannings: zod.array(contractPlanningSchema),
   })
-  .transform((raw) => {
+  .transform(raw => {
     const contractPlanningsGroupedByContractId = raw.plannings.reduce(
       (map, curr) =>
-        map.update(curr.contract.id, List<[PlanningSchema, ClosedPeriodSchema]>(), (list) =>
-          list.push([curr.planning, curr.period]),
+        map.update(curr.contract.id, List<[PlanningSchema, ClosedPeriodSchema]>(), list =>
+          list.push([curr.planning, curr.period])
         ),
-      Map<ContractSchema['id'], List<[PlanningSchema, ClosedPeriodSchema]>>(),
+      Map<ContractSchema['id'], List<[PlanningSchema, ClosedPeriodSchema]>>()
     );
 
     return {
       cleaner: raw.cleaner,
-      shifts: raw.shifts.map((shift) =>
+      shifts: raw.shifts.map(shift =>
         Shift.build({
           id: 'TODO',
           clientId: 'TODO',
           startTime: LocalDateTime.of(LocalDate.parse(shift.date), LocalTime.parse(shift.startTime)),
           duration: Duration.parse(shift.duration),
           employeeId: raw.cleaner.silaeId,
-        }),
+        })
       ),
-      leaves: raw.leaves.map((leave) =>
+      leaves: raw.leaves.map(leave =>
         Leave.build({
           startTime: LocalTime.parse(leave.startTime),
           endTime: LocalTime.parse(leave.endTime),
@@ -154,10 +154,10 @@ const employeeWithTimecardSchema = zod
           duration: Duration.parse(leave.duration),
           compensation: isPaidLeaveReason(leave.absenceType) ? 'PAID' : 'UNPAID',
           absenceType: leave.absenceType,
-        }),
+        })
       ),
-      contracts: contractPlanningsGroupedByContractId.keySeq().map((contractId) => {
-        const { contract, planning, period } = raw.plannings.find((planning) => planning.contract.id === contractId);
+      contracts: contractPlanningsGroupedByContractId.keySeq().map(contractId => {
+        const { contract, planning, period } = raw.plannings.find(planning => planning.contract.id === contractId);
         const extraDuration = Duration.parse(contract.extraDuration ?? 'PT0M');
         return EmploymentContract.build({
           id: contractId,
@@ -166,7 +166,7 @@ const employeeWithTimecardSchema = zod
           endDate: O.fromNullable(contract.period.end ? LocalDate.parse(contract.period.end) : null),
           overtimeAveragingPeriod: Duration.ofDays(7),
           weeklyTotalWorkedHours: Duration.parse(contract.weeklyHours),
-          workedDays: Set(keys(planning).map((d) => DayOfWeek[d])),
+          workedDays: Set(keys(planning).map(d => DayOfWeek[d])),
           subType: contract.subType as ContractSubType,
           extraDuration: extraDuration,
           weeklyPlannings: contractPlanningsGroupedByContractId
@@ -174,7 +174,7 @@ const employeeWithTimecardSchema = zod
             .reduce((map, curr) => {
               const weeklyPlanning = daySchema.options.reduce((acc, day) => {
                 const slots =
-                  curr[0][day]?.map((slot) => {
+                  curr[0][day]?.map(slot => {
                     let startTime = LocalTime.parse(slot.startTime);
                     return new LocalTimeSlot(startTime, Duration.parse(slot.duration).addTo(startTime));
                   }) || Set<LocalTimeSlot>();
@@ -183,7 +183,7 @@ const employeeWithTimecardSchema = zod
 
               return map.set(
                 new LocalDateRange(LocalDate.parse(curr[1].start), LocalDate.parse(curr[1].end)),
-                weeklyPlanning,
+                weeklyPlanning
               );
             }, Map<LocalDateRange, WeeklyPlanning>()),
         });
@@ -205,19 +205,19 @@ export const parsePayload = (payload: unknown) =>
     payload,
     employeeWithTimecardSchema.safeParse,
     E.fromPredicate(
-      (parsedJSON) => parsedJSON.success,
-      (e) => {
+      parsedJSON => parsedJSON.success,
+      e => {
         let error = new Error(`success : ${e.success} \n Error while parsing payload ${e['error']}`);
         console.log(error);
         return error;
-      },
+      }
     ),
-    E.map((parsedJSON) => (parsedJSON.success ? parsedJSON.data : null)),
-    E.mapLeft((e) => console.log('error while parsing', e)),
+    E.map(parsedJSON => (parsedJSON.success ? parsedJSON.data : null)),
+    E.mapLeft(e => console.log('error while parsing', e)),
     E.map(({ leaves, contracts, shifts, cleaner }) => ({
       shifts,
       leaves,
       contracts,
       employee: cleaner,
-    })),
+    }))
   );
