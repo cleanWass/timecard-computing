@@ -8,14 +8,14 @@ import * as TE from 'fp-ts/TaskEither';
 
 import fs from 'fs';
 import { fetchDataForEmployee, fetchEmployeeWithActiveContractDuringPeriod } from './app';
-import { formatCsv, formatCsvGroupedByContract } from './application/csv-generation/export-csv';
+import { formatCsvGroupedByContract } from './application/csv-generation/export-csv';
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
 import { formatPayload, parsePayload } from './infrastructure/parsing/parse-payload';
 import { RepositoryFailedCall } from './~shared/error/RepositoryFailedCall';
 
-const ws_single_line = fs.createWriteStream('export_février_2024_single_line.csv', { flags: 'a' });
-const ws_multi_lines = fs.createWriteStream('export_février_2024_multi_lines.csv', { flags: 'a' });
+const ws_single_line = fs.createWriteStream('export_février_2024_single_line.csv');
+const ws_multi_lines = fs.createWriteStream('export_février_2024_multi_lines.csv');
 const errorFile = fs.createWriteStream('export_error.csv');
 
 export const headers = [
@@ -95,8 +95,8 @@ const timecards = pipe(
     return pipe(
       cleaners
         .sort((a, b) => Number.parseInt(a.silaeId) - Number.parseInt(b.silaeId))
-        .slice(434)
-        // .filter((c) => [1246].includes(Number.parseInt(c.silaeId)))
+        // .slice(434)
+        // .filter((c) => [642].includes(Number.parseInt(c.silaeId)))
         .map(({ silaeId, fullName }) =>
           pipe(
             TE.tryCatch(
