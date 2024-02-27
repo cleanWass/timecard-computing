@@ -14,6 +14,7 @@ import { LocalDateRange } from './domain/models/local-date-range';
 import { formatPayload, parsePayload } from './infrastructure/parsing/parse-payload';
 import { RepositoryFailedCall } from './~shared/error/RepositoryFailedCall';
 
+const ws_debug = fs.createWriteStream('export_debug.csv');
 const ws_single_line = fs.createWriteStream('export_février_2024_single_line.csv');
 const ws_multi_lines = fs.createWriteStream('export_février_2024_multi_lines.csv');
 const errorFile = fs.createWriteStream('export_error.csv');
@@ -36,10 +37,12 @@ export const headers = [
   'NbTicket',
 ] as const;
 
+const csvStreamDebug = format({ headers: [...headers] });
 const csvStreamSingle = format({ headers: [...headers] });
 const csvStreamMulti = format({ headers: [...headers] });
 const errorCsvStream = format({ headers: ['Matricule', 'error'] });
 
+csvStreamDebug.pipe(ws_debug).on('end', () => process.exit());
 csvStreamSingle.pipe(ws_single_line).on('end', () => process.exit());
 csvStreamMulti.pipe(ws_multi_lines).on('end', () => process.exit());
 errorCsvStream.pipe(errorFile).on('end', () => process.exit());
@@ -53,108 +56,124 @@ const log = {
 const periodJanvier = new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDate.parse('2024-01-22'));
 const periodFévrier = new LocalDateRange(LocalDate.parse('2024-01-22'), LocalDate.parse('2024-02-19'));
 
-let period = periodFévrier;
+const timecards = ({
+  period,
+  debug = false,
+  displayLog = true,
+  splitFiles = true,
+}: {
+  period: LocalDateRange;
+  debug?: boolean;
+  displayLog?: boolean;
+  splitFiles?: boolean;
+}) =>
+  pipe(
+    TE.tryCatch(
+      () => fetchEmployeeWithActiveContractDuringPeriod(period),
+      e => {
+        console.log(`Fetching from bridge went wrong`, e);
+        return new Error(`Fetching from care data parser went wrong ${e}`);
+      }
+    ),
 
-const timecards = pipe(
-  TE.tryCatch(
-    () => fetchEmployeeWithActiveContractDuringPeriod(period),
-    e => {
-      console.log(`Fetching from bridge went wrong`, e);
-      return new Error(`Fetching from care data parser went wrong ${e}`);
-    }
-  ),
-
-  TE.fold(
-    e => TE.left(e),
-    cleaners =>
-      TE.right(
-        cleaners
-          .reduce(
-            (acc, current) => (acc.some(t => t.silaeId === current.silaeId) ? acc : [...acc, current]),
-            [] as {
-              id: string;
-              type: string;
-              firstName: string;
-              lastName: string;
-              silaeId: string;
-            }[]
-          )
-          .map(({ id, silaeId, lastName, firstName, type }) => ({
-            silaeId,
-            id,
-            fullName: `${firstName} ${lastName}`,
-            type,
-          }))
-      )
-  ),
-  TE.map(cleaners => {
-    log.total = cleaners.length;
-    return cleaners;
-  }),
-  TE.chainW(cleaners => {
-    return pipe(
-      cleaners
-        .sort((a, b) => Number.parseInt(a.silaeId) - Number.parseInt(b.silaeId))
-        // .slice(434)
-        // .filter(c => [563].includes(Number.parseInt(c.silaeId)))
-        .map(({ silaeId, fullName }) =>
-          pipe(
-            TE.tryCatch(
-              () => fetchDataForEmployee(silaeId, period),
-              e => {
-                log.failed++;
-                return new RepositoryFailedCall(
-                  `Fetching from care data parser went wrong for silaeId: ${silaeId} ==> ${e}`
-                );
-              }
-            ),
-            TE.chainW(flow(parsePayload, TE.fromEither)),
-            TE.map(
-              flow(
-                formatPayload,
-                computeTimecardForEmployee(period),
-                E.mapLeft(e => {
-                  log.failed++;
-                  console.log(e);
-                  return e;
-                }),
-                E.map(formatCsvGroupedByContract),
-                E.map(row => {
-                  if (row.size === 1) {
-                    csvStreamSingle.write(row.first());
-                  } else {
-                    row.forEach((value, key) => csvStreamMulti.write(value));
-                  }
-
-                  log.successful++;
-                  console.log(`${fullName} - ${silaeId} -  OK ${log.successful}/${log.total} (error : ${log.failed})`);
-                  return row;
-                })
-              )
-            ),
-            TE.foldW(
-              failed => TE.right(failed),
-              result => TE.right(result)
+    TE.fold(
+      e => TE.left(e),
+      cleaners =>
+        TE.right(
+          cleaners
+            .reduce(
+              (acc, current) => (acc.some(t => t.silaeId === current.silaeId) ? acc : [...acc, current]),
+              [] as {
+                id: string;
+                type: string;
+                firstName: string;
+                lastName: string;
+                silaeId: string;
+              }[]
             )
-          )
-        ),
-      TE.sequenceSeqArray
-    );
-  }),
+            .map(({ id, silaeId, lastName, firstName, type }) => ({
+              silaeId,
+              id,
+              fullName: `${firstName} ${lastName}`,
+              type,
+            }))
+        )
+    ),
+    TE.map(cleaners => {
+      log.total = cleaners.length;
+      return cleaners;
+    }),
+    TE.chainW(cleaners => {
+      return pipe(
+        cleaners
+          .sort((a, b) => Number.parseInt(a.silaeId) - Number.parseInt(b.silaeId))
+          // .slice(434)
+          // .filter(c => [1193].includes(Number.parseInt(c.silaeId)))
+          .map(({ silaeId, fullName }) =>
+            pipe(
+              TE.tryCatch(
+                () => fetchDataForEmployee(silaeId, period),
+                e => {
+                  log.failed++;
+                  return new RepositoryFailedCall(
+                    `Fetching from care data parser went wrong for silaeId: ${silaeId} ==> ${e}`
+                  );
+                }
+              ),
+              TE.chainW(flow(parsePayload, TE.fromEither)),
+              TE.map(
+                flow(
+                  formatPayload,
+                  computeTimecardForEmployee(period),
+                  E.mapLeft(e => {
+                    log.failed++;
+                    console.log(e);
+                    return e;
+                  }),
+                  E.map(formatCsvGroupedByContract),
+                  E.map(row => {
+                    if (debug === true) {
+                      csvStreamDebug.write(row.first());
+                    } else {
+                      if (row.size === 1) {
+                        csvStreamSingle.write(row.first());
+                      } else {
+                        row.forEach((value, key) => csvStreamMulti.write(value));
+                      }
+                    }
 
-  TE.fold(
-    e => {
-      return T.never;
-    },
-    result => {
-      return T.of(result);
-    }
-  )
-);
+                    log.successful++;
+                    console.log(
+                      `${fullName} - ${silaeId} -  OK ${log.successful}/${log.total} (error : ${log.failed})`
+                    );
+                    return row;
+                  })
+                )
+              ),
+              TE.foldW(
+                failed => TE.right(failed),
+                result => TE.right(result)
+              )
+            )
+          ),
+        TE.sequenceSeqArray
+      );
+    }),
+
+    TE.fold(
+      e => {
+        return T.never;
+      },
+      result => {
+        return T.of(result);
+      }
+    )
+  )();
 
 async function main() {
   try {
-    await timecards();
+    const debug = process.argv.some(arg => ['debug', '-debug', '-d', 'd'].includes(arg));
+    await timecards({ debug, period: periodFévrier });
     csvStreamSingle.end();
     csvStreamMulti.end();
     errorCsvStream.end();
