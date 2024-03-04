@@ -6,6 +6,7 @@ import { ClassAttributes } from '../../../../~shared/util/types';
 import { EmployeeId } from '../../employee-registration/employee/employee-id';
 import { LocalDateRange } from '../../local-date-range';
 import { LocalTimeSlot } from '../../local-time-slot';
+import { ContractType } from './contract-type';
 import { EmploymentContractId } from './employment-contract-id';
 import type { ContractSubType } from './contract-sub-type';
 
@@ -29,6 +30,7 @@ export class EmploymentContract implements ValueObject {
       params.weeklyTotalWorkedHours,
       params.workedDays,
       params.weeklyPlannings,
+      params.type,
       params.subType,
       params.extraDuration ?? null,
       params.weeklyNightShiftHours ?? this.nightShiftTimeSlots
@@ -46,11 +48,12 @@ export class EmploymentContract implements ValueObject {
     public readonly weeklyTotalWorkedHours: Duration,
     public readonly workedDays: Set<DayOfWeek>,
     public readonly weeklyPlannings: Map<LocalDateRange, WeeklyPlanning>,
+    public readonly type: ContractType,
     public readonly subType?: ContractSubType,
     public readonly extraDuration?: Duration,
     public readonly weeklyNightShiftHours?: [LocalTimeSlot, LocalTimeSlot]
   ) {
-    this._vo = Map<string, ValueObject | string | number | boolean>()
+    this._vo = Map<string, ValueObject | ContractType | ContractSubType | string | number | boolean>()
       .set('id', id)
       .set('employeeId', this.employeeId)
       .set('startDate', this.startDate)
@@ -66,6 +69,7 @@ export class EmploymentContract implements ValueObject {
       .set('weeklyTotalWorkedHours', this.weeklyTotalWorkedHours.toString())
       .set('workedDays', this.workedDays)
       .set('weeklyPlannings', this.weeklyPlannings)
+      .set('type', this.type)
       .set('subType', this.subType)
       .set('weeklyNightShiftHours', this.weeklyNightShiftHours.toString())
       .set('extraDuration', this.extraDuration?.toString() ?? null);
@@ -114,7 +118,9 @@ export class EmploymentContract implements ValueObject {
           (planning, period) =>
             `
 ${period.toFormattedString()}
-${planning.map((slots, day) => `\t\t${day} -> ${slots.isEmpty() ? ' // ' : slots.map(s => s.debug()).join(' | ')}`).join('\n')}`
+${planning
+  .map((slots, day) => `\t\t${day} -> ${slots.isEmpty() ? ' // ' : slots.map(s => s.debug()).join(' | ')}`)
+  .join('\n')}`
         )
         .join('\n---------\n')}
     `;

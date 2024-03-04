@@ -108,7 +108,7 @@ const timecards = ({
         cleaners
           .sort((a, b) => Number.parseInt(a.silaeId) - Number.parseInt(b.silaeId))
           // .slice(434)
-          // .filter(c => [1193].includes(Number.parseInt(c.silaeId)))
+          .filter(c => [1193].includes(Number.parseInt(c.silaeId)))
           .map(({ silaeId, fullName }) =>
             pipe(
               TE.tryCatch(

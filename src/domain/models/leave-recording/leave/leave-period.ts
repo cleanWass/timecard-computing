@@ -7,11 +7,11 @@ import { LocalDateRange } from '../../local-date-range';
 import { Shift } from '../../mission-delivery/shift/shift';
 
 import { LeaveId } from './leave-id';
-import { LeaveReason } from './leave-reason';
+import { LeaveRetribution } from './leave-retribution';
 
 export type ILeavePeriod = {
   id: LeaveId;
-  reason: LeaveReason;
+  reason: LeaveRetribution;
   startTime: LocalTime;
   endTime: LocalTime;
   period: LocalDateRange;
@@ -21,7 +21,7 @@ export type ILeavePeriod = {
 export class LeavePeriod implements ValueObject, ILeavePeriod {
   public static build(params: {
     id: LeaveId;
-    reason: LeaveReason;
+    reason: LeaveRetribution;
     startTime: LocalTime;
     endTime: LocalTime;
     period: LocalDateRange;
@@ -34,7 +34,7 @@ export class LeavePeriod implements ValueObject, ILeavePeriod {
 
   private constructor(
     public readonly id: LeaveId,
-    public readonly reason: LeaveReason,
+    public readonly reason: LeaveRetribution,
     public readonly startTime: LocalTime,
     public readonly endTime: LocalTime,
     public readonly period: LocalDateRange,
@@ -82,8 +82,8 @@ export class LeavePeriod implements ValueObject, ILeavePeriod {
   debug(): string {
     return `${LocalDateTime.of(this.period.start, this.startTime).format(
       DateTimeFormatter.ofPattern('HH:mm dd/MM/yy')
-    )} -> ${LocalDateTime.of(this.period.end.minusDays(1), this.endTime).format(DateTimeFormatter.ofPattern('HH:mm dd/MM/yy'))} --> ${
-      this.reason
-    }`;
+    )} -> ${LocalDateTime.of(this.period.end.minusDays(1), this.endTime).format(
+      DateTimeFormatter.ofPattern('HH:mm dd/MM/yy')
+    )} --> ${this.reason}`;
   }
 }

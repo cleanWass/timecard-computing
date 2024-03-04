@@ -1,7 +1,7 @@
 import { LocalDate } from '@js-joda/core';
 import { Map, ValueObject } from 'immutable';
 import { EmployeeId } from './employee-id';
-import { EmployeeRole } from './employee-role';
+import { EmployeeRole } from './EMPLOYEE_ROLE';
 
 export class Employee implements ValueObject {
   public static build(params: {
@@ -28,7 +28,7 @@ export class Employee implements ValueObject {
       params.silaeId,
       params.email,
       params.phoneNumber,
-      params.address,
+      params.address
     );
   }
 
@@ -47,7 +47,7 @@ export class Employee implements ValueObject {
     public readonly silaeId: string,
     public readonly email?: string,
     public readonly phoneNumber?: string,
-    public readonly address?: { city?: string; street?: string; postalCode?: string },
+    public readonly address?: { city?: string; street?: string; postalCode?: string }
   ) {
     this._vo = Map<
       string,

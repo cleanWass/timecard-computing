@@ -2,7 +2,7 @@ import { DateTimeFormatter, Duration, Instant, LocalDate, LocalDateTime, LocalTi
 import { Interval } from '@js-joda/extra';
 import { Map, ValueObject } from 'immutable';
 import { TypeProps } from '../../../../~shared/util/types';
-import { LeaveReason, PaidLeaveReason, UnpaidLeaveReason } from './leave-reason';
+import { LeaveRetribution, PaidLeaveReason, UnpaidLeaveReason } from './leave-retribution';
 import '@js-joda/timezone';
 
 interface ILeave {
@@ -10,7 +10,7 @@ interface ILeave {
   startTime: LocalTime;
   endTime: LocalTime;
   duration: Duration;
-  compensation: LeaveReason;
+  compensation: LeaveRetribution;
   absenceType: PaidLeaveReason | UnpaidLeaveReason;
 }
 
@@ -26,7 +26,7 @@ export class Leave implements ValueObject, ILeave {
     public readonly startTime: LocalTime,
     public readonly endTime: LocalTime,
     public readonly duration: Duration,
-    public readonly compensation: LeaveReason,
+    public readonly compensation: LeaveRetribution,
     public readonly absenceType: PaidLeaveReason | UnpaidLeaveReason
   ) {
     this._vo = Map<string, TypeProps<Leave>>()
@@ -73,8 +73,8 @@ export class Leave implements ValueObject, ILeave {
   }
 
   debug(): string {
-    return `${this.getStartDateTime().format(DateTimeFormatter.ofPattern('HH:mm dd/MM/yy'))} -> ${this.getEndDateTime().format(
+    return `${this.getStartDateTime().format(
       DateTimeFormatter.ofPattern('HH:mm dd/MM/yy')
-    )}`;
+    )} -> ${this.getEndDateTime().format(DateTimeFormatter.ofPattern('HH:mm dd/MM/yy'))}`;
   }
 }

@@ -1,4 +1,4 @@
-export const employeeRole = [
+export const EMPLOYEE_ROLE = [
   'Admin',
   'Cleaner',
   'Customer Service',
@@ -11,4 +11,4 @@ export const employeeRole = [
   'Team Leader',
 ] as const;
 
-export type EmployeeRole = (typeof employeeRole)[number];
+export type EmployeeRole = (typeof EMPLOYEE_ROLE)[number];

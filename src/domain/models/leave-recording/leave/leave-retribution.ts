@@ -1,4 +1,29 @@
-export type LeaveReason = 'PAID' | 'UNPAID' | 'HOLIDAY';
+export const LEAVE_REASON = [
+  'HOLIDAY',
+  'ILLNESS',
+  'CONSERVATORY_LAID_OFF',
+  'DISCIPLINARY_LAID_OFF',
+  'LEAVE_ABSENCE_PAID',
+  'MATERNITY_LEAVE',
+  'PARENTAL_LEAVE',
+  'PATERNITY_LEAVE',
+  'SABBATICAL_LEAVE',
+  'UNAUTHORIZED_LEAVE',
+  'UNAUTHORIZED_LEAVE_UNPAID',
+  'UNPAYED_LEAVE',
+  'WORK_ILLNESS',
+  'WORK_INJURY',
+  'CLOSED_SITE',
+  'COMMUTE INJURY',
+  'FAMILY_LEAVE',
+  'PAYED_LEAVE',
+  'SICK_CHILD',
+  'TRAINING_LEAVE',
+] as const;
+
+export type LeaveReason = (typeof LEAVE_REASON)[number] & (PaidLeaveReason | UnpaidLeaveReason);
+
+export type LeaveRetribution = 'PAID' | 'UNPAID' | 'HOLIDAY';
 
 export type PaidLeaveReason =
   | 'HOLIDAY'

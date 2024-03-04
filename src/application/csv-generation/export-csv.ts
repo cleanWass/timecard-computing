@@ -7,22 +7,21 @@ import { formatDurationAs100 } from '../../~shared/util/joda-helper';
 import { ExtractEitherRightType, keys } from '../../~shared/util/types';
 import { computeTimecardForEmployee } from '../timecard-computation/compute-timecard-for-employee';
 
-function formatObjectDurations(rawObject: {
+const formatObjectDurations = (rawObject: {
   [key in Exclude<
     (typeof headers)[number],
     'Matricule' | 'Fonction' | 'Salarié' | 'Période' | 'NbTicket' | 'Silae Id'
   >]: Duration;
-}) {
-  return keys(rawObject).reduce((res, code) => {
+}) =>
+  keys(rawObject).reduce((res, code) => {
     const value = Math.round(((rawObject[code] || Duration.ZERO).toMinutes() / 15) * 15);
     const durationAs100 = formatDurationAs100(Duration.ofMinutes(value));
     return { ...res, [code]: durationAs100 === '0' ? '' : durationAs100 };
   }, {});
-}
 
 export function formatCsv(row: ExtractEitherRightType<ReturnType<typeof computeTimecardForEmployee>>) {
   const listTcs = List(row.timecards);
-  const groupedTc = listTcs.groupBy((tc) => tc.contract);
+  const groupedTc = listTcs.groupBy(tc => tc.contract);
   const totalTcs = WorkingPeriodTimecard.getTotalWorkedHours(listTcs);
   const totalMealTickets = WorkingPeriodTimecard.getTotalMealTickets(listTcs);
   return {
@@ -47,12 +46,10 @@ export function formatCsv(row: ExtractEitherRightType<ReturnType<typeof computeT
 }
 
 export const formatCsvGroupedByContract = (
-  row: ExtractEitherRightType<ReturnType<typeof computeTimecardForEmployee>>,
+  row: ExtractEitherRightType<ReturnType<typeof computeTimecardForEmployee>>
 ) => {
   const listTcs = List(row.timecards);
-  const groupedTc = listTcs.groupBy((tc) => tc.contract);
-  // const totalTcs = WorkingPeriodTimecard.getTotalWorkedHours(listTcs);
-  // const totalMealTickets = WorkingPeriodTimecard.getTotalMealTickets(listTcs);
+  const groupedTc = listTcs.groupBy(tc => tc.contract);
   return groupedTc
     .map((timecards, contract) => {
       const totalTcs = WorkingPeriodTimecard.getTotalWorkedHours(timecards);

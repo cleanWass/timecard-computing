@@ -3,10 +3,10 @@ import axios from 'axios';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import express from 'express';
-import { pipe, flow } from 'fp-ts/function';
-import * as T from 'fp-ts/lib/Task';
+import { flow, pipe } from 'fp-ts/function';
 import * as E from 'fp-ts/lib/Either';
-import { array } from 'fp-ts/Array';
+import * as O from 'fp-ts/lib/Option';
+import * as T from 'fp-ts/lib/Task';
 
 import * as TE from 'fp-ts/lib/TaskEither';
 import { isRight } from 'fp-ts/These';
@@ -73,22 +73,58 @@ app.post('/timecard', async (req, res) => {
   const { body, params } = req;
   console.log('/timecard', { body: req.body, params: req.params });
   const {
-    cleanerId,
+    silaeId,
     period: { startDate, endDate },
-  } = {
-    cleanerId: '003AX000004TCdsYAG', //ivete
-    period: { startDate: '2023-11-20', endDate: '2023-12-18' },
-  };
+  } = req.body;
 
   const period = new LocalDateRange(LocalDate.parse(startDate), LocalDate.parse(endDate));
+  //
+  // const contractSchema = z.object({
+  //   startDate: z.string(),
+  //   endDate: z.string().nullish(),
+  //   weeklyPlanning: z.record(daySchema, z.array(z.object({ startTime: z.string(), endTime: z.string() }).nullish())),
+  //   subType: z.enum(['remplacement', 'acroissement', 'complement_heure', 'CDI', 'CDD_en_CDI']).optional(),
+  //   extraDuration: z.string().optional(),
+  //   weeklyTotalWorkedHours: z.string(),
+  // });
 
   await pipe(
     TE.tryCatch(
-      () => fetchDataForEmployee(cleanerId, period),
+      () => fetchDataForEmployee(silaeId, period),
       e => new Error(`Fetching from care data parser went wrong ${e}`)
     ),
     TE.chainW(flow(parsePayload, TE.fromEither)),
-    TE.map(flow(formatPayload, computeTimecardForEmployee(period))),
+    TE.map(
+      flow(
+        formatPayload,
+        computeTimecardForEmployee(period),
+        E.map(result => {
+          return {
+            period: { start: result.period.start.toString(), end: result.period.end.toString() },
+            timecards: result.timecards.map(t => ({
+              id: t.id,
+              shifts: t.shifts.toArray(),
+              leaves: t.leaves.toArray(),
+              contract: {
+                startDate: t.contract.startDate.toString(),
+                endDate: pipe(
+                  t.contract.endDate,
+                  O.fold(
+                    () => undefined,
+                    e => e.toString()
+                  )
+                ),
+                type: t.contract.type,
+                subType: t.contract.subType,
+                weeklyTotalWorkedHours: t.contract.weeklyTotalWorkedHours.toString(),
+              },
+              workedHours: t.workedHours.toObject(),
+              period: { start: t.workingPeriod.period.start.toString(), end: t.workingPeriod.period.end.toString() },
+            })),
+          };
+        })
+      )
+    ),
     TE.fold(
       e => {
         console.error('Error in TE.fold:', e);
