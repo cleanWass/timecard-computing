@@ -16,7 +16,7 @@ export class TheoreticalShift extends Shift {
     public readonly duration: Duration,
     public readonly employeeId: EmployeeId
   ) {
-    super(id, startTime, duration, 'fake-client', employeeId);
+    super(id, startTime, duration, 'facke-client-id', 'fake-client', 'fake', employeeId);
   }
 
   update(params: Partial<TheoreticalShift>) {

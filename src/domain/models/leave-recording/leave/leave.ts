@@ -10,6 +10,8 @@ interface ILeave {
   startTime: LocalTime;
   endTime: LocalTime;
   duration: Duration;
+  // clientId: string;
+  // clientName: string;
   compensation: LeaveRetribution;
   absenceType: PaidLeaveReason | UnpaidLeaveReason;
 }

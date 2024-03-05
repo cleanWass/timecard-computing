@@ -151,7 +151,7 @@ const timecards = ({
                 )
               ),
               TE.foldW(
-                failed => TE.right(failed),
+                failed => TE.left(failed),
                 result => TE.right(result)
               )
             )

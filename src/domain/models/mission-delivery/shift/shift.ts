@@ -15,6 +15,8 @@ export type IShift = {
   startTime: LocalDateTime;
   duration: Duration;
   clientId: ClientId;
+  clientName: string;
+  type: string;
   employeeId: EmployeeId;
   replacedShiftId?: ShiftId;
   requirementIds?: RequirementId[];
@@ -22,25 +24,29 @@ export type IShift = {
 };
 
 export class Shift implements ValueObject, IShift {
-  public static build(params: {
-    id: ShiftId;
-    startTime: LocalDateTime;
-    duration: Duration;
-    clientId: ClientId;
-    employeeId: EmployeeId;
-    replacedShiftId?: ShiftId;
-    requirementIds?: RequirementId[];
-    serviceContractId?: ServiceContractId;
-  }) {
+  public static build({
+    clientId,
+    clientName,
+    duration,
+    employeeId,
+    id,
+    replacedShiftId,
+    requirementIds,
+    serviceContractId,
+    startTime,
+    type,
+  }: IShift) {
     return new Shift(
-      params.id,
-      params.startTime,
-      params.duration,
-      params.clientId,
-      params.employeeId,
-      params.serviceContractId,
-      params.requirementIds,
-      params.replacedShiftId
+      id,
+      startTime,
+      duration,
+      clientId,
+      clientName,
+      type,
+      employeeId,
+      serviceContractId,
+      requirementIds,
+      replacedShiftId
     );
   }
 
@@ -51,6 +57,8 @@ export class Shift implements ValueObject, IShift {
     public readonly startTime: LocalDateTime,
     public readonly duration: Duration,
     public readonly clientId: ClientId,
+    public readonly clientName: string,
+    public readonly type: string,
     public readonly employeeId: EmployeeId,
     public readonly serviceContractId?: ServiceContractId,
     public readonly requirementIds?: RequirementId[],
@@ -63,6 +71,8 @@ export class Shift implements ValueObject, IShift {
       .set('startTime', this.startTime)
       .set('duration', this.duration)
       .set('clientId', this.clientId)
+      .set('type', this.type)
+      .set('clientName', this.clientName)
       .set('employeeId', this.employeeId)
       .set('replacedShiftId', this.replacedShiftId);
   }
@@ -81,6 +91,8 @@ export class Shift implements ValueObject, IShift {
       startTime: params.startTime ?? this.startTime,
       duration: params.duration ?? this.duration,
       clientId: params.clientId ?? this.clientId,
+      clientName: params.clientName ?? this.clientName,
+      type: params.type ?? this.type,
       employeeId: params.employeeId ?? this.employeeId,
       serviceContractId: params.serviceContractId ?? this.serviceContractId,
       requirementIds: params.requirementIds ?? this.requirementIds,

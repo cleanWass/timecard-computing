@@ -13,6 +13,7 @@ import { isRight } from 'fp-ts/These';
 import { computeTimecardForEmployee } from '../src/application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from '../src/domain/models/local-date-range';
 import { formatPayload, parsePayload } from './infrastructure/parsing/parse-payload';
+import { planningValidator } from './infrastructure/parsing/schema/planning';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -78,15 +79,6 @@ app.post('/timecard', async (req, res) => {
   } = req.body;
 
   const period = new LocalDateRange(LocalDate.parse(startDate), LocalDate.parse(endDate));
-  //
-  // const contractSchema = z.object({
-  //   startDate: z.string(),
-  //   endDate: z.string().nullish(),
-  //   weeklyPlanning: z.record(daySchema, z.array(z.object({ startTime: z.string(), endTime: z.string() }).nullish())),
-  //   subType: z.enum(['remplacement', 'acroissement', 'complement_heure', 'CDI', 'CDD_en_CDI']).optional(),
-  //   extraDuration: z.string().optional(),
-  //   weeklyTotalWorkedHours: z.string(),
-  // });
 
   await pipe(
     TE.tryCatch(
@@ -99,13 +91,16 @@ app.post('/timecard', async (req, res) => {
         formatPayload,
         computeTimecardForEmployee(period),
         E.map(result => {
+          // result.timecards.forEach(t => t.debug());
           return {
+            employee: result.employee,
             period: { start: result.period.start.toString(), end: result.period.end.toString() },
             timecards: result.timecards.map(t => ({
               id: t.id,
               shifts: t.shifts.toArray(),
               leaves: t.leaves.toArray(),
               contract: {
+                id: t.contract.id,
                 startDate: t.contract.startDate.toString(),
                 endDate: pipe(
                   t.contract.endDate,
@@ -117,6 +112,13 @@ app.post('/timecard', async (req, res) => {
                 type: t.contract.type,
                 subType: t.contract.subType,
                 weeklyTotalWorkedHours: t.contract.weeklyTotalWorkedHours.toString(),
+                weeklyPlannings: t.contract.weeklyPlannings
+                  .map((planning, period) => ({
+                    period: { start: period.start.toString(), end: period.end.toString() },
+                    planning: planning.toJSON(),
+                  }))
+                  .valueSeq()
+                  .toArray(),
               },
               workedHours: t.workedHours.toObject(),
               period: { start: t.workingPeriod.period.start.toString(), end: t.workingPeriod.period.end.toString() },
