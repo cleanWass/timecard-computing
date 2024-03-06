@@ -76,6 +76,7 @@ app.post('/timecard', async (req, res) => {
   const {
     silaeId,
     period: { startDate, endDate },
+    previewShifts,
   } = req.body;
 
   const period = new LocalDateRange(LocalDate.parse(startDate), LocalDate.parse(endDate));
@@ -90,41 +91,38 @@ app.post('/timecard', async (req, res) => {
       flow(
         formatPayload,
         computeTimecardForEmployee(period),
-        E.map(result => {
-          // result.timecards.forEach(t => t.debug());
-          return {
-            employee: result.employee,
-            period: { start: result.period.start.toString(), end: result.period.end.toString() },
-            timecards: result.timecards.map(t => ({
-              id: t.id,
-              shifts: t.shifts.toArray(),
-              leaves: t.leaves.toArray(),
-              contract: {
-                id: t.contract.id,
-                startDate: t.contract.startDate.toString(),
-                endDate: pipe(
-                  t.contract.endDate,
-                  O.fold(
-                    () => undefined,
-                    e => e.toString()
-                  )
-                ),
-                type: t.contract.type,
-                subType: t.contract.subType,
-                weeklyTotalWorkedHours: t.contract.weeklyTotalWorkedHours.toString(),
-                weeklyPlannings: t.contract.weeklyPlannings
-                  .map((planning, period) => ({
-                    period: { start: period.start.toString(), end: period.end.toString() },
-                    planning: planning.toJSON(),
-                  }))
-                  .valueSeq()
-                  .toArray(),
-              },
-              workedHours: t.workedHours.toObject(),
-              period: { start: t.workingPeriod.period.start.toString(), end: t.workingPeriod.period.end.toString() },
-            })),
-          };
-        })
+        E.map(result => ({
+          employee: result.employee,
+          period: { start: result.period.start.toString(), end: result.period.end.toString() },
+          timecards: result.timecards.map(t => ({
+            id: t.id,
+            shifts: t.shifts.toArray(),
+            leaves: t.leaves.toArray(),
+            contract: {
+              id: t.contract.id,
+              startDate: t.contract.startDate.toString(),
+              endDate: pipe(
+                t.contract.endDate,
+                O.fold(
+                  () => undefined,
+                  e => e.toString()
+                )
+              ),
+              type: t.contract.type,
+              subType: t.contract.subType,
+              weeklyTotalWorkedHours: t.contract.weeklyTotalWorkedHours.toString(),
+              weeklyPlannings: t.contract.weeklyPlannings
+                .map((planning, period) => ({
+                  period: { start: period.start.toString(), end: period.end.toString() },
+                  planning: planning.toJSON(),
+                }))
+                .valueSeq()
+                .toArray(),
+            },
+            workedHours: t.workedHours.toObject(),
+            period: { start: t.workingPeriod.period.start.toString(), end: t.workingPeriod.period.end.toString() },
+          })),
+        }))
       )
     ),
     TE.fold(
@@ -139,52 +137,6 @@ app.post('/timecard', async (req, res) => {
           console.error('Error in TE.fold: Expected Right, but got Left', result.left);
           return T.of(res.status(500).json({ error: 'Unexpected result format' }));
         }
-      }
-    )
-  )();
-});
-
-const getEmployeeTimecard = (employeeId: string, period: LocalDateRange) =>
-  pipe(
-    TE.tryCatch(
-      () => fetchDataForEmployee(employeeId, period),
-      e => new Error(`OOOOO Fetching from care data parser went wrong for cleanerID: ${employeeId} ==> ${e.toString()}`)
-    ),
-    TE.chainW(flow(parsePayload, TE.fromEither)),
-    TE.map(flow(formatPayload, computeTimecardForEmployee(period)))
-  );
-
-app.post('/payroll', async (req, res) => {
-  const { body, params } = req;
-  console.log('/payroll', { body: req.body, params: req.params });
-  const {
-    cleanerId,
-    period: { startDate, endDate },
-  } = req.body;
-
-  const period = new LocalDateRange(LocalDate.parse(startDate), LocalDate.parse(endDate));
-
-  const timecards = await pipe(
-    TE.tryCatch(
-      () => fetchEmployeeWithActiveContractDuringPeriod(period),
-      e => new Error(`Fetching from care data parser went wrong ${e}`)
-    ),
-    TE.chain(cleaners => {
-      return pipe(
-        cleaners.slice(0, 10).map(({ id }) => getEmployeeTimecard(id, period)),
-        t => t,
-        TE.sequenceArray
-      );
-    }),
-    TE.chainW(result => TE.fromEither(E.sequenceArray(result))),
-    TE.fold(
-      e => {
-        console.log(e);
-        return T.of(res.status(500).json({ error: e }));
-      },
-      result => {
-        result.forEach(cl => cl.timecards.forEach(t => t.debug()));
-        return T.of(res.status(200).json(result));
       }
     )
   )();
