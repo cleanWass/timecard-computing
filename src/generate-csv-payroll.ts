@@ -4,18 +4,13 @@ import axios from 'axios';
 import { format } from 'fast-csv';
 import * as E from 'fp-ts/Either';
 import { flow, pipe } from 'fp-ts/function';
-import * as T from 'fp-ts/Task';
 import * as TE from 'fp-ts/TaskEither';
 
 import fs from 'fs';
-import { List } from 'immutable';
-import { fetchDataForEmployee, fetchEmployeeWithActiveContractDuringPeriod } from './app';
 import { formatCsvGroupedByContract } from './application/csv-generation/export-csv';
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
-import { WorkingPeriodTimecard } from './domain/models/time-card-computation/timecard/working-period-timecard';
-import { formatPayload, parsePayload } from './infrastructure/parsing/parse-payload';
-import { RepositoryFailedCall } from './~shared/error/RepositoryFailedCall';
+import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
 
 const ws_debug = fs.createWriteStream('export_debug.csv');
 const ws_single_line = fs.createWriteStream('export_février_2024_single_line.csv');

@@ -4,10 +4,10 @@ import { Shift } from './shift';
 import { ShiftId } from './shift-id';
 import '@js-joda/timezone';
 
-export class TheoreticalShift extends Shift {
+export class InactiveShift extends Shift {
   public static count = 0;
   public static build(params: { startTime: LocalDateTime; duration: Duration; employeeId: EmployeeId }) {
-    return new TheoreticalShift(`${TheoreticalShift.count++}`, params.startTime, params.duration, params.employeeId);
+    return new InactiveShift(`${InactiveShift.count++}`, params.startTime, params.duration, params.employeeId);
   }
 
   private constructor(
@@ -16,14 +16,6 @@ export class TheoreticalShift extends Shift {
     public readonly duration: Duration,
     public readonly employeeId: EmployeeId
   ) {
-    super(id, startTime, duration, 'facke-client-id', 'fake-client', 'fake', employeeId);
-  }
-
-  update(params: Partial<TheoreticalShift>) {
-    return TheoreticalShift.build({
-      startTime: params.startTime ?? this.startTime,
-      duration: params.duration ?? this.duration,
-      employeeId: params.employeeId ?? this.employeeId,
-    });
+    super(id, startTime, duration, 'fake-client-id', 'fake-client', 'Inactive', employeeId);
   }
 }

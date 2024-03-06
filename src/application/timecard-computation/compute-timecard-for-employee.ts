@@ -11,10 +11,7 @@ import { Shift } from '../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
-import {
-  computeExtraHoursByRate,
-  computeTotalAdditionalHours,
-} from './computation/additionnal-hours-computation';
+import { computeExtraHoursByRate, computeTotalAdditionalHours } from './computation/additionnal-hours-computation';
 import { computeMealTickets } from './computation/meal-tickets-computation';
 import {
   computeLeavesHours,
@@ -27,19 +24,15 @@ import {
   groupShiftsByWorkingPeriods,
   splitPeriodIntoWorkingPeriods,
 } from './computation/working-period-computation';
-import {
-  curateLeaves,
-  filterShifts,
-} from './curation/shifts-and-period-curation';
-import { generateTheoreticalShiftIfPartialWeek } from './generation/theoretical-shifts-generation';
+import { curateLeaves, filterShifts } from './curation/shifts-and-period-curation';
+import { generateInactiveShiftsIfPartialWeek } from './generation/inactive-shifts-generation';
 
-const findContract =
-  (contracts: List<EmploymentContract>) => (workingPeriod: WorkingPeriod) =>
-    pipe(
-      contracts.find(c => c.id === workingPeriod.employmentContractId),
-      E.fromNullable(new TimecardComputationError('Missing contract')),
-      E.map(contract => ({ contract, workingPeriod }))
-    );
+const findContract = (contracts: List<EmploymentContract>) => (workingPeriod: WorkingPeriod) =>
+  pipe(
+    contracts.find(c => c.id === workingPeriod.employmentContractId),
+    E.fromNullable(new TimecardComputationError('Missing contract')),
+    E.map(contract => ({ contract, workingPeriod }))
+  );
 
 const initializeWorkingPeriodTimecard = ({
   shifts,
@@ -69,13 +62,7 @@ export const computeWorkingPeriodTimecard: (
   leaves: List<Leave>,
   contract: EmploymentContract,
   employee: Employee
-) => WorkingPeriodTimecard = (
-  workingPeriod,
-  shifts,
-  leaves,
-  contract,
-  employee
-) => {
+) => WorkingPeriodTimecard = (workingPeriod, shifts, leaves, contract, employee) => {
   return pipe(
     {
       contract,
@@ -87,7 +74,7 @@ export const computeWorkingPeriodTimecard: (
     initializeWorkingPeriodTimecard,
     curateLeaves,
     filterShifts,
-    generateTheoreticalShiftIfPartialWeek,
+    generateInactiveShiftsIfPartialWeek,
     computeTotalNormalHoursAvailable,
     normalHoursComputation,
     computeLeavesHours,
@@ -112,15 +99,9 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
   }) =>
     pipe(
       E.Do,
-      E.bind('workingPeriods', () =>
-        splitPeriodIntoWorkingPeriods(contracts, period)
-      ),
-      E.bindW('groupedShifts', ({ workingPeriods }) =>
-        groupShiftsByWorkingPeriods(shifts, workingPeriods)
-      ),
-      E.bindW('groupedLeaves', ({ workingPeriods }) =>
-        groupLeavesByWorkingPeriods(leaves, workingPeriods)
-      ),
+      E.bind('workingPeriods', () => splitPeriodIntoWorkingPeriods(contracts, period)),
+      E.bindW('groupedShifts', ({ workingPeriods }) => groupShiftsByWorkingPeriods(shifts, workingPeriods)),
+      E.bindW('groupedLeaves', ({ workingPeriods }) => groupLeavesByWorkingPeriods(leaves, workingPeriods)),
       E.bindW('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) =>
         pipe(
           workingPeriods,

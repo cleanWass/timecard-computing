@@ -1,16 +1,18 @@
 import { LocalDateTime } from '@js-joda/core';
 import { List, Set } from 'immutable';
 import { LocalTimeSlot } from '../../../domain/models/local-time-slot';
-import { TheoreticalShift } from '../../../domain/models/mission-delivery/shift/theorical-shift';
+import { InactiveShift } from '../../../domain/models/mission-delivery/shift/inactive-shift';
 import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { getFirstDayOfWeek, getTotalDuration } from '../../../~shared/util/joda-helper';
 
-const generateTheoreticalShift = (timecard: WorkingPeriodTimecard) => {
+export const generateInactiveShifts = (timecard: WorkingPeriodTimecard) => {
   return List(
     timecard.workingPeriod.period
       .with({
         start: getFirstDayOfWeek(timecard.workingPeriod.period.start),
-        end: getFirstDayOfWeek(timecard.workingPeriod.period.start).plusDays(timecard.contract.overtimeAveragingPeriod.toDays()),
+        end: getFirstDayOfWeek(timecard.workingPeriod.period.start).plusDays(
+          timecard.contract.overtimeAveragingPeriod.toDays()
+        ),
       })
       .toLocalDateArray()
       .filter(d => !timecard.workingPeriod.period.contains(d))
@@ -18,7 +20,7 @@ const generateTheoreticalShift = (timecard: WorkingPeriodTimecard) => {
         timecard.weeklyPlanning
           .get(day.dayOfWeek(), Set<LocalTimeSlot>())
           .map(timeSlot =>
-            TheoreticalShift.build({
+            InactiveShift.build({
               duration: timeSlot.duration(),
               employeeId: timecard.employee.id,
               startTime: LocalDateTime.of(day, timeSlot.startTime),
@@ -29,9 +31,9 @@ const generateTheoreticalShift = (timecard: WorkingPeriodTimecard) => {
   );
 };
 
-export const generateTheoreticalShiftIfPartialWeek = (wpTimecard: WorkingPeriodTimecard) => {
+export const generateInactiveShiftsIfPartialWeek = (wpTimecard: WorkingPeriodTimecard) => {
   if (wpTimecard.workingPeriod.isComplete(wpTimecard.contract)) return wpTimecard;
 
-  const theoreticalShifts = generateTheoreticalShift(wpTimecard);
-  return wpTimecard.with({ theoreticalShifts }).register('TotalTheoretical', getTotalDuration(theoreticalShifts));
+  const inactiveShifts = generateInactiveShifts(wpTimecard);
+  return wpTimecard.with({ inactiveShifts }).register('TotalInactiveShifts', getTotalDuration(inactiveShifts));
 };

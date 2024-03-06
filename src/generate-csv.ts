@@ -1,4 +1,5 @@
-import { LocalDate } from '@js-joda/core';
+import { DateTimeFormatter, LocalDate } from '@js-joda/core';
+import axios from 'axios';
 
 import { format } from 'fast-csv';
 import * as E from 'fp-ts/Either';
@@ -7,11 +8,11 @@ import * as T from 'fp-ts/Task';
 import * as TE from 'fp-ts/TaskEither';
 
 import fs from 'fs';
-import { fetchDataForEmployee, fetchEmployeeWithActiveContractDuringPeriod } from './app';
+import { fetchDataForEmployee } from './app';
 import { formatCsvGroupedByContract } from './application/csv-generation/export-csv';
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
-import { formatPayload, parsePayload } from './infrastructure/parsing/parse-payload';
+import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
 import { RepositoryFailedCall } from './~shared/error/RepositoryFailedCall';
 
 const ws_debug = fs.createWriteStream('export_debug.csv');
@@ -55,6 +56,34 @@ const log = {
 // const period = new LocalDateRange(LocalDate.parse('2024-01-08'), LocalDate.parse('2024-01-15'));
 const periodJanvier = new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDate.parse('2024-01-22'));
 const periodFévrier = new LocalDateRange(LocalDate.parse('2024-01-22'), LocalDate.parse('2024-02-19'));
+
+export const fetchEmployeeWithActiveContractDuringPeriod = ({ start, end }: LocalDateRange) => {
+  const token = 'zkrgnflp124jffdlj449FkAAZ'; // TODO env
+  const baseURl = 'https://cleany-help-rh-herokuapp-com'; // TODO env
+
+  const url = 'http://localhost:3000/active-cleaners';
+
+  const url1 = `${baseURl}/bases/${start.format(DateTimeFormatter.ofPattern('yyyy-MM-dd'))}/${end.format(
+    DateTimeFormatter.ofPattern('yyyy-MM-dd')
+  )}}/${token}`;
+
+  return axios
+    .post(url, {
+      period: {
+        startDate: start.toString(),
+        endDate: end.toString(),
+      },
+    })
+    .then(r => {
+      return r.data as {
+        id: string;
+        type: string;
+        firstName: string;
+        lastName: string;
+        silaeId: string;
+      }[];
+    });
+};
 
 const timecards = ({
   period,

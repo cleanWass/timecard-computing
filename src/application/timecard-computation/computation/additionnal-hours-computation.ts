@@ -32,7 +32,9 @@ export const computeComplementaryHours = (timecard: WorkingPeriodTimecard) =>
 export const computeSupplementaryHours = (timecard: WorkingPeriodTimecard) => {
   const additionalHours = timecard.workedHours.TotalAdditionalHours;
 
-  const _25PerCentRateHours = Duration.ofMinutes(Math.min(additionalHours.toMinutes(), Duration.ofHours(8).toMinutes()));
+  const _25PerCentRateHours = Duration.ofMinutes(
+    Math.min(additionalHours.toMinutes(), Duration.ofHours(8).toMinutes())
+  );
   const _50PerCentRateHours = additionalHours.minus(_25PerCentRateHours);
   return timecard
     .register('TwentyFivePercentRateSupplementary', _25PerCentRateHours)
@@ -42,32 +44,24 @@ export const computeSupplementaryHours = (timecard: WorkingPeriodTimecard) => {
 export const computeTotalAdditionalHours = (timecard: WorkingPeriodTimecard) => {
   const {
     contract: { weeklyTotalWorkedHours },
-    workedHours: { TotalNormalAvailable, TotalTheoretical, TotalWeekly, TotalNationalHolidayLeaves },
+    workedHours: { TotalNormalAvailable, TotalInactiveShifts, TotalWeekly, TotalNationalHolidayLeaves },
   } = timecard;
-  const totalEffectiveHours = TotalWeekly.plus(TotalTheoretical).plus(TotalNationalHolidayLeaves);
-  const totalAdditionalHours = totalEffectiveHours.minus(weeklyTotalWorkedHours).plus(timecard.contract.extraDuration || Duration.ZERO);
+  const totalEffectiveHours = TotalWeekly.plus(TotalInactiveShifts).plus(TotalNationalHolidayLeaves);
+  const totalAdditionalHours = totalEffectiveHours
+    .minus(weeklyTotalWorkedHours)
+    .plus(timecard.contract.extraDuration || Duration.ZERO);
 
   if (totalAdditionalHours.isNegative()) return timecard.register('TotalAdditionalHours', Duration.ZERO);
   const totalNormalHours = getLowerDuration(TotalNormalAvailable, totalAdditionalHours);
 
-  // console.log(`
-  // -------------------------------------
-  // TotalLeavesPaid: ${formatDuration(TotalLeavesPaid)}
-  // TotalTheoretical: ${formatDuration(TotalTheoretical)}
-  // totalAdditionalHours: ${formatDuration(totalAdditionalHours)}
-  // TotalWeekly: ${formatDuration(TotalWeekly)}
-  // totalEffectiveHours: ${formatDuration(totalEffectiveHours)}
-  // TotalNormalAvailable: ${formatDuration(TotalNormalAvailable)}
-  // -------------------------------------
-  // totalNormalHours: ${formatDuration(totalNormalHours)}
-  // -------------------------------------
-  // `);
   return timecard
     .register('TotalNormal', totalNormalHours)
     .register('TotalNormalAvailable', TotalNormalAvailable.minus(totalNormalHours))
     .register(
       'TotalAdditionalHours',
-      Duration.ofMinutes(Math.ceil(getGreaterDuration(totalAdditionalHours.minus(totalNormalHours), Duration.ZERO).toMinutes() / 15) * 15)
+      Duration.ofMinutes(
+        Math.ceil(getGreaterDuration(totalAdditionalHours.minus(totalNormalHours), Duration.ZERO).toMinutes() / 15) * 15
+      )
     );
 };
 

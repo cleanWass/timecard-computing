@@ -23,7 +23,7 @@ export const HoursTypeCodes = {
   HolidaySurchargedP: 'MAJOFERIEP', // Majoration Férié Ponctuel
 
   TotalWeekly: 'Heures total', // Horaire Total
-  TotalTheoretical: 'Heures théoriques normal', // Horaire Théorique Total
+  TotalInactiveShifts: 'Heures shifts théoriques', // Nombre d'heures de shifts théoriques
   TotalLeaves: 'Heures congés total', // Horaire Congé Total
   TotalNationalHolidayLeaves: 'Heures congés jours fériés', // Horaire Congé Férié
   TotalLeavesUnpaid: 'Heures congés non payés', // Horaire Congé Non Payé

@@ -9,6 +9,7 @@ import { RequirementId } from '../../sales-contract-management/requirement/requi
 import { ServiceContractId } from '../../sales-contract-management/service-contract/service-contract-id';
 import { ShiftId } from './shift-id';
 import '@js-joda/timezone';
+import { ShiftReason } from './shift-reason';
 
 export type IShift = {
   id: ShiftId;
@@ -16,7 +17,7 @@ export type IShift = {
   duration: Duration;
   clientId: ClientId;
   clientName: string;
-  type: string;
+  type: ShiftReason;
   employeeId: EmployeeId;
   replacedShiftId?: ShiftId;
   requirementIds?: RequirementId[];
@@ -58,13 +59,13 @@ export class Shift implements ValueObject, IShift {
     public readonly duration: Duration,
     public readonly clientId: ClientId,
     public readonly clientName: string,
-    public readonly type: string,
+    public readonly type: ShiftReason,
     public readonly employeeId: EmployeeId,
     public readonly serviceContractId?: ServiceContractId,
     public readonly requirementIds?: RequirementId[],
     public readonly replacedShiftId?: ShiftId
   ) {
-    this._vo = Map<string, TypeProps<IShift>>()
+    this._vo = Map<string | ShiftReason, TypeProps<IShift>>()
       .set('id', this.id)
       .set('serviceContractId', this.serviceContractId)
       .set('requirementIds', this.requirementIds)

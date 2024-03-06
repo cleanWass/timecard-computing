@@ -12,8 +12,8 @@ import * as TE from 'fp-ts/lib/TaskEither';
 import { isRight } from 'fp-ts/These';
 import { computeTimecardForEmployee } from '../src/application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from '../src/domain/models/local-date-range';
-import { formatPayload, parsePayload } from './infrastructure/parsing/parse-payload';
-import { planningValidator } from './infrastructure/parsing/schema/planning';
+import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
+import { planningValidator } from './infrastructure/validation/extern/planning';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -42,34 +42,6 @@ export const fetchDataForEmployee = (silaeId: string, { start, end }: LocalDateR
     .then(r => r.data)
     .catch(e => console.log(`error while fetching for ${silaeId} ${e.response.data}`));
 
-export const fetchEmployeeWithActiveContractDuringPeriod = ({ start, end }: LocalDateRange) => {
-  const token = 'zkrgnflp124jffdlj449FkAAZ'; // TODO env
-  const baseURl = 'https://cleany-help-rh-herokuapp-com'; // TODO env
-
-  const url = 'http://localhost:3000/active-cleaners';
-
-  const url1 = `${baseURl}/bases/${start.format(DateTimeFormatter.ofPattern('yyyy-MM-dd'))}/${end.format(
-    DateTimeFormatter.ofPattern('yyyy-MM-dd')
-  )}}/${token}`;
-
-  return axios
-    .post(url, {
-      period: {
-        startDate: start.toString(),
-        endDate: end.toString(),
-      },
-    })
-    .then(r => {
-      return r.data as {
-        id: string;
-        type: string;
-        firstName: string;
-        lastName: string;
-        silaeId: string;
-      }[];
-    });
-};
-
 app.post('/timecard', async (req, res) => {
   const { body, params } = req;
   console.log('/timecard', { body: req.body, params: req.params });
@@ -79,6 +51,7 @@ app.post('/timecard', async (req, res) => {
     previewShifts,
   } = req.body;
 
+  console.log('previewShifts', previewShifts);
   const period = new LocalDateRange(LocalDate.parse(startDate), LocalDate.parse(endDate));
 
   await pipe(

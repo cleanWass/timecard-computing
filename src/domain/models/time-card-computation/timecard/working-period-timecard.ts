@@ -10,7 +10,7 @@ import {
 import { Leave } from '../../leave-recording/leave/leave';
 import { LocalTimeSlot } from '../../local-time-slot';
 import { Shift } from '../../mission-delivery/shift/shift';
-import { TheoreticalShift } from '../../mission-delivery/shift/theorical-shift';
+import { InactiveShift } from '../../mission-delivery/shift/inactive-shift';
 import { WorkingPeriod } from '../working-period/working-period';
 import { HoursTypeCodes, WorkedHoursRate, WorkedHoursRecap, WorkedHoursRecapType } from './worked-hours-rate';
 
@@ -25,7 +25,7 @@ export class WorkingPeriodTimecard implements ValueObject {
     weeklyPlanning: WeeklyPlanning;
 
     shifts: List<Shift>;
-    theoreticalShifts?: List<TheoreticalShift>;
+    inactiveShifts?: List<InactiveShift>;
 
     leaves: List<Leave>;
 
@@ -41,8 +41,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.weeklyPlanning ?? Map<DayOfWeek, Set<LocalTimeSlot>>(),
       params.shifts,
       params.leaves ?? List<Leave>(),
-      List<TheoreticalShift>(),
-      params.mealTickets ?? 0,
+      List<InactiveShift>(),
+      params.mealTickets ?? 0
     );
   }
 
@@ -60,8 +60,8 @@ export class WorkingPeriodTimecard implements ValueObject {
 
     public readonly leaves: List<Leave>,
 
-    public readonly theoreticalShifts: List<TheoreticalShift>,
-    public readonly mealTickets: number,
+    public readonly inactiveShifts: List<InactiveShift>,
+    public readonly mealTickets: number
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
       .set('id', this.id)
@@ -72,7 +72,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       .set('workedHours', this.workedHours)
       .set('shifts', this.shifts)
       .set('leaves', this.leaves)
-      .set('theoreticalShifts', this.theoreticalShifts)
+      .set('inactiveShifts', this.inactiveShifts)
       .set('mealTickets', this.mealTickets);
   }
 
@@ -86,8 +86,8 @@ export class WorkingPeriodTimecard implements ValueObject {
 
   getNightOrdinary() {
     return this.weeklyPlanning.reduce(
-      (days, slots, day) => (slots.some((slot) => slot.isNight()) ? days.add(day) : days),
-      Set<DayOfWeek>(),
+      (days, slots, day) => (slots.some(slot => slot.isNight()) ? days.add(day) : days),
+      Set<DayOfWeek>()
     );
   }
 
@@ -101,8 +101,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.weeklyPlanning ?? this.weeklyPlanning,
       params.shifts ?? this.shifts,
       params.leaves ?? this.leaves,
-      params.theoreticalShifts ?? this.theoreticalShifts,
-      params.mealTickets ?? this.mealTickets,
+      params.inactiveShifts ?? this.inactiveShifts,
+      params.mealTickets ?? this.mealTickets
     );
   }
 
@@ -127,30 +127,30 @@ export class WorkingPeriodTimecard implements ValueObject {
             ${this.workedHours
               .toSeq()
               .map((duration, rate) =>
-                duration.isZero() ? `` : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`,
+                duration.isZero() ? `` : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`
               )
-              .filter((s) => s)
+              .filter(s => s)
               .join('\n\t\t')}
         Leaves: ${this.leaves
           .sortBy(
-            (s) => s.date,
-            (a, b) => a.compareTo(b),
+            s => s.date,
+            (a, b) => a.compareTo(b)
           )
-          .map((l) => l.debug())
+          .map(l => l.debug())
           .join(' | ')}
         Shifts: ${this.shifts
           .sortBy(
-            (s) => s.startTime,
-            (a, b) => a.compareTo(b),
+            s => s.startTime,
+            (a, b) => a.compareTo(b)
           )
-          .map((s) => s.debug())
+          .map(s => s.debug())
           .join(' | ')}
-        TheoreticalShifts: ${this.theoreticalShifts.map((s) => s.debug()).join(' | ')}
+        InactiveShifts: ${this.inactiveShifts.map(s => s.debug()).join(' | ')}
         _____
         planning: ${this.weeklyPlanning
-          .map((slots, day) => `${day} -> ${slots.map((s) => s.debug()).join(' | ')}`)
+          .map((slots, day) => `${day} -> ${slots.map(s => s.debug()).join(' | ')}`)
           .join('\n\t\t')}
-      `,
+      `
     );
   }
 
@@ -167,10 +167,10 @@ export class WorkingPeriodTimecard implements ValueObject {
               acc[key] = total[key].plus(timecard.workedHours[key]);
               return acc;
             },
-            {} as { [k in WorkedHoursRate]: Duration },
-          ),
+            {} as { [k in WorkedHoursRate]: Duration }
+          )
         ),
-      new WorkedHoursRecap(),
+      new WorkedHoursRecap()
     );
   }
 }

@@ -2,7 +2,7 @@ import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import { List } from 'immutable';
 import { ExtractEitherRightType } from '../../~shared/util/types';
-import { employeeDataValidator } from './schema/employee';
+import { employeeDataValidator } from './extern/employee';
 
 export const formatPayload = (data: ExtractEitherRightType<typeof parsePayload>) => {
   return {
