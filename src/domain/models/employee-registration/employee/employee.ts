@@ -55,6 +55,8 @@ export class Employee implements ValueObject {
       | EmployeeRole
       | string
       | number
+      | null
+      | undefined
       | boolean
       | LocalDate
       | { city?: string; street?: string; postalCode?: string }

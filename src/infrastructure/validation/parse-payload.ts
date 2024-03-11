@@ -1,6 +1,7 @@
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import { List } from 'immutable';
+import { ParseError } from '../../~shared/error/ParseError';
 import { ExtractEitherRightType } from '../../~shared/util/types';
 import { employeeDataValidator } from './extern/employee';
 
@@ -18,19 +19,14 @@ export const parsePayload = (payload: unknown) =>
     payload,
     employeeDataValidator.safeParse,
     E.fromPredicate(
-      parsedJSON => parsedJSON.success,
-      e => {
-        let error = new Error(`success : ${e.success} \n Error while parsing payload ${e['error']}`);
-        console.log(error);
-        return error;
-      }
+      parsedJSON => parsedJSON.success && parsedJSON?.data !== null,
+      e => new ParseError(`safe parse success : ${e.success} \n Error while parsing payload ${e['error']}`)
     ),
-    E.map(parsedJSON => (parsedJSON.success ? parsedJSON.data : null)),
-    E.mapLeft(e => console.log('error while parsing', e)),
-    E.map(({ leaves, contracts, shifts, cleaner }) => ({
+    E.chain(parsedJSON => (parsedJSON.success ? E.right(parsedJSON.data) : E.left(new ParseError('data is empty')))),
+    E.map(({ leaves, contracts, shifts, employee }) => ({
       shifts,
       leaves,
       contracts,
-      employee: cleaner,
+      employee,
     }))
   );

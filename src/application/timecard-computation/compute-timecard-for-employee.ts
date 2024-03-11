@@ -1,12 +1,14 @@
+import { DayOfWeek } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
-import { List } from 'immutable';
+import { List, Map, Set } from 'immutable';
 import '@js-joda/timezone';
 
 import { Employee } from '../../domain/models/employee-registration/employee/employee';
 import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../domain/models/leave-recording/leave/leave';
 import { LocalDateRange } from '../../domain/models/local-date-range';
+import { LocalTimeSlot } from '../../domain/models/local-time-slot';
 import { Shift } from '../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
@@ -51,7 +53,7 @@ const initializeWorkingPeriodTimecard = ({
     contract,
     employee,
     workingPeriod,
-    weeklyPlanning: contract.weeklyPlannings.get(workingPeriod.period),
+    weeklyPlanning: contract.weeklyPlannings.get(workingPeriod.period, Map<DayOfWeek, Set<LocalTimeSlot>>()),
     shifts,
     leaves,
   });

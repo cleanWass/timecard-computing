@@ -5,7 +5,7 @@ import { formatDuration, getGreaterDuration, getLowerDuration } from '../../../~
 
 const computeSurchargeWithExtraHours = (timecard: WorkingPeriodTimecard) => {
   const additionalHours = timecard.workedHours.TotalAdditionalHours;
-  const _10PerCentRateHours = getLowerDuration(additionalHours, timecard.contract.extraDuration);
+  const _10PerCentRateHours = getLowerDuration(additionalHours, timecard.contract.extraDuration || Duration.ZERO);
   const _25PerCentRateHours = getGreaterDuration(additionalHours.minus(_10PerCentRateHours), Duration.ZERO);
   return timecard
 

@@ -48,7 +48,7 @@ export const employeeDataValidator = zod
         seniorityDate: LocalDate.parse(cleaner.seniorityDate),
       })
     ),
-    shifts: zod.array(shiftValidator).nullish(),
+    shifts: zod.array(shiftValidator),
     leaves: zod.array(leaveValidator).nullish(),
     plannings: zod.array(contractPlanningValidator),
   })
@@ -62,8 +62,8 @@ export const employeeDataValidator = zod
     );
 
     return {
-      cleaner: raw.cleaner,
-      shifts: raw.shifts.map(shift =>
+      employee: raw.cleaner,
+      shifts: (raw.shifts || []).map(shift =>
         Shift.build({
           id: shift.id,
           clientId: shift.clientId,
@@ -74,7 +74,7 @@ export const employeeDataValidator = zod
           employeeId: raw.cleaner.silaeId,
         })
       ),
-      leaves: raw.leaves.map(leave =>
+      leaves: (raw.leaves || []).map(leave =>
         Leave.build({
           startTime: LocalTime.parse(leave.startTime),
           endTime: LocalTime.parse(leave.endTime),
@@ -85,7 +85,8 @@ export const employeeDataValidator = zod
         })
       ),
       contracts: contractPlanningsGroupedByContractId.keySeq().map(contractId => {
-        const { contract, planning, period } = raw.plannings.find(planning => planning.contract.id === contractId);
+        // @ts-ignore
+        const { contract, planning } = raw.plannings.find(planning => planning.contract.id === contractId);
         const extraDuration = Duration.parse(contract.extraDuration ?? 'PT0M');
         return EmploymentContract.build({
           id: contractId,
@@ -98,6 +99,7 @@ export const employeeDataValidator = zod
           type: contract.type,
           subType: contract.subType as ContractSubType,
           extraDuration: extraDuration,
+          weeklyNightShiftHours: EmploymentContract.nightShiftTimeSlots,
           weeklyPlannings: contractPlanningsGroupedByContractId
             .get(contractId, List<[PlanningValidatorType, ClosedPeriodValidatorType]>())
             .reduce((map, curr) => {

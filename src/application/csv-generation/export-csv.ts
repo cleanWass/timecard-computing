@@ -1,8 +1,7 @@
 import { Duration } from '@js-joda/core';
 import { List } from 'immutable';
-import { HoursTypeCodes } from '../../domain/models/time-card-computation/timecard/worked-hours-rate';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
-import { headers } from '../../generate-csv';
+import { headers } from '../../generate-csv-payroll';
 import { formatDurationAs100 } from '../../~shared/util/joda-helper';
 import { ExtractEitherRightType, keys } from '../../~shared/util/types';
 import { computeTimecardForEmployee } from '../timecard-computation/compute-timecard-for-employee';
@@ -28,7 +27,7 @@ export function formatCsv(row: ExtractEitherRightType<ReturnType<typeof computeT
     'Silae Id': row.employee.silaeId || '0',
     Salarié: row.employee.firstName + ' ' + row.employee.lastName || '0',
     Fonction: row.employee.role,
-    Période: row.contracts.first().period(row.period.end).toFormattedString(),
+    Période: row.period.toFormattedString(),
     ...formatObjectDurations({
       HN: totalTcs.TotalNormal,
       HC10: totalTcs.TenPercentRateComplementary,

@@ -12,12 +12,17 @@ import { getTotalDuration } from '../../../~shared/util/joda-helper';
 // si travailleur événementielle ou hotellerie et travailleur de nuit,
 
 const isShiftDuringPlanning = (shift: Shift, planning: WorkingPeriodTimecard['weeklyPlanning']) =>
-  planning.get(shift.startTime.dayOfWeek(), Set<LocalTimeSlot>()).some(timeSlot => shift.getTimeSlot().isConcurrentOf(timeSlot));
+  planning
+    .get(shift.startTime.dayOfWeek(), Set<LocalTimeSlot>())
+    .some(timeSlot => shift.getTimeSlot().isConcurrentOf(timeSlot));
 
 const computeSundayHours = (timecard: WorkingPeriodTimecard) => {
   const sundayShifts = timecard.shifts.filter(shift => shift.startTime.dayOfWeek() === DayOfWeek.SUNDAY);
 
-  return timecard.register(timecard.contract.isSundayWorker() ? 'SundayContract' : 'SundayAdditional', getTotalDuration(sundayShifts));
+  return timecard.register(
+    timecard.contract.isSundayWorker() ? 'SundayContract' : 'SundayAdditional',
+    getTotalDuration(sundayShifts)
+  );
 };
 
 const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
@@ -34,8 +39,14 @@ const computeHolidayHours = (timecard: WorkingPeriodTimecard) => {
     isShiftDuringPlanning(shift, timecard.weeklyPlanning) ? 'HolidaySurchargedH' : 'HolidaySurchargedP'
   );
   return timecard
-    .register('HolidaySurchargedH', getTotalDuration(shiftsDuringHolidaysGroupedByRate.get('HolidaySurchargedH', List<Shift>())))
-    .register('HolidaySurchargedP', getTotalDuration(shiftsDuringHolidaysGroupedByRate.get('HolidaySurchargedP', List<Shift>())));
+    .register(
+      'HolidaySurchargedH',
+      getTotalDuration(shiftsDuringHolidaysGroupedByRate.get('HolidaySurchargedH', List<Shift>()))
+    )
+    .register(
+      'HolidaySurchargedP',
+      getTotalDuration(shiftsDuringHolidaysGroupedByRate.get('HolidaySurchargedP', List<Shift>()))
+    );
 };
 
 const computeNightShiftHours = (timecard: WorkingPeriodTimecard) => {
@@ -45,25 +56,24 @@ const computeNightShiftHours = (timecard: WorkingPeriodTimecard) => {
       weeklyNightShiftHours: [morningSurchargedHours, nightSurchargedHours],
     },
   } = timecard;
-  const earlyMorningShifts = shifts
-    .map(shift => {
-      const commonRange = shift.getTimeSlot().commonRange(morningSurchargedHours);
-      if (!commonRange) return null;
-      return shift.with({ startTime: shift.startTime.with(commonRange.startTime), duration: commonRange.duration() });
-    }, List())
-    .filter(identity);
+  const earlyMorningShifts = shifts.reduce((list, shift) => {
+    const commonRange = shift.getTimeSlot().commonRange(morningSurchargedHours);
+    return commonRange
+      ? list.push(
+          shift.with({ startTime: shift.startTime.with(commonRange.startTime), duration: commonRange.duration() })
+        )
+      : list;
+  }, List<Shift>());
 
-  const lateNightShifts = shifts
-    .map(shift => {
-      const commonRange = shift.getTimeSlot().commonRange(nightSurchargedHours);
-      if (!commonRange) return null;
-      const duration =
-        commonRange.startTime.plus(commonRange.duration()).compareTo(LocalTime.MAX.truncatedTo(ChronoUnit.MINUTES)) === 0
-          ? commonRange.duration().plus(Duration.ofMinutes(1))
-          : commonRange.duration();
-      return shift.with({ startTime: shift.startTime.with(commonRange.startTime), duration });
-    })
-    .filter(identity);
+  const lateNightShifts = shifts.reduce((list, shift) => {
+    const commonRange = shift.getTimeSlot().commonRange(nightSurchargedHours);
+    if (!commonRange) return list;
+    const duration =
+      commonRange.startTime.plus(commonRange.duration()).compareTo(LocalTime.MAX.truncatedTo(ChronoUnit.MINUTES)) === 0
+        ? commonRange.duration().plus(Duration.ofMinutes(1))
+        : commonRange.duration();
+    return list.push(shift.with({ startTime: shift.startTime.with(commonRange.startTime), duration }));
+  }, List<Shift>());
 
   const nightShifts = earlyMorningShifts.concat(lateNightShifts);
 

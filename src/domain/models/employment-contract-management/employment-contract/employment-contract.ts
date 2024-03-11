@@ -15,7 +15,7 @@ export type WeeklyPlanning = Map<DayOfWeek, Set<LocalTimeSlot>>;
 // WeeklyTotalWorkedHours is the number of hours worked in a week.  If subType == "complement_d'heures" then it should integrate extra hours
 
 export class EmploymentContract implements ValueObject {
-  private static nightShiftTimeSlots: [LocalTimeSlot, LocalTimeSlot] = [
+  static nightShiftTimeSlots: [LocalTimeSlot, LocalTimeSlot] = [
     new LocalTimeSlot(LocalTime.MIN, LocalTime.of(6, 0)),
     new LocalTimeSlot(LocalTime.of(21, 0), LocalTime.MAX),
   ];
@@ -30,10 +30,10 @@ export class EmploymentContract implements ValueObject {
       params.weeklyTotalWorkedHours,
       params.workedDays,
       params.weeklyPlannings,
+      params.weeklyNightShiftHours ?? this.nightShiftTimeSlots,
       params.type,
       params.subType,
-      params.extraDuration ?? null,
-      params.weeklyNightShiftHours ?? this.nightShiftTimeSlots
+      params.extraDuration ?? undefined
     );
   }
 
@@ -48,12 +48,15 @@ export class EmploymentContract implements ValueObject {
     public readonly weeklyTotalWorkedHours: Duration,
     public readonly workedDays: Set<DayOfWeek>,
     public readonly weeklyPlannings: Map<LocalDateRange, WeeklyPlanning>,
+    public readonly weeklyNightShiftHours: [LocalTimeSlot, LocalTimeSlot],
     public readonly type: ContractType,
     public readonly subType?: ContractSubType,
-    public readonly extraDuration?: Duration,
-    public readonly weeklyNightShiftHours?: [LocalTimeSlot, LocalTimeSlot]
+    public readonly extraDuration?: Duration
   ) {
-    this._vo = Map<string, ValueObject | ContractType | ContractSubType | string | number | boolean>()
+    this._vo = Map<
+      string,
+      ValueObject | ContractType | ContractSubType | string | number | boolean | null | undefined
+    >()
       .set('id', id)
       .set('employeeId', this.employeeId)
       .set('startDate', this.startDate)
@@ -70,9 +73,9 @@ export class EmploymentContract implements ValueObject {
       .set('workedDays', this.workedDays)
       .set('weeklyPlannings', this.weeklyPlannings)
       .set('type', this.type)
-      .set('subType', this.subType)
-      .set('weeklyNightShiftHours', this.weeklyNightShiftHours.toString())
-      .set('extraDuration', this.extraDuration?.toString() ?? null);
+      .set('subType', this.subType || '')
+      .set('weeklyNightShiftHours', this.weeklyNightShiftHours?.toString() || '')
+      .set('extraDuration', this.extraDuration?.toString());
   }
 
   equals(other: unknown): boolean {

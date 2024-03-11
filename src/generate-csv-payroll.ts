@@ -117,6 +117,7 @@ const timecards = ({
 
                   log.successful++;
                   console.log(
+                    // @ts-ignore
                     `${row.first().Salarié} - ${row.first()['Silae Id']} -  OK ${log.successful}/${
                       log.total
                     } (error : ${log.failed})`

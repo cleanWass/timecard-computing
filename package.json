@@ -37,6 +37,6 @@
     "posttest": "yarn lint",
     "start": "node ./build/src/app.js",
     "launch": "tsc ; bun start",
-    "generate-csv": "tsc ; bun run src/generate-csv.ts"
+    "generate-csv": "tsc ; bun run src/generate-csv-payroll.ts"
   }
 }
