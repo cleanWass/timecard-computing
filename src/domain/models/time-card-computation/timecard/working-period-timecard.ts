@@ -9,6 +9,7 @@ import {
 } from '../../employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../leave-recording/leave/leave';
 import { LocalTimeSlot } from '../../local-time-slot';
+import { ProspectiveShift } from '../../mission-delivery/shift/prospective-shift';
 import { Shift } from '../../mission-delivery/shift/shift';
 import { InactiveShift } from '../../mission-delivery/shift/inactive-shift';
 import { WorkingPeriod } from '../working-period/working-period';
@@ -67,7 +68,6 @@ export class WorkingPeriodTimecard implements ValueObject {
       .set('id', this.id)
       .set('employee', this.employee)
       .set('contract', this.contract)
-      .set('workingPeriod', this.workingPeriod)
       .set('workingPeriod', this.workingPeriod)
       .set('workedHours', this.workedHours)
       .set('shifts', this.shifts)

@@ -9,6 +9,7 @@ import { EmploymentContract } from '../../domain/models/employment-contract-mana
 import { Leave } from '../../domain/models/leave-recording/leave/leave';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { LocalTimeSlot } from '../../domain/models/local-time-slot';
+import { ProspectiveShift } from '../../domain/models/mission-delivery/shift/prospective-shift';
 import { Shift } from '../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
@@ -102,9 +103,10 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
     pipe(
       E.Do,
       E.bind('workingPeriods', () => splitPeriodIntoWorkingPeriods(contracts, period)),
-      E.bindW('groupedShifts', ({ workingPeriods }) => groupShiftsByWorkingPeriods(shifts, workingPeriods)),
-      E.bindW('groupedLeaves', ({ workingPeriods }) => groupLeavesByWorkingPeriods(leaves, workingPeriods)),
-      E.bindW('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) =>
+
+      E.bind('groupedShifts', ({ workingPeriods }) => groupShiftsByWorkingPeriods(shifts, workingPeriods)),
+      E.bind('groupedLeaves', ({ workingPeriods }) => groupLeavesByWorkingPeriods(leaves, workingPeriods)),
+      E.bind('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) =>
         pipe(
           workingPeriods,
           wps =>

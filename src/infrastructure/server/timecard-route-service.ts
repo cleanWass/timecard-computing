@@ -56,9 +56,8 @@ export const formatRequestPayload = (data: ReturnType<typeof parseRequestPayload
     )
   );
 
-export const parseApiReturn = (data: unknown) => {
-  console.log('data2', JSON.stringify(data, null, 2));
-  return pipe(
+export const parseApiReturn = (data: unknown) =>
+  pipe(
     data,
     employeeDataValidator.safeParse,
     E.fromPredicate(
@@ -67,7 +66,6 @@ export const parseApiReturn = (data: unknown) => {
     ),
     E.chain(parsedJSON => (parsedJSON.success ? E.right(parsedJSON.data) : E.left(new ParseError('data is empty'))))
   );
-};
 
 export const formatApiReturn = (data: ReturnType<typeof parseApiReturn>) =>
   pipe(
@@ -82,14 +80,10 @@ export const formatApiReturn = (data: ReturnType<typeof parseApiReturn>) =>
 
 export const validateRequestPayload = (payload: unknown) => pipe(payload, parseRequestPayload, formatRequestPayload);
 
-export const fetchTimecardData = ({ silaeId, period }: TimecardRouteParams) => {
-  console.log('fetchTimecardData', silaeId, period);
-  return TE.right(fetchDataForEmployee(silaeId, period));
-  // e => new ParseError(`Fetching from care data parser went wrong ${e}`)
-  // );
-};
+export const fetchTimecardData = ({ silaeId, period }: TimecardRouteParams) =>
+  TE.tryCatch(
+    () => fetchDataForEmployee(silaeId, period),
+    e => new ParseError(`Fetching from care data parser went wrong ${e}`)
+  );
 
-export const validateApiReturn = (data: unknown) => {
-  console.log('data1', JSON.stringify(data, null, 2));
-  return pipe(data, parseApiReturn, formatApiReturn);
-};
+export const validateApiReturn = (data: unknown) => pipe(data, parseApiReturn, formatApiReturn);

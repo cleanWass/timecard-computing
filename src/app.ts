@@ -7,10 +7,9 @@ import * as O from 'fp-ts/lib/Option';
 import * as T from 'fp-ts/lib/Task';
 
 import * as TE from 'fp-ts/lib/TaskEither';
-import { isRight } from 'fp-ts/These';
+import { List } from 'immutable';
 import { computeTimecardForEmployee } from '../src/application/timecard-computation/compute-timecard-for-employee';
 import {
-  fetchDataForEmployee,
   fetchTimecardData,
   validateApiReturn,
   validateRequestPayload,
@@ -33,38 +32,36 @@ app.use(
 
 app.post('/timecard', async (req, res) => {
   console.log('/timecard', { body: req.body, params: req.params });
-  const {
-    silaeId,
-    period: { startDate, endDate },
-    prospectiveShifts,
-  } = req.body;
-
-  console.log('prospectiveShifts', prospectiveShifts);
 
   await pipe(
     TE.Do,
-    TE.bind('params', ({}) => TE.fromEither(validateRequestPayload(req.body))),
+    TE.bind('params', () => TE.fromEither(validateRequestPayload(req.body))),
     TE.bind('raw', ({ params }) => fetchTimecardData(params)),
-    TE.bind('data', ({ params, raw }) => {
-      return pipe(raw, validateApiReturn, TE.fromEither);
-    }),
-    TE.map(({ params: { period, silaeId, prospectiveShifts }, data }) =>
+    TE.bind('data', ({ raw }) => pipe(raw, validateApiReturn, TE.fromEither)),
+    TE.bind('timecards', ({ params: { period }, data }) =>
+      pipe(data, computeTimecardForEmployee(period), formatTimecardComputationReturn)
+    ),
+    TE.bind('prospectiveTimecards', ({ params: { period, prospectiveShifts }, data }) =>
       pipe(
-        { ...data, shifts: data.shifts.concat(prospectiveShifts) },
+        { ...data, shifts: data.shifts.concat(List(prospectiveShifts)) },
         computeTimecardForEmployee(period),
         formatTimecardComputationReturn
       )
     ),
+    TE.map(({ timecards, prospectiveTimecards }) => ({
+      ...timecards,
+      prospectiveTimecards: prospectiveTimecards.timecards,
+    })),
     TE.fold(
       e => {
         console.error('Error in TE.fold:', e);
         return T.of(res.status(500).json({ error: e }));
       },
       result => {
-        if (isRight(result)) {
-          return T.of(res.status(200).json(result.right));
+        if (result) {
+          return T.of(res.status(200).json(result));
         } else {
-          console.error('Error in TE.fold: Expected Right, but got Left', result.left);
+          console.error('Error in TE.fold: Expected Right, but got Left', result);
           return T.of(res.status(500).json({ error: 'Unexpected result format' }));
         }
       }
@@ -108,6 +105,7 @@ const formatTimecardComputationReturn = (
         workedHours: t.workedHours.toObject(),
         period: { start: t.workingPeriod.period.start.toString(), end: t.workingPeriod.period.end.toString() },
       })),
-    }))
+    })),
+    TE.fromEither
   );
 };
