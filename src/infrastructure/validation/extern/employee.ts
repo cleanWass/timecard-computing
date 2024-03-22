@@ -65,9 +65,9 @@ export const employeeDataValidator = zod
       employee: raw.cleaner,
       shifts: (raw.shifts || []).map(shift =>
         Shift.build({
-          id: shift.id,
-          clientId: shift.clientId,
-          clientName: shift.clientName,
+          id: shift.id || 'no id',
+          clientId: shift.clientId || 'no client id',
+          clientName: shift.clientName || 'no client name',
           startTime: LocalDateTime.of(LocalDate.parse(shift.date), LocalTime.parse(shift.startTime)),
           duration: Duration.parse(shift.duration),
           type: shift.type,

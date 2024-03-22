@@ -26,10 +26,7 @@ export const fetchDataForEmployee = (silaeId: string, { start, end }: LocalDateR
         endDate: end.toString(),
       },
     })
-    .then(r => {
-      console.log('r.data', r.data?.shifts?.length);
-      return r.data;
-    })
+    .then(r => r.data)
     .catch(e => console.log(`error while fetching for ${silaeId} ${e.response.data}`));
 
 export const parseRequestPayload = (payload: unknown) => validateRoutePayload(timecardRoutesPayloadValidator)(payload);

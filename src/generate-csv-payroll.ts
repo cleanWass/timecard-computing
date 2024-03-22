@@ -7,14 +7,15 @@ import { flow, pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 
 import fs from 'fs';
-import { formatCsvGroupedByContract } from './application/csv-generation/export-csv';
+import { formatCsv, formatCsvGroupedByContract } from './application/csv-generation/export-csv';
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
 import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
+import { Set } from 'immutable';
 
 const ws_debug = fs.createWriteStream('export_debug.csv');
-const ws_single_line = fs.createWriteStream('export_février_2024_single_line.csv');
-const ws_multi_lines = fs.createWriteStream('export_février_2024_multi_lines.csv');
+const ws_single_line = fs.createWriteStream('export_mars_2024_single_line.csv');
+const ws_multi_lines = fs.createWriteStream('export_mars_2024_multi_lines.csv');
 const errorFile = fs.createWriteStream('export_error.csv');
 
 export const headers = [
@@ -50,9 +51,10 @@ const log = {
   failed: 0,
   successful: 0,
 };
-// const period = new LocalDateRange(LocalDate.parse('2024-01-08'), LocalDate.parse('2024-01-15'));
+
 const periodJanvier = new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDate.parse('2024-01-22'));
 const periodFévrier = new LocalDateRange(LocalDate.parse('2024-01-22'), LocalDate.parse('2024-02-18'));
+const periodMars = new LocalDateRange(LocalDate.parse('2024-02-19'), LocalDate.parse('2024-03-17'));
 
 export type CleanerResponse = {
   cleaner: unknown;
@@ -103,33 +105,28 @@ const timecards = ({
               flow(
                 formatPayload,
                 computeTimecardForEmployee(period),
-                E.map(formatCsvGroupedByContract),
+                E.map(formatCsv),
                 E.map(row => {
-                  if (debug === true) {
-                    row.forEach((value, key) => csvStreamDebug.write(value));
-                  } else {
-                    if (row.size === 1) {
-                      csvStreamSingle.write(row.first());
-                    } else {
-                      row.forEach((value, key) => csvStreamMulti.write(value));
-                    }
-                  }
+                  // if (debug) {
+                  //   row.forEach((value, key) => csvStreamDebug.write(value));
+                  // } else {
+                  //   if (row.size === 1) {
+                  //     csvStreamSingle.write(row.first());
+                  //   } else {
+                  //     row.forEach((value, key) => csvStreamMulti.write(value));
+                  //   }
+                  // }
+                  csvStreamSingle.write(row);
 
                   log.successful++;
                   console.log(
                     // @ts-ignore
-                    `${row.first().Salarié} - ${row.first()['Silae Id']} -  OK ${log.successful}/${
-                      log.total
-                    } (error : ${log.failed})`
+                    `${row.Salarié} - ${row['Silae Id']} -  OK ${log.successful}/${log.total} (error : ${log.failed})`
                   );
                   return row;
                 })
               )
             )
-
-            // TE.map(
-            //   computeTimecardForEmployee(period),
-            //   TE.mapLeft(e => [cleaner.cleaner, e])
           )
         )
       );
@@ -139,7 +136,7 @@ const timecards = ({
 async function main() {
   try {
     const debug = process.argv.some(arg => ['debug', '-debug', '-d', 'd'].includes(arg));
-    await timecards({ debug, period: periodFévrier })();
+    await timecards({ debug, period: periodMars })();
     csvStreamSingle.end();
     csvStreamMulti.end();
     errorCsvStream.end();

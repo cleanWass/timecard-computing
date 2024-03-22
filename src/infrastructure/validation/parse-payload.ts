@@ -20,7 +20,10 @@ export const parsePayload = (payload: unknown) =>
     employeeDataValidator.safeParse,
     E.fromPredicate(
       parsedJSON => parsedJSON.success && parsedJSON?.data !== null,
-      e => new ParseError(`safe parse success : ${e.success} \n Error while parsing payload ${e['error']}`)
+      e => {
+        console.log(new ParseError(`safe parse success : ${e.success} \n Error while parsing payload ${e['error']} `));
+        return new ParseError(`safe parse success : ${e.success} \n Error while parsing payload ${e['error']}`);
+      }
     ),
     E.chain(parsedJSON => (parsedJSON.success ? E.right(parsedJSON.data) : E.left(new ParseError('data is empty')))),
     E.map(({ leaves, contracts, shifts, employee }) => ({

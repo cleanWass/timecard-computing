@@ -3,12 +3,12 @@ import { SHIFT_REASON } from '../../../domain/models/mission-delivery/shift/shif
 
 export const shiftValidator = zod
   .object({
-    id: zod.string(),
+    id: zod.string().nullish(),
     date: zod.string().min(1),
     type: zod.enum(SHIFT_REASON),
     startTime: zod.string(),
     duration: zod.string(),
-    clientId: zod.string(),
-    clientName: zod.string(),
+    clientId: zod.string().nullish(),
+    clientName: zod.string().nullish(),
   })
   .required();
