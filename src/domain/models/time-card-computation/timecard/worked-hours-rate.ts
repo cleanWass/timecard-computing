@@ -3,6 +3,7 @@ import { Duration } from '@js-joda/core';
 import { Record, RecordOf } from 'immutable';
 import { keys } from '../../../../~shared/util/types';
 
+// TODO split computations keys and results keys
 export const HoursTypeCodes = {
   TotalNormal: 'HN', // Horaire Normal Total
 
@@ -22,7 +23,7 @@ export const HoursTypeCodes = {
   HolidaySurchargedH: 'MAJOFERIEH', // Majoration Férié Habituel
   HolidaySurchargedP: 'MAJOFERIEP', // Majoration Férié Ponctuel
 
-  TotalWeekly: 'Heures total', // Horaire Total
+  TotalWeekly: 'Heures total travaillées', // Horaire Total
   TotalInactiveShifts: 'Heures shifts théoriques', // Nombre d'heures de shifts théoriques
   TotalLeaves: 'Heures congés total', // Horaire Congé Total
   TotalNationalHolidayLeaves: 'Heures congés jours fériés', // Horaire Congé Férié

@@ -39,7 +39,7 @@ export const headers = [
 const csvStreamDebug = format({ headers: [...headers] });
 const csvStreamSingle = format({ headers: [...headers] });
 const csvStreamMulti = format({ headers: [...headers] });
-const errorCsvStream = format({ headers: ['Matricule', 'error'] });
+const errorCsvStream = format({ headers: ['Matricule', 'Employé', 'Durée Intercontrat', 'Période'] });
 
 csvStreamDebug.pipe(ws_debug).on('end', () => process.exit());
 csvStreamSingle.pipe(ws_single_line).on('end', () => process.exit());
@@ -101,20 +101,24 @@ const timecards = ({
         TE.traverseArray(cleaner =>
           pipe(
             cleaner,
-
             flow(parsePayload, TE.fromEither),
             TE.map(
               flow(
                 formatPayload,
-                // t => {
-                //   console.log('after parsing payload : ', JSON.stringify(t, null, 2));
-                //   return t;
-                // },
                 computeTimecardForEmployee(period),
                 E.map(t => {
                   List(t.timecards)
                     .sort((a, b) => a.contract.startDate.compareTo(b.contract.startDate))
-                    .forEach(tc => tc.debug());
+                    .forEach(tc => {
+                      if (tc.getTotalIntercontractDuration().toMinutes() > 0) {
+                        errorCsvStream.write({
+                          Matricule: tc.employee.silaeId,
+                          Employé: tc.employee.firstName + ' ' + tc.employee.lastName,
+                          'Durée Intercontrat': tc.getTotalIntercontractDuration().toString(),
+                          Période: tc.workingPeriod.period.toFormattedString(),
+                        });
+                      }
+                    });
                   return t;
                 }),
                 E.map(formatCsvGroupedByContract),
@@ -130,10 +134,16 @@ const timecards = ({
                   }
                   log.successful++;
                   console.log(
-                    // @ts-ignore
-                    `${row.Salarié} - ${row['Silae Id']} -  OK ${log.successful}/${log.total} (error : ${log.failed})`
+                    `${row.first().Salarié} - ${row?.first()['Silae Id']} -  OK ${log.successful}/${
+                      log.total
+                    } (error : ${log.failed})`
                   );
                   return row;
+                }),
+                E.mapLeft(e => {
+                  console.log(`error for ${cleaner.cleaner.firstName} + ${cleaner.cleaner.lastName} ${e}`);
+                  log.failed++;
+                  return e;
                 })
               )
             )

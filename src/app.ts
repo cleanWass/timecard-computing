@@ -9,6 +9,7 @@ import * as T from 'fp-ts/lib/Task';
 import * as TE from 'fp-ts/lib/TaskEither';
 import { List } from 'immutable';
 import { computeTimecardForEmployee } from '../src/application/timecard-computation/compute-timecard-for-employee';
+import { computeRentabilityForEmployee } from './application/rentability-computation/compute-rentability-for-employee';
 import {
   fetchTimecardData,
   validateApiReturn,
@@ -39,7 +40,15 @@ app.post('/timecard', async (req, res) => {
     TE.bind('raw', ({ params }) => fetchTimecardData(params)),
     TE.bind('data', ({ raw }) => pipe(raw, validateApiReturn, TE.fromEither)),
     TE.bind('timecards', ({ params: { period }, data }) =>
-      pipe(data, computeTimecardForEmployee(period), formatTimecardComputationReturn)
+      pipe(
+        data,
+        computeTimecardForEmployee(period),
+        E.map(result => {
+          computeRentabilityForEmployee(period, List(result.timecards));
+          return result;
+        }),
+        formatTimecardComputationReturn
+      )
     ),
     TE.bind('prospectiveTimecards', ({ params: { period, prospectiveShifts }, data }) =>
       pipe(

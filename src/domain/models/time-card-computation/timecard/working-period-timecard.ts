@@ -76,6 +76,13 @@ export class WorkingPeriodTimecard implements ValueObject {
       .set('mealTickets', this.mealTickets);
   }
 
+  getTotalIntercontractDuration() {
+    const totalHoursAffected = Duration.ZERO.plus(this.workedHours.TotalWeekly)
+      .plus(this.workedHours.TotalLeaves)
+      .plus(this.workedHours.TotalInactiveShifts);
+    return this.contract.weeklyTotalWorkedHours.minus(totalHoursAffected);
+  }
+
   equals(other: unknown): boolean {
     return this._vo.equals((other as WorkingPeriodTimecard)?._vo);
   }
