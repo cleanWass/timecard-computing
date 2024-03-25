@@ -11,7 +11,7 @@ import { formatCsv, formatCsvGroupedByContract } from './application/csv-generat
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
 import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
-import { Set } from 'immutable';
+import { List, Set } from 'immutable';
 
 const ws_debug = fs.createWriteStream('export_debug.csv');
 const ws_single_line = fs.createWriteStream('export_mars_2024_single_line.csv');
@@ -92,6 +92,7 @@ const timecards = ({
     ),
     TE.map(dataCleaners => {
       log.total = dataCleaners.length;
+      // @ts-ignore
       return dataCleaners;
     }),
     TE.chainW(dataCleaners => {
@@ -100,24 +101,33 @@ const timecards = ({
         TE.traverseArray(cleaner =>
           pipe(
             cleaner,
+
             flow(parsePayload, TE.fromEither),
             TE.map(
               flow(
                 formatPayload,
+                // t => {
+                //   console.log('after parsing payload : ', JSON.stringify(t, null, 2));
+                //   return t;
+                // },
                 computeTimecardForEmployee(period),
-                E.map(formatCsv),
+                E.map(t => {
+                  List(t.timecards)
+                    .sort((a, b) => a.contract.startDate.compareTo(b.contract.startDate))
+                    .forEach(tc => tc.debug());
+                  return t;
+                }),
+                E.map(formatCsvGroupedByContract),
                 E.map(row => {
-                  // if (debug) {
-                  //   row.forEach((value, key) => csvStreamDebug.write(value));
-                  // } else {
-                  //   if (row.size === 1) {
-                  //     csvStreamSingle.write(row.first());
-                  //   } else {
-                  //     row.forEach((value, key) => csvStreamMulti.write(value));
-                  //   }
-                  // }
-                  csvStreamSingle.write(row);
-
+                  if (debug) {
+                    row.forEach((value, key) => csvStreamDebug.write(value));
+                  } else {
+                    if (row.size === 1) {
+                      csvStreamSingle.write(row.first());
+                    } else {
+                      row.forEach((value, key) => csvStreamMulti.write(value));
+                    }
+                  }
                   log.successful++;
                   console.log(
                     // @ts-ignore
@@ -135,6 +145,7 @@ const timecards = ({
 
 async function main() {
   try {
+    console.log('start');
     const debug = process.argv.some(arg => ['debug', '-debug', '-d', 'd'].includes(arg));
     await timecards({ debug, period: periodMars })();
     csvStreamSingle.end();
