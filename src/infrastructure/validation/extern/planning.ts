@@ -15,6 +15,7 @@ export const planningValidator = zod.record(
 export type PlanningValidatorType = zod.infer<typeof planningValidator>;
 
 export const contractPlanningValidator = zod.object({
+  type: zod.enum(['Incumbent', 'OneOff', 'Handyman', 'Replacement']),
   contract: contractValidator,
   planning: planningValidator,
   period: closedPeriodValidator,

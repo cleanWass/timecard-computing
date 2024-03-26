@@ -14,8 +14,9 @@ import { formatPayload, parsePayload } from './infrastructure/validation/parse-p
 import { List, Set } from 'immutable';
 
 const ws_debug = fs.createWriteStream('export_debug.csv');
-const ws_single_line = fs.createWriteStream('export_mars_2024_single_line.csv');
-const ws_multi_lines = fs.createWriteStream('export_mars_2024_multi_lines.csv');
+const ws_total = fs.createWriteStream('export_mars_2024.csv');
+// const ws_single_line = fs.createWriteStream('export_mars_2024_single_line.csv');
+// const ws_multi_lines = fs.createWriteStream('export_mars_2024_multi_lines.csv');
 const errorFile = fs.createWriteStream('export_error.csv');
 
 export const headers = [
@@ -37,13 +38,15 @@ export const headers = [
 ] as const;
 
 const csvStreamDebug = format({ headers: [...headers] });
+const csvStreamTotal = format({ headers: [...headers] });
 const csvStreamSingle = format({ headers: [...headers] });
 const csvStreamMulti = format({ headers: [...headers] });
 const errorCsvStream = format({ headers: ['Matricule', 'Employé', 'Durée Intercontrat', 'Période'] });
 
 csvStreamDebug.pipe(ws_debug).on('end', () => process.exit());
-csvStreamSingle.pipe(ws_single_line).on('end', () => process.exit());
-csvStreamMulti.pipe(ws_multi_lines).on('end', () => process.exit());
+csvStreamTotal.pipe(ws_total).on('end', () => process.exit());
+// csvStreamSingle.pipe(ws_single_line).on('end', () => process.exit());
+// csvStreamMulti.pipe(ws_multi_lines).on('end', () => process.exit());
 errorCsvStream.pipe(errorFile).on('end', () => process.exit());
 
 const log = {
@@ -121,22 +124,31 @@ const timecards = ({
                     });
                   return t;
                 }),
-                E.map(formatCsvGroupedByContract),
+                E.map(formatCsv),
+                // E.map(row => {
+                //   if (debug) {
+                //     row.forEach((value, key) => csvStreamDebug.write(value));
+                //   } else {
+                //     if (row.size === 1) {
+                //       csvStreamSingle.write(row.first());
+                //     } else {
+                //       row.forEach((value, key) => csvStreamMulti.write(value));
+                //     }
+                //   }
+                //   log.successful++;
+                //   console.log(
+                //     `${row.first().Salarié} - ${row?.first()['Silae Id']} -  OK ${log.successful}/${
+                //       log.total
+                //     } (error : ${log.failed})`
+                //   );
+                //   return row;
+                // }),
                 E.map(row => {
-                  if (debug) {
-                    row.forEach((value, key) => csvStreamDebug.write(value));
-                  } else {
-                    if (row.size === 1) {
-                      csvStreamSingle.write(row.first());
-                    } else {
-                      row.forEach((value, key) => csvStreamMulti.write(value));
-                    }
-                  }
+                  csvStreamTotal.write(row);
+
                   log.successful++;
                   console.log(
-                    `${row.first().Salarié} - ${row?.first()['Silae Id']} -  OK ${log.successful}/${
-                      log.total
-                    } (error : ${log.failed})`
+                    `${row.Salarié} - ${row['Silae Id']} -  OK ${log.successful}/${log.total} (error : ${log.failed})`
                   );
                   return row;
                 }),

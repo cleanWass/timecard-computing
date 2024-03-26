@@ -9,9 +9,8 @@ import {
 } from '../../employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../leave-recording/leave/leave';
 import { LocalTimeSlot } from '../../local-time-slot';
-import { ProspectiveShift } from '../../mission-delivery/shift/prospective-shift';
-import { Shift } from '../../mission-delivery/shift/shift';
 import { InactiveShift } from '../../mission-delivery/shift/inactive-shift';
+import { Shift } from '../../mission-delivery/shift/shift';
 import { WorkingPeriod } from '../working-period/working-period';
 import { HoursTypeCodes, WorkedHoursRate, WorkedHoursRecap, WorkedHoursRecapType } from './worked-hours-rate';
 
@@ -32,6 +31,7 @@ export class WorkingPeriodTimecard implements ValueObject {
 
     workedHours?: WorkedHoursRecapType;
     mealTickets?: number;
+    rentability?: number;
   }) {
     return new WorkingPeriodTimecard(
       `${WorkingPeriodTimecard.count++}`,
@@ -43,7 +43,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.shifts,
       params.leaves ?? List<Leave>(),
       List<InactiveShift>(),
-      params.mealTickets ?? 0
+      params.mealTickets ?? 0,
+      params.rentability ?? 0
     );
   }
 
@@ -62,7 +63,8 @@ export class WorkingPeriodTimecard implements ValueObject {
     public readonly leaves: List<Leave>,
 
     public readonly inactiveShifts: List<InactiveShift>,
-    public readonly mealTickets: number
+    public readonly mealTickets: number,
+    public readonly rentability: number
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
       .set('id', this.id)
@@ -73,7 +75,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       .set('shifts', this.shifts)
       .set('leaves', this.leaves)
       .set('inactiveShifts', this.inactiveShifts)
-      .set('mealTickets', this.mealTickets);
+      .set('mealTickets', this.mealTickets)
+      .set('rentability', this.rentability);
   }
 
   getTotalIntercontractDuration() {
@@ -109,7 +112,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.shifts ?? this.shifts,
       params.leaves ?? this.leaves,
       params.inactiveShifts ?? this.inactiveShifts,
-      params.mealTickets ?? this.mealTickets
+      params.mealTickets ?? this.mealTickets,
+      params.rentability ?? this.rentability
     );
   }
 

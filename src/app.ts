@@ -1,6 +1,7 @@
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import express from 'express';
+
 import { pipe } from 'fp-ts/function';
 import * as E from 'fp-ts/lib/Either';
 import * as O from 'fp-ts/lib/Option';
@@ -9,7 +10,6 @@ import * as T from 'fp-ts/lib/Task';
 import * as TE from 'fp-ts/lib/TaskEither';
 import { List } from 'immutable';
 import { computeTimecardForEmployee } from '../src/application/timecard-computation/compute-timecard-for-employee';
-import { computeRentabilityForEmployee } from './application/rentability-computation/compute-rentability-for-employee';
 import {
   fetchTimecardData,
   validateApiReturn,
@@ -40,15 +40,7 @@ app.post('/timecard', async (req, res) => {
     TE.bind('raw', ({ params }) => fetchTimecardData(params)),
     TE.bind('data', ({ raw }) => pipe(raw, validateApiReturn, TE.fromEither)),
     TE.bind('timecards', ({ params: { period }, data }) =>
-      pipe(
-        data,
-        computeTimecardForEmployee(period),
-        E.map(result => {
-          computeRentabilityForEmployee(period, List(result.timecards));
-          return result;
-        }),
-        formatTimecardComputationReturn
-      )
+      pipe(data, computeTimecardForEmployee(period), formatTimecardComputationReturn)
     ),
     TE.bind('prospectiveTimecards', ({ params: { period, prospectiveShifts }, data }) =>
       pipe(
@@ -112,6 +104,8 @@ const formatTimecardComputationReturn = (
             .toArray(),
         },
         workedHours: t.workedHours.toObject(),
+        mealTickets: t.mealTickets,
+        rentability: t.rentability,
         period: { start: t.workingPeriod.period.start.toString(), end: t.workingPeriod.period.end.toString() },
       })),
     })),

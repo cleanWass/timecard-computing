@@ -7,7 +7,7 @@ import { employeeDataValidator } from './extern/employee';
 
 export const formatPayload = (data: ExtractEitherRightType<typeof parsePayload>) => {
   return {
-    employee: List(data.employee),
+    employee: data.employee,
     shifts: List(data.shifts),
     leaves: List(data.leaves),
     contracts: List(data.contracts),

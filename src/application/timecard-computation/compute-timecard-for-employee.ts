@@ -14,6 +14,7 @@ import { Shift } from '../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
+import { computeRentabilityForEmployee } from '../rentability-computation/compute-rentability-for-employee';
 import { computeExtraHoursByRate, computeTotalAdditionalHours } from './computation/additionnal-hours-computation';
 import { computeMealTickets } from './computation/meal-tickets-computation';
 import {
@@ -84,7 +85,8 @@ export const computeWorkingPeriodTimecard: (
     computeTotalAdditionalHours,
     computeExtraHoursByRate,
     computeSurchargedHours,
-    computeMealTickets
+    computeMealTickets,
+    computeRentabilityForEmployee
   );
 };
 
