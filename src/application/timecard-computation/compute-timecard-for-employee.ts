@@ -16,6 +16,7 @@ import { WorkingPeriod } from '../../domain/models/time-card-computation/working
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
 import { computeRentabilityForEmployee } from '../rentability-computation/compute-rentability-for-employee';
 import { computeExtraHoursByRate, computeTotalAdditionalHours } from './computation/additionnal-hours-computation';
+import { inferTotalIntercontractAndTotalContract } from './computation/infer-total-intercontract-and-total-contract';
 import { computeMealTickets } from './computation/meal-tickets-computation';
 import {
   computeLeavesHours,
@@ -86,6 +87,7 @@ export const computeWorkingPeriodTimecard: (
     computeExtraHoursByRate,
     computeSurchargedHours,
     computeMealTickets,
+    inferTotalIntercontractAndTotalContract,
     computeRentabilityForEmployee
   );
 };

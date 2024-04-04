@@ -24,6 +24,8 @@ export const HoursTypeCodes = {
   HolidaySurchargedP: 'MAJOFERIEP', // Majoration Férié Ponctuel
 
   TotalWeekly: 'Heures total travaillées', // Horaire Total
+  TotalContract: 'Heures contrat', // Horaire Contrat Total
+  TotalIntercontract: 'Heures intercontrat', // Horaire Intercontrat Total
   TotalInactiveShifts: 'Heures shifts théoriques', // Nombre d'heures de shifts théoriques
   TotalLeaves: 'Heures congés total', // Horaire Congé Total
   TotalNationalHolidayLeaves: 'Heures congés jours fériés', // Horaire Congé Férié
@@ -45,28 +47,3 @@ const defaultValues = keys(HoursTypeCodes).reduce(
 
 export const WorkedHoursRecap = Record(defaultValues);
 export type WorkedHoursRecapType = RecordOf<typeof defaultValues>;
-//
-// const defaultValues = {
-//   TotalWeekly: Duration.ZERO,
-//   TotalComplementary: Duration.ZERO,
-//   TotalSupplementary: Duration.ZERO,
-//   TenPercentRateComplementary: Duration.ZERO,
-//   ElevenPercentRateComplementary: Duration.ZERO,
-//   TwentyFivePercentRateComplementary: Duration.ZERO,
-//   TwentyFivePercentRateSupplementary: Duration.ZERO,
-//   FiftyPercentRateSupplementary: Duration.ZERO,
-//   SundayContract: Duration.ZERO,
-//   SundayAdditional: Duration.ZERO,
-//   NightShiftContract: Duration.ZERO,
-//   NightShiftAdditional: Duration.ZERO,
-// };
-
-// export class WorkedHoursResume extends Record(defaultValues) {
-//   constructor(values?: Partial<typeof HoursTypeCodes>) {
-//     super(values);
-//   }
-//
-//   with(values: Partial<typeof HoursTypeCodes>) {
-//     return this.merge(values);
-//   }
-// }
