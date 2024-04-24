@@ -111,21 +111,29 @@ export class EmploymentContract implements ValueObject {
     return EmploymentContract.build(params);
   }
 
-  debug() {
+  debug(showPlannings = false) {
     return `
       id: ${this.id}
       employeeId: ${this.employeeId}
+      weeklyTotalWorkedHours: ${this.weeklyTotalWorkedHours}
+      type: ${this.type}
+      subType: ${this.subType}
+      extraDuration: ${this.extraDuration}
       period: ${this.period(LocalDate.now()).toFormattedString()} 
-      planning: ${this.weeklyPlannings
-        .map(
-          (planning, period) =>
-            `
+      ${
+        showPlannings
+          ? `planning: ${this.weeklyPlannings
+              .map(
+                (planning, period) =>
+                  `
 ${period.toFormattedString()}
 ${planning
   .map((slots, day) => `\t\t${day} -> ${slots.isEmpty() ? ' // ' : slots.map(s => s.debug()).join(' | ')}`)
   .join('\n')}`
-        )
-        .join('\n---------\n')}
+              )
+              .join('\n---------\n')}`
+          : ''
+      }
     `;
   }
 }

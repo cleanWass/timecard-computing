@@ -14,9 +14,9 @@ import { formatPayload, parsePayload } from './infrastructure/validation/parse-p
 import { List, Set } from 'immutable';
 
 const ws_debug = fs.createWriteStream('export_debug.csv');
-const ws_total = fs.createWriteStream('export_mars_2024.csv');
-// const ws_single_line = fs.createWriteStream('export_mars_2024_single_line.csv');
-// const ws_multi_lines = fs.createWriteStream('export_mars_2024_multi_lines.csv');
+const ws_total = fs.createWriteStream('export_avril_2024_total.csv');
+const ws_single_line = fs.createWriteStream('export_avril_2024_single_line.csv');
+const ws_multi_lines = fs.createWriteStream('export_avril_2024_multi_lines.csv');
 const errorFile = fs.createWriteStream('export_error.csv');
 
 export const headers = [
@@ -24,6 +24,9 @@ export const headers = [
   'Salarié',
   'Fonction',
   'Période',
+  // 'Durée hebdo',
+  // 'Contrat',
+  'Manager',
   'HN',
   'HC10',
   'HC11',
@@ -45,8 +48,8 @@ const errorCsvStream = format({ headers: ['Matricule', 'Employé', 'Durée Inter
 
 csvStreamDebug.pipe(ws_debug).on('end', () => process.exit());
 csvStreamTotal.pipe(ws_total).on('end', () => process.exit());
-// csvStreamSingle.pipe(ws_single_line).on('end', () => process.exit());
-// csvStreamMulti.pipe(ws_multi_lines).on('end', () => process.exit());
+csvStreamSingle.pipe(ws_single_line).on('end', () => process.exit());
+csvStreamMulti.pipe(ws_multi_lines).on('end', () => process.exit());
 errorCsvStream.pipe(errorFile).on('end', () => process.exit());
 
 const log = {
@@ -58,6 +61,7 @@ const log = {
 const periodJanvier = new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDate.parse('2024-01-22'));
 const periodFévrier = new LocalDateRange(LocalDate.parse('2024-01-22'), LocalDate.parse('2024-02-18'));
 const periodMars = new LocalDateRange(LocalDate.parse('2024-02-19'), LocalDate.parse('2024-03-17'));
+const periodAvril = new LocalDateRange(LocalDate.parse('2024-03-18'), LocalDate.parse('2024-04-21'));
 
 export type CleanerResponse = {
   cleaner: unknown;
@@ -101,6 +105,7 @@ const timecards = ({
     TE.chainW(dataCleaners => {
       return pipe(
         dataCleaners,
+        // dataCleaners.filter(cleaner => ['00950'].includes(cleaner.cleaner.silaeId)),
         TE.traverseArray(cleaner =>
           pipe(
             cleaner,
@@ -122,36 +127,41 @@ const timecards = ({
                         });
                       }
                     });
+                  if (debug) {
+                    List(t.timecards)
+                      .sortBy(tc => tc.workingPeriod.period.start.toString())
+                      .forEach(tc => tc.debug());
+                  }
                   return t;
                 }),
-                E.map(formatCsv),
-                // E.map(row => {
-                //   if (debug) {
-                //     row.forEach((value, key) => csvStreamDebug.write(value));
-                //   } else {
-                //     if (row.size === 1) {
-                //       csvStreamSingle.write(row.first());
-                //     } else {
-                //       row.forEach((value, key) => csvStreamMulti.write(value));
-                //     }
-                //   }
-                //   log.successful++;
-                //   console.log(
-                //     `${row.first().Salarié} - ${row?.first()['Silae Id']} -  OK ${log.successful}/${
-                //       log.total
-                //     } (error : ${log.failed})`
-                //   );
-                //   return row;
-                // }),
+                E.map(formatCsvGroupedByContract),
                 E.map(row => {
-                  csvStreamTotal.write(row);
-
+                  if (debug) {
+                    row.forEach((value, key) => csvStreamDebug.write(value));
+                  } else {
+                    if (row.size === 1) {
+                      csvStreamSingle.write(row.first());
+                    } else {
+                      row.forEach((value, key) => csvStreamMulti.write(value));
+                    }
+                  }
                   log.successful++;
                   console.log(
-                    `${row.Salarié} - ${row['Silae Id']} -  OK ${log.successful}/${log.total} (error : ${log.failed})`
+                    `${row.first().Salarié} - ${row?.first()['Silae Id']} -  OK ${log.successful}/${
+                      log.total
+                    } (error : ${log.failed})`
                   );
                   return row;
                 }),
+                // E.map(row => {
+                //   csvStreamTotal.write(row);
+                //
+                //   log.successful++;
+                //   console.log(
+                //     `${row.Salarié} - ${row['Silae Id']} -  OK ${log.successful}/${log.total} (error : ${log.failed})`
+                //   );
+                //   return row;
+                // }),
                 E.mapLeft(e => {
                   console.log(`error for ${cleaner.cleaner.firstName} + ${cleaner.cleaner.lastName} ${e}`);
                   log.failed++;
@@ -169,7 +179,7 @@ async function main() {
   try {
     console.log('start');
     const debug = process.argv.some(arg => ['debug', '-debug', '-d', 'd'].includes(arg));
-    await timecards({ debug, period: periodMars })();
+    await timecards({ debug, period: periodAvril })();
     csvStreamSingle.end();
     csvStreamMulti.end();
     errorCsvStream.end();

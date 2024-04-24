@@ -4,7 +4,7 @@ import { Set } from 'immutable';
 import { LocalDateRange } from 'src/domain/models/local-date-range';
 import { IllegalArgumentError } from '../../~shared/error/illegal-argument-error';
 
-const { JANUARY, MAY, JULY, AUGUST, NOVEMBER, DECEMBER } = Month;
+const { JANUARY, APRIL, MAY, JULY, AUGUST, NOVEMBER, DECEMBER } = Month;
 const { of } = MonthDay;
 
 type HolidaySpecification = (d: LocalDate) => boolean;
@@ -53,7 +53,9 @@ export class HolidayComputationService {
     return supportedCodes.includes(iso31662Code)
       ? E.right(this.computeFrIdfDates(period, additionalDates))
       : E.left(
-          new IllegalArgumentError(`Cannot compute holidays for ISO 3166-2 code ${iso31662Code}. Supported codes are ${supportedCodes}.`)
+          new IllegalArgumentError(
+            `Cannot compute holidays for ISO 3166-2 code ${iso31662Code}. Supported codes are ${supportedCodes}.`
+          )
         );
   }
 
@@ -74,8 +76,13 @@ export class HolidayComputationService {
       monthDaySpecification(of(NOVEMBER, 1)),
       monthDaySpecification(of(NOVEMBER, 11)),
       monthDaySpecification(of(DECEMBER, 25)),
-      easterComputationSpecificationPlus(0, yearsInPeriod),
-      easterComputationSpecificationPlus(39, yearsInPeriod),
+
+      monthDaySpecification(of(APRIL, 1)),
+      monthDaySpecification(of(MAY, 9)),
+      monthDaySpecification(of(MAY, 20)),
+
+      // easterComputationSpecificationPlus(0, yearsInPeriod),
+      // easterComputationSpecificationPlus(39, yearsInPeriod),
     ]).concat(additionalDates.map(date => monthDaySpecification(of(date.month(), date.dayOfMonth()))));
     return daysInPeriod.filter(date => specs.some(matches => matches(date)));
   }

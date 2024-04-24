@@ -21,7 +21,7 @@ export const parsePayload = (payload: unknown) =>
     E.fromPredicate(
       parsedJSON => parsedJSON.success && parsedJSON?.data !== null,
       e => {
-        console.log(new ParseError(`safe parse success : ${e.success} \n Error while parsing payload ${e['error']} `));
+        console.log(`safe parse success : ${e.success} \n Error while parsing payload ${e['error']} `);
         return new ParseError(`safe parse success : ${e.success} \n Error while parsing payload ${e['error']}`);
       }
     ),

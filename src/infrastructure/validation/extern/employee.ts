@@ -30,6 +30,8 @@ export const employeeValidator = zod.object({
   seniorityDate: zod.string(),
   email: zod.string().optional(),
   phone: zod.string().optional(),
+  managerId: zod.string().optional(),
+  managerName: zod.string().optional(),
   address: zod
     .object({
       street: zod.string(),

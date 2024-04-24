@@ -13,6 +13,8 @@ export class Employee implements ValueObject {
     silaeId: string;
     email?: string;
     phoneNumber?: string;
+    managerId?: string;
+    managerName?: string;
     address?: {
       city?: string;
       street?: string;
@@ -28,6 +30,8 @@ export class Employee implements ValueObject {
       params.silaeId,
       params.email,
       params.phoneNumber,
+      params.managerId,
+      params.managerName,
       params.address
     );
   }
@@ -47,6 +51,8 @@ export class Employee implements ValueObject {
     public readonly silaeId: string,
     public readonly email?: string,
     public readonly phoneNumber?: string,
+    public readonly managerId?: string,
+    public readonly managerName?: string,
     public readonly address?: { city?: string; street?: string; postalCode?: string }
   ) {
     this._vo = Map<
@@ -69,6 +75,8 @@ export class Employee implements ValueObject {
       .set('seniorityDate', this.seniorityDate)
       .set('email', this.email)
       .set('phoneNumber', this.phoneNumber)
+      .set('managerId', this.managerId)
+      .set('managerName', this.managerName)
       .set('address', this.address);
   }
 
