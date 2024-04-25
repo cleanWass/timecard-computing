@@ -1,4 +1,4 @@
-import { DayOfWeek, Duration } from '@js-joda/core';
+import { DayOfWeek, Duration, LocalDate } from '@js-joda/core';
 import { List, Map, Set, ValueObject } from 'immutable';
 import { formatDuration, formatDurationAs100 } from '../../../../~shared/util/joda-helper';
 import { keys } from '../../../../~shared/util/types';
@@ -8,6 +8,7 @@ import {
   WeeklyPlanning,
 } from '../../employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../leave-recording/leave/leave';
+import { LocalDateRange } from '../../local-date-range';
 import { LocalTimeSlot } from '../../local-time-slot';
 import { InactiveShift } from '../../mission-delivery/shift/inactive-shift';
 import { Shift } from '../../mission-delivery/shift/shift';
@@ -129,11 +130,11 @@ export class WorkingPeriodTimecard implements ValueObject {
         WorkingPeriodTimecard ${this.id} for ${this.employee.firstName} ${this.employee.lastName} (${this.employee.id})
         MealTickets: ${this.mealTickets}
         Period: ${this.workingPeriod.period.toFormattedString()}
-        Contract: ${formatDuration(this.contract.weeklyTotalWorkedHours)} / week - ${this.contract.subType} ${
-          this.contract.extraDuration || ''
-        } \n NightWorker : ${this.getNightOrdinary().join(', ')} - SundayWorker : ${
-          this.contract.isSundayWorker() ? 'Yes' : 'No'
-        }
+        Contract: ${this.contract.id} ${formatDuration(this.contract.weeklyTotalWorkedHours)} / week - ${
+          this.contract.subType
+        } ${this.contract.extraDuration || ''} \n NightWorker : ${this.getNightOrdinary().join(
+          ', '
+        )} - SundayWorker : ${this.contract.isSundayWorker() ? 'Yes' : 'No'}
         WorkedHours: 
             ${this.workedHours
               .toSeq()
@@ -167,6 +168,18 @@ export class WorkingPeriodTimecard implements ValueObject {
 
   static getTotalMealTickets(list: List<WorkingPeriodTimecard>) {
     return list.reduce((total, timecard) => total + (timecard.contract.isFullTime() ? 0 : timecard.mealTickets), 0);
+  }
+
+  static getTotalWorkingPeriod(list: List<WorkingPeriodTimecard>) {
+    const start = list.reduce(
+      (res, tc) => (tc.workingPeriod.period.start.isBefore(res) ? tc.workingPeriod.period.start : res),
+      LocalDate.MAX
+    );
+    const end = list.reduce(
+      (res, tc) => (tc.workingPeriod.period.end.isAfter(res) ? tc.workingPeriod.period.end : res),
+      LocalDate.MIN
+    );
+    return new LocalDateRange(start, end);
   }
 
   static getTotalWorkedHours(list: List<WorkingPeriodTimecard>) {

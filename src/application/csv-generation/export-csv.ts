@@ -16,7 +16,7 @@ import { computeTimecardForEmployee } from '../timecard-computation/compute-time
 const formatObjectDurations = (rawObject: {
   [key in Exclude<
     (typeof headers)[number],
-    'Matricule' | 'Fonction' | 'Salarié' | 'Période' | 'NbTicket' | 'Silae Id' | 'Durée hebdo' | 'Manager' | 'Contrat'
+    'Matricule' | 'Fonction' | 'Salarié' | 'Période' | 'NbTicket' | 'Silae Id' | 'Manager'
   >]: Duration;
 }) =>
   keys(rawObject).reduce((res, code) => {
@@ -53,6 +53,11 @@ export function formatCsv(row: ExtractEitherRightType<ReturnType<typeof computeT
   };
 }
 
+const getPeriodValue = (timecards: List<WorkingPeriodTimecard>, periodToCompute: LocalDateRange) => {
+  const period = WorkingPeriodTimecard.getTotalWorkingPeriod(timecards);
+  return (periodToCompute.commonRange(period) || period).toFormattedString(false);
+};
+
 export const getFunctionTranslations = (role: EmployeeRole) => EMPLOYEE_ROLE_TRANSLATIONS[role];
 
 const getCsvOutput = (
@@ -61,32 +66,34 @@ const getCsvOutput = (
   timecards: List<WorkingPeriodTimecard>,
   contract: EmploymentContract
 ) => {
-  const totalTcs = WorkingPeriodTimecard.getTotalWorkedHours(timecards);
-  const totalMealTickets = WorkingPeriodTimecard.getTotalMealTickets(timecards);
-  return {
-    'Silae Id': employee.silaeId || '0',
-    Salarié: employee.firstName + ' ' + employee.lastName || '0',
-    Fonction: getFunctionTranslations(employee.role),
-    Période: (
-      contract.period(period.end).commonRange(period.with({ end: period.end.plusDays(1) })) || period
-    ).toFormattedString(false),
-    // Contrat: `${contract.id} ${formatDuration(contract.weeklyTotalWorkedHours)} ${contract.type} ${contract.subType}`,
-    // 'Durée hebdo': formatDuration(contract.weeklyTotalWorkedHours),
-    Manager: employee.managerName || '',
-    ...formatObjectDurations({
-      HN: totalTcs.TotalNormal,
-      HC10: totalTcs.TenPercentRateComplementary,
-      HC11: totalTcs.ElevenPercentRateComplementary,
-      HC25: totalTcs.TwentyFivePercentRateComplementary,
-      HS25: totalTcs.TwentyFivePercentRateSupplementary,
-      HS50: totalTcs.FiftyPercentRateSupplementary,
-      HNuit: totalTcs.NightShiftContract,
-      MajoNuit100: totalTcs.NightShiftAdditional,
-      HDim: totalTcs.SundayContract,
-      MajoDim100: totalTcs.SundayAdditional,
-    }),
-    NbTicket: contract.isFullTime() ? '' : totalMealTickets,
-  };
+  const listTcs = List(timecards).sortBy(tc => tc.workingPeriod.period.start.toString());
+  const groupedTc = listTcs.groupBy(tc => tc.contract);
+  return groupedTc
+    .map((timecards, contract) => {
+      const totalTcs = WorkingPeriodTimecard.getTotalWorkedHours(timecards);
+      const totalMealTickets = WorkingPeriodTimecard.getTotalMealTickets(timecards);
+      return {
+        'Silae Id': employee.silaeId || '0',
+        Salarié: employee.firstName + ' ' + employee.lastName || '0',
+        Fonction: getFunctionTranslations(employee.role),
+        Période: getPeriodValue(timecards, period),
+        Manager: employee.managerName,
+        ...formatObjectDurations({
+          HN: totalTcs.TotalNormal,
+          HC10: totalTcs.TenPercentRateComplementary,
+          HC11: totalTcs.ElevenPercentRateComplementary,
+          HC25: totalTcs.TwentyFivePercentRateComplementary,
+          HS25: totalTcs.TwentyFivePercentRateSupplementary,
+          HS50: totalTcs.FiftyPercentRateSupplementary,
+          HNuit: totalTcs.NightShiftContract,
+          MajoNuit100: totalTcs.NightShiftAdditional,
+          HDim: totalTcs.SundayContract,
+          MajoDim100: totalTcs.SundayAdditional,
+        }),
+        NbTicket: contract.isFullTime() ? '' : totalMealTickets,
+      };
+    })
+    .valueSeq();
 };
 
 export const timecardGroupper = (contracts: List<EmploymentContract>) => {
