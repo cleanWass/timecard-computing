@@ -110,8 +110,8 @@ const timecards = ({
     }),
     TE.chainW(dataCleaners => {
       return pipe(
-        dataCleaners,
-        // dataCleaners.filter(cleaner => ['00194', '01139', '00658'].includes(cleaner.cleaner.silaeId)),
+        // dataCleaners,
+        dataCleaners.filter(cleaner => ['00898'].includes(cleaner.cleaner.silaeId)),
         TE.traverseArray(cleaner =>
           pipe(
             cleaner,
