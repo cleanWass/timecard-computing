@@ -66,34 +66,28 @@ const getCsvOutput = (
   timecards: List<WorkingPeriodTimecard>,
   contract: EmploymentContract
 ) => {
-  const listTcs = List(timecards).sortBy(tc => tc.workingPeriod.period.start.toString());
-  const groupedTc = listTcs.groupBy(tc => tc.contract);
-  return groupedTc
-    .map((timecards, contract) => {
-      const totalTcs = WorkingPeriodTimecard.getTotalWorkedHours(timecards);
-      const totalMealTickets = WorkingPeriodTimecard.getTotalMealTickets(timecards);
-      return {
-        'Silae Id': employee.silaeId || '0',
-        Salarié: employee.firstName + ' ' + employee.lastName || '0',
-        Fonction: getFunctionTranslations(employee.role),
-        Période: getPeriodValue(timecards, period),
-        Manager: employee.managerName,
-        ...formatObjectDurations({
-          HN: totalTcs.TotalNormal,
-          HC10: totalTcs.TenPercentRateComplementary,
-          HC11: totalTcs.ElevenPercentRateComplementary,
-          HC25: totalTcs.TwentyFivePercentRateComplementary,
-          HS25: totalTcs.TwentyFivePercentRateSupplementary,
-          HS50: totalTcs.FiftyPercentRateSupplementary,
-          HNuit: totalTcs.NightShiftContract,
-          MajoNuit100: totalTcs.NightShiftAdditional,
-          HDim: totalTcs.SundayContract,
-          MajoDim100: totalTcs.SundayAdditional,
-        }),
-        NbTicket: contract.isFullTime() ? '' : totalMealTickets,
-      };
-    })
-    .valueSeq();
+  const totalTcs = WorkingPeriodTimecard.getTotalWorkedHours(timecards);
+  const totalMealTickets = WorkingPeriodTimecard.getTotalMealTickets(timecards);
+  return {
+    'Silae Id': employee.silaeId || '0',
+    Salarié: employee.firstName + ' ' + employee.lastName || '0',
+    Fonction: getFunctionTranslations(employee.role),
+    Période: getPeriodValue(timecards, period),
+    Manager: employee.managerName,
+    ...formatObjectDurations({
+      HN: totalTcs.TotalNormal,
+      HC10: totalTcs.TenPercentRateComplementary,
+      HC11: totalTcs.ElevenPercentRateComplementary,
+      HC25: totalTcs.TwentyFivePercentRateComplementary,
+      HS25: totalTcs.TwentyFivePercentRateSupplementary,
+      HS50: totalTcs.FiftyPercentRateSupplementary,
+      HNuit: totalTcs.NightShiftContract,
+      MajoNuit100: totalTcs.NightShiftAdditional,
+      HDim: totalTcs.SundayContract,
+      MajoDim100: totalTcs.SundayAdditional,
+    }),
+    NbTicket: contract.isFullTime() ? '' : totalMealTickets,
+  };
 };
 
 export const timecardGroupper = (contracts: List<EmploymentContract>) => {

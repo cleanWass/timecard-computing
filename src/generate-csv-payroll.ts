@@ -1,4 +1,4 @@
-import { LocalDate } from '@js-joda/core';
+import { Duration, LocalDate } from '@js-joda/core';
 import axios from 'axios';
 
 import { format } from 'fast-csv';
@@ -12,12 +12,17 @@ import { computeTimecardForEmployee } from './application/timecard-computation/c
 import { LocalDateRange } from './domain/models/local-date-range';
 import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
 import { List, Set } from 'immutable';
+import { formatDuration, formatDurationAs100 } from './~shared/util/joda-helper';
 
-const ws_debug = fs.createWriteStream('export_debug.csv');
-const ws_total = fs.createWriteStream('export_avril_2024_total.csv');
-const ws_single_line = fs.createWriteStream('export_avril_2024_single_line.csv');
-const ws_multi_lines = fs.createWriteStream('export_avril_2024_multi_lines.csv');
-const errorFile = fs.createWriteStream('export_error.csv');
+if (!fs.existsSync('export/2024/mai/')) {
+  console.log('create directory');
+  fs.mkdirSync('exports/2024/mai/', { recursive: true });
+}
+const ws_debug = fs.createWriteStream('exports/2024/mai/debug.csv');
+const ws_total = fs.createWriteStream('exports/2024/mai/total.csv');
+const ws_single_line = fs.createWriteStream('exports/2024/mai/single_line.csv');
+const ws_multi_lines = fs.createWriteStream('exports/2024/mai/multi_lines.csv');
+const errorFile = fs.createWriteStream('exports/2024/mai/error.csv');
 
 export const headers = [
   'Silae Id',
@@ -62,6 +67,7 @@ const periodJanvier = new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDat
 const periodFévrier = new LocalDateRange(LocalDate.parse('2024-01-22'), LocalDate.parse('2024-02-18'));
 const periodMars = new LocalDateRange(LocalDate.parse('2024-02-19'), LocalDate.parse('2024-03-17'));
 const periodAvril = new LocalDateRange(LocalDate.parse('2024-03-18'), LocalDate.parse('2024-04-22'));
+const periodMai = new LocalDateRange(LocalDate.parse('2024-04-22'), LocalDate.parse('2024-05-20'));
 
 export type CleanerResponse = {
   cleaner: unknown;
@@ -104,8 +110,8 @@ const timecards = ({
     }),
     TE.chainW(dataCleaners => {
       return pipe(
-        // dataCleaners,
-        dataCleaners.filter(cleaner => ['00194', '01139', '00658'].includes(cleaner.cleaner.silaeId)),
+        dataCleaners,
+        // dataCleaners.filter(cleaner => ['00194', '01139', '00658'].includes(cleaner.cleaner.silaeId)),
         TE.traverseArray(cleaner =>
           pipe(
             cleaner,
@@ -122,8 +128,10 @@ const timecards = ({
                         errorCsvStream.write({
                           Matricule: tc.employee.silaeId,
                           Employé: tc.employee.firstName + ' ' + tc.employee.lastName,
-                          'Durée Intercontrat': tc.getTotalIntercontractDuration().toString(),
                           Période: tc.workingPeriod.period.toFormattedString(),
+                          'Durée Intercontrat': formatDurationAs100(
+                            tc.getTotalIntercontractDuration() || Duration.ZERO
+                          ),
                         });
                       }
                     });
@@ -178,8 +186,9 @@ const timecards = ({
 async function main() {
   try {
     console.log('start');
+
     const debug = process.argv.some(arg => ['debug', '-debug', '-d', 'd'].includes(arg));
-    await timecards({ debug, period: periodAvril })();
+    await timecards({ debug, period: periodMai })();
     csvStreamSingle.end();
     csvStreamMulti.end();
     errorCsvStream.end();
