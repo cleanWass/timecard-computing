@@ -100,7 +100,7 @@ export const employeeDataValidator = zod
           workedDays: Set(keys(planning).map(d => DayOfWeek[d])),
           type: contract.type,
           subType: contract.subType as ContractSubType,
-          extraDuration: extraDuration,
+          extraDuration: contract.subType === 'complement_heure' ? extraDuration : Duration.ZERO,
           weeklyNightShiftHours: EmploymentContract.nightShiftTimeSlots,
           weeklyPlannings: contractPlanningsGroupedByContractId
             .get(contractId, List<[PlanningValidatorType, ClosedPeriodValidatorType]>())

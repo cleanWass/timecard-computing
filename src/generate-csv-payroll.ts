@@ -67,7 +67,7 @@ const periodJanvier = new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDat
 const periodFévrier = new LocalDateRange(LocalDate.parse('2024-01-22'), LocalDate.parse('2024-02-18'));
 const periodMars = new LocalDateRange(LocalDate.parse('2024-02-19'), LocalDate.parse('2024-03-17'));
 const periodAvril = new LocalDateRange(LocalDate.parse('2024-03-18'), LocalDate.parse('2024-04-22'));
-const periodMai = new LocalDateRange(LocalDate.parse('2024-04-22'), LocalDate.parse('2024-05-20'));
+const periodMai = new LocalDateRange(LocalDate.parse('2024-04-22'), LocalDate.parse('2024-05-29'));
 
 export type CleanerResponse = {
   cleaner: unknown;
@@ -110,8 +110,8 @@ const timecards = ({
     }),
     TE.chainW(dataCleaners => {
       return pipe(
-        // dataCleaners,
-        dataCleaners.filter(cleaner => ['00898'].includes(cleaner.cleaner.silaeId)),
+        dataCleaners,
+        // dataCleaners.filter(cleaner => ['00898'].includes(cleaner.cleaner.silaeId)),
         TE.traverseArray(cleaner =>
           pipe(
             cleaner,
