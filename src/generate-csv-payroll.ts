@@ -1,4 +1,4 @@
-import { Duration, LocalDate } from '@js-joda/core';
+import { DateTimeFormatter, Duration, LocalDate, LocalTime } from '@js-joda/core';
 import axios from 'axios';
 
 import { format } from 'fast-csv';
@@ -13,16 +13,6 @@ import { LocalDateRange } from './domain/models/local-date-range';
 import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
 import { List, Set } from 'immutable';
 import { formatDuration, formatDurationAs100 } from './~shared/util/joda-helper';
-
-if (!fs.existsSync('export/2024/mai/')) {
-  console.log('create directory');
-  fs.mkdirSync('exports/2024/mai/', { recursive: true });
-}
-const ws_debug = fs.createWriteStream('exports/2024/mai/debug.csv');
-const ws_total = fs.createWriteStream('exports/2024/mai/total.csv');
-const ws_single_line = fs.createWriteStream('exports/2024/mai/single_line.csv');
-const ws_multi_lines = fs.createWriteStream('exports/2024/mai/multi_lines.csv');
-const errorFile = fs.createWriteStream('exports/2024/mai/error.csv');
 
 export const headers = [
   'Silae Id',
@@ -45,17 +35,56 @@ export const headers = [
   'NbTicket',
 ] as const;
 
-const csvStreamDebug = format({ headers: [...headers] });
-const csvStreamTotal = format({ headers: [...headers] });
-const csvStreamSingle = format({ headers: [...headers] });
-const csvStreamMulti = format({ headers: [...headers] });
-const errorCsvStream = format({ headers: ['Matricule', 'Employé', 'Durée Intercontrat', 'Période'] });
+const prepareScriptEnv = ({
+  period,
+  debug = false,
+  displayLog = true,
+  splitFiles = true,
+  timestamp = '',
+}: {
+  period: LocalDateRange;
+  debug: boolean;
+  displayLog: boolean;
+  splitFiles: boolean;
+  timestamp: string;
+}) => {
+  const currentMonth = period.end.month().toString().toLowerCase();
+  const currentTime = LocalTime.now().format(DateTimeFormatter.ofPattern('HH:mm'));
+  const basePath = `exports/2024/${currentMonth}/${currentTime}`;
 
-csvStreamDebug.pipe(ws_debug).on('end', () => process.exit());
-csvStreamTotal.pipe(ws_total).on('end', () => process.exit());
-csvStreamSingle.pipe(ws_single_line).on('end', () => process.exit());
-csvStreamMulti.pipe(ws_multi_lines).on('end', () => process.exit());
-errorCsvStream.pipe(errorFile).on('end', () => process.exit());
+  [debug, displayLog, splitFiles, timestamp].forEach(flag => console.log(flag));
+
+  if (!fs.existsSync(basePath)) {
+    if (debug) console.log('create directory');
+    fs.mkdirSync(basePath, { recursive: true });
+  }
+
+  const fileStreams = ['debug', 'total', 'single', 'multi', 'error'].reduce(
+    (acc, type) => {
+      const filename = `${basePath}/${currentMonth}-${currentTime}_${type}.csv`;
+      acc[type] = fs.createWriteStream(filename);
+      return acc;
+    },
+    {} as Record<string, fs.WriteStream>
+  );
+
+  const csvStreams = ['debug', 'total', 'single', 'multi'].reduce(
+    (acc, type) => {
+      acc[type] = format({ headers: [...headers] });
+      acc[type].pipe(fileStreams[type]).on('end', () => process.exit());
+      return acc;
+    },
+    {} as Record<string, any>
+  );
+
+  const errorCsvStream = format({ headers: ['Matricule', 'Employé', 'Durée Intercontrat', 'Période'] });
+  errorCsvStream.pipe(fileStreams['error']).on('end', () => process.exit());
+
+  return {
+    ...csvStreams,
+    errorCsvStream,
+  };
+};
 
 const log = {
   total: 0,
@@ -89,13 +118,17 @@ const timecards = ({
   debug = false,
   displayLog = true,
   splitFiles = true,
+  streams: { csvStreamDebug, csvStreamMulti, csvStreamSingle, csvStreamTotal, errorCsvStream },
 }: {
   period: LocalDateRange;
   debug?: boolean;
   displayLog?: boolean;
   splitFiles?: boolean;
-}) =>
-  pipe(
+  streams: ReturnType<typeof prepareScriptEnv>;
+}) => {
+  // console.log('streams', csvStreamMulti, csvStreamSingle, csvStreamTotal, errorCsvStream);
+
+  return pipe(
     TE.tryCatch(
       () => fetchPayrollData(period),
       e => {
@@ -182,16 +215,19 @@ const timecards = ({
       );
     })
   );
+};
 
 async function main() {
   try {
     console.log('start');
 
     const debug = process.argv.some(arg => ['debug', '-debug', '-d', 'd'].includes(arg));
-    await timecards({ debug, period: periodMai })();
-    csvStreamSingle.end();
-    csvStreamMulti.end();
-    errorCsvStream.end();
+    const streams = prepareScriptEnv(periodAvril, debug, true, true, '');
+
+    await timecards({ debug, period: periodAvril, streams })();
+    for (const streamName in streams) {
+      streams[streamName].end();
+    }
 
     console.log('total', log.total);
     console.log('failed', log.failed);
