@@ -96,10 +96,12 @@ export class WorkingPeriodTimecard implements ValueObject {
   }
 
   getNightOrdinary() {
-    return this.weeklyPlanning.reduce(
-      (days, slots, day) => (slots.some(slot => slot.isNight()) ? days.add(day) : days),
-      Set<DayOfWeek>()
-    );
+    return this.contract.type === 'CDD'
+      ? Set(DayOfWeek.values())
+      : this.weeklyPlanning.reduce(
+          (days, slots, day) => (slots.some(slot => slot.isNight()) ? days.add(day) : days),
+          Set<DayOfWeek>()
+        );
   }
 
   with(params: Partial<WorkingPeriodTimecard>): WorkingPeriodTimecard {

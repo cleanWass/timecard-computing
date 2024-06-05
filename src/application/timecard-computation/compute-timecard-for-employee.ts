@@ -21,8 +21,8 @@ import { computeMealTickets } from './computation/meal-tickets-computation';
 import {
   computeLeavesHours,
   computeTotalNormalHoursAvailable,
-  normalHoursComputation,
-} from './computation/normal-hours-computation';
+  computeWorkedHours,
+} from './computation/base-hours-computation';
 import { computeSurchargedHours } from './computation/surcharged-hours-computation';
 import {
   groupLeavesByWorkingPeriods,
@@ -81,7 +81,7 @@ export const computeWorkingPeriodTimecard: (
     filterShifts,
     generateInactiveShiftsIfPartialWeek,
     computeTotalNormalHoursAvailable,
-    normalHoursComputation,
+    computeWorkedHours,
     computeLeavesHours,
     computeTotalAdditionalHours,
     computeExtraHoursByRate,
