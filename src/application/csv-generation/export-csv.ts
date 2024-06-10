@@ -45,7 +45,7 @@ export const formatCsvDetails = (row: TimecardComputationResult) => {
           ? 'x'
           : '',
       }),
-      {} as { [k: (typeof days)[number]]: 'x' | '' }
+      {} as { [k in (typeof days)[number]]: 'x' | '' }
     );
     const ref = days.reduce(
       (acc, day, index) => {
@@ -57,7 +57,7 @@ export const formatCsvDetails = (row: TimecardComputationResult) => {
           ),
         };
       },
-      {} as { [k: (typeof days)[number]]: 'x' | '' }
+      {} as { [k in (typeof days)[number]]: 'x' | '' }
     );
 
     const shifts = days.reduce(
@@ -73,7 +73,7 @@ export const formatCsvDetails = (row: TimecardComputationResult) => {
           ),
         };
       },
-      {} as { [k: (typeof days)[number]]: 'x' | '' }
+      {} as { [k in (typeof days)[number]]: 'x' | '' }
     );
     return {
       'Silae Id': employee.silaeId || '0',
