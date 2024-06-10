@@ -112,27 +112,22 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
       E.bind('groupedLeaves', ({ workingPeriods }) => groupLeavesByWorkingPeriods(leaves, workingPeriods)),
       E.bind('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) =>
         pipe(
-          workingPeriods,
-          wps =>
-            wps
-              .map(wp =>
-                pipe(
-                  wp,
-                  findContract(contracts),
-
-                  E.map(({ contract, workingPeriod }) =>
-                    computeWorkingPeriodTimecard(
-                      workingPeriod,
-                      groupedShifts.get(workingPeriod, List<Shift>()),
-                      groupedLeaves.get(workingPeriod, List<Leave>()),
-                      contract,
-                      employee
-                    )
-                  )
+          workingPeriods.toArray(),
+          E.traverseArray(wp =>
+            pipe(
+              wp,
+              findContract(contracts),
+              E.map(({ contract, workingPeriod }) =>
+                computeWorkingPeriodTimecard(
+                  workingPeriod,
+                  groupedShifts.get(workingPeriod, List<Shift>()),
+                  groupedLeaves.get(workingPeriod, List<Leave>()),
+                  contract,
+                  employee
                 )
               )
-              .toArray(),
-          E.sequenceArray
+            )
+          )
         )
       ),
       E.map(({ timecards, workingPeriods, groupedShifts }) => ({

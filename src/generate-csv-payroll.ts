@@ -7,7 +7,7 @@ import { flow, pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 
 import fs from 'fs';
-import { formatCsv, formatCsvGroupedByContract } from './application/csv-generation/export-csv';
+import { formatCsv, formatCsvDetails, formatCsvGroupedByContract } from './application/csv-generation/export-csv';
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
 import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
@@ -35,6 +35,48 @@ export const headers = [
   'NbTicket',
 ] as const;
 
+export const HeadersDetails = [
+  'Silae Id',
+  'Salarié',
+  'Fonction',
+  'Période',
+  'Manager',
+  '  L',
+  '  Ma',
+  '  Me',
+  '  J',
+  '  V',
+  '  S',
+  '  D',
+  'R L',
+  'R Ma',
+  'R Me',
+  'R J',
+  'R V',
+  'R S',
+  'R D',
+  'S L',
+  'S Ma',
+  'S Me',
+  'S J',
+  'S V',
+  'S S',
+  'S D',
+
+  // 'Durée hebdo',
+  // 'Contrat',
+  'HN',
+  'HC10',
+  'HC11',
+  'HC25',
+  'HS25',
+  'HS50',
+  'HNuit',
+  'MajoNuit100',
+  'HDim',
+  'MajoDim100',
+];
+
 const prepareScriptEnv = ({
   period,
   debug = false,
@@ -49,6 +91,7 @@ const prepareScriptEnv = ({
   timestamp: string;
 }) => {
   const currentMonth = period.end.month().toString().toLowerCase();
+  console.log(currentMonth.toString());
   const currentTime = LocalTime.now().format(DateTimeFormatter.ofPattern('HH:mm'));
   const basePath = `exports/2024/${currentMonth}/${currentTime}`;
 
@@ -59,7 +102,7 @@ const prepareScriptEnv = ({
     fs.mkdirSync(basePath, { recursive: true });
   }
 
-  const fileStreams = ['debug', 'total', 'single', 'multi', 'error'].reduce(
+  const fileStreams = ['debug', 'total', 'single', 'multi', 'error', 'details'].reduce(
     (acc, type) => {
       const filename = `${basePath}/${currentMonth}-${currentTime}_${type}.csv`;
       acc[type] = fs.createWriteStream(filename);
@@ -68,21 +111,27 @@ const prepareScriptEnv = ({
     {} as Record<string, fs.WriteStream>
   );
 
-  const csvStreams = ['debug', 'total', 'single', 'multi'].reduce(
-    (acc, type) => {
-      acc[type] = format({ headers: [...headers] });
-      acc[type].pipe(fileStreams[type]).on('end', () => process.exit());
-      return acc;
-    },
-    {} as Record<string, any>
-  );
+  const csvStreamSingle = format({ headers: [...headers] });
+  csvStreamSingle.pipe(fileStreams['single']).on('end', () => process.exit());
+
+  const csvStreamMulti = format({ headers: [...headers] });
+  csvStreamMulti.pipe(fileStreams['multi']).on('end', () => process.exit());
+
+  const csvStreamTotal = format({ headers: [...headers] });
+  csvStreamTotal.pipe(fileStreams['total']).on('end', () => process.exit());
 
   const errorCsvStream = format({ headers: ['Matricule', 'Employé', 'Durée Intercontrat', 'Période'] });
   errorCsvStream.pipe(fileStreams['error']).on('end', () => process.exit());
 
+  const csvStreamDetails = format({ headers: HeadersDetails });
+  csvStreamDetails.pipe(fileStreams['details']).on('end', () => process.exit());
+
   return {
-    ...csvStreams,
+    csvStreamMulti,
+    csvStreamSingle,
+    csvStreamTotal,
     errorCsvStream,
+    csvStreamDetails,
   };
 };
 
@@ -92,11 +141,13 @@ const log = {
   successful: 0,
 };
 
-const periodJanvier = new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDate.parse('2024-01-22'));
-const periodFévrier = new LocalDateRange(LocalDate.parse('2024-01-22'), LocalDate.parse('2024-02-18'));
-const periodMars = new LocalDateRange(LocalDate.parse('2024-02-19'), LocalDate.parse('2024-03-17'));
-const periodAvril = new LocalDateRange(LocalDate.parse('2024-03-18'), LocalDate.parse('2024-04-22'));
-const periodMai = new LocalDateRange(LocalDate.parse('2024-04-22'), LocalDate.parse('2024-05-29'));
+const periods = {
+  january: new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDate.parse('2024-01-22')),
+  february: new LocalDateRange(LocalDate.parse('2024-01-22'), LocalDate.parse('2024-02-18')),
+  march: new LocalDateRange(LocalDate.parse('2024-02-19'), LocalDate.parse('2024-03-17')),
+  april: new LocalDateRange(LocalDate.parse('2024-03-18'), LocalDate.parse('2024-04-22')),
+  may: new LocalDateRange(LocalDate.parse('2024-04-22'), LocalDate.parse('2024-05-29')),
+};
 
 export type CleanerResponse = {
   cleaner: unknown;
@@ -118,7 +169,7 @@ const timecards = ({
   debug = false,
   displayLog = true,
   splitFiles = true,
-  streams: { csvStreamDebug, csvStreamMulti, csvStreamSingle, csvStreamTotal, errorCsvStream },
+  streams: { csvStreamDebug, csvStreamDetails, csvStreamMulti, csvStreamSingle, csvStreamTotal, errorCsvStream },
 }: {
   period: LocalDateRange;
   debug?: boolean;
@@ -126,7 +177,7 @@ const timecards = ({
   splitFiles?: boolean;
   streams: ReturnType<typeof prepareScriptEnv>;
 }) => {
-  // console.log('streams', csvStreamMulti, csvStreamSingle, csvStreamTotal, errorCsvStream);
+  console.log('streams', csvStreamSingle);
 
   return pipe(
     TE.tryCatch(
@@ -138,13 +189,11 @@ const timecards = ({
     ),
     TE.map(dataCleaners => {
       log.total = dataCleaners.length;
-      // @ts-ignore
       return dataCleaners;
     }),
     TE.chainW(dataCleaners => {
       return pipe(
         dataCleaners,
-        // dataCleaners.filter(cleaner => ['00898'].includes(cleaner.cleaner.silaeId)),
         TE.traverseArray(cleaner =>
           pipe(
             cleaner,
@@ -168,41 +217,34 @@ const timecards = ({
                         });
                       }
                     });
-                  if (true) {
+                  if (displayLog) {
                     List(t.timecards)
                       .sortBy(tc => tc.workingPeriod.period.start.toString())
                       .forEach(tc => tc.debug());
                   }
                   return t;
                 }),
-                E.map(formatCsvGroupedByContract),
-                E.map(row => {
-                  if (debug) {
-                    row.forEach((value, key) => csvStreamDebug.write(value));
+                E.map(results => {
+                  const splitedFiles = formatCsvGroupedByContract(results);
+                  if (splitedFiles.size === 1) {
+                    csvStreamSingle.write(splitedFiles.first());
                   } else {
-                    if (row.size === 1) {
-                      csvStreamSingle.write(row.first());
-                    } else {
-                      row.forEach((value, key) => csvStreamMulti.write(value));
-                    }
+                    splitedFiles.forEach((value, key) => csvStreamMulti.write(value));
                   }
+
+                  const total = formatCsv(results);
+                  csvStreamTotal.write(total);
+
+                  const details = formatCsvDetails(results);
+                  details.forEach((value, key) => csvStreamDetails.write(value));
+
                   log.successful++;
                   console.log(
-                    `${row.first().Salarié} - ${row?.first()['Silae Id']} -  OK ${log.successful}/${
-                      log.total
-                    } (error : ${log.failed})`
+                    `${total.Salarié} - ${total['Silae Id']} -  OK ${log.successful}/${log.total} (error : ${log.failed})`
                   );
-                  return row;
+                  return results;
                 }),
-                // E.map(row => {
-                //   csvStreamTotal.write(row);
-                //
-                //   log.successful++;
-                //   console.log(
-                //     `${row.Salarié} - ${row['Silae Id']} -  OK ${log.successful}/${log.total} (error : ${log.failed})`
-                //   );
-                //   return row;
-                // }),
+
                 E.mapLeft(e => {
                   console.log(`error for ${cleaner.cleaner.firstName} + ${cleaner.cleaner.lastName} ${e}`);
                   log.failed++;
@@ -222,9 +264,15 @@ async function main() {
     console.log('start');
 
     const debug = process.argv.some(arg => ['debug', '-debug', '-d', 'd'].includes(arg));
-    const streams = prepareScriptEnv(periodAvril, debug, true, true, '');
+    const streams = prepareScriptEnv({
+      period: periods.may,
+      splitFiles: true,
+      debug: false,
+      displayLog: true,
+      timestamp: '',
+    });
 
-    await timecards({ debug, period: periodAvril, streams })();
+    await timecards({ debug: false, period: periods.may, streams })();
     for (const streamName in streams) {
       streams[streamName].end();
     }
