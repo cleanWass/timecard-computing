@@ -1,253 +1,106 @@
-import { DateTimeFormatter, Duration, LocalDate, LocalTime } from '@js-joda/core';
+import { LocalDate } from '@js-joda/core';
 import axios from 'axios';
-
-import { format } from 'fast-csv';
 import * as E from 'fp-ts/Either';
 import { flow, pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
-
-import fs from 'fs';
-import { formatCsv, formatCsvDetails, formatCsvGroupedByContract } from './application/csv-generation/export-csv';
+import { List } from 'immutable';
+import { formatCsv, formatCsvDetails, formatCsvSilaeExport } from './application/csv-generation/export-csv';
+import { prepareEnv } from './application/csv-generation/prepare-env';
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
+import { WorkingPeriodTimecard } from './domain/models/time-card-computation/timecard/working-period-timecard';
 import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
-import { List, Set } from 'immutable';
-import { formatDuration, formatDurationAs100 } from './~shared/util/joda-helper';
-
-export const headers = [
-  'Silae Id',
-  'Salarié',
-  'Fonction',
-  'Période',
-  // 'Durée hebdo',
-  // 'Contrat',
-  'Manager',
-  'HN',
-  'HC10',
-  'HC11',
-  'HC25',
-  'HS25',
-  'HS50',
-  'HNuit',
-  'MajoNuit100',
-  'HDim',
-  'MajoDim100',
-  'NbTicket',
-] as const;
-
-export const HeadersDetails = [
-  'Silae Id',
-  'Salarié',
-  'Fonction',
-  'Période',
-  'Manager',
-  '  L',
-  '  Ma',
-  '  Me',
-  '  J',
-  '  V',
-  '  S',
-  '  D',
-  'R L',
-  'R Ma',
-  'R Me',
-  'R J',
-  'R V',
-  'R S',
-  'R D',
-  'S L',
-  'S Ma',
-  'S Me',
-  'S J',
-  'S V',
-  'S S',
-  'S D',
-
-  // 'Durée hebdo',
-  // 'Contrat',
-  'HN',
-  'HC10',
-  'HC11',
-  'HC25',
-  'HS25',
-  'HS50',
-  'HNuit',
-  'MajoNuit100',
-  'HDim',
-  'MajoDim100',
-];
-
-const prepareScriptEnv = ({
-  period,
-  debug = false,
-  displayLog = true,
-  splitFiles = true,
-  timestamp = '',
-}: {
-  period: LocalDateRange;
-  debug: boolean;
-  displayLog: boolean;
-  splitFiles: boolean;
-  timestamp: string;
-}) => {
-  const currentMonth = period.end.month().toString().toLowerCase();
-  console.log(currentMonth.toString());
-  const currentTime = LocalTime.now().format(DateTimeFormatter.ofPattern('HH:mm'));
-  const basePath = `exports/2024/${currentMonth}/${currentTime}`;
-
-  [debug, displayLog, splitFiles, timestamp].forEach(flag => console.log(flag));
-
-  if (!fs.existsSync(basePath)) {
-    if (debug) console.log('create directory');
-    fs.mkdirSync(basePath, { recursive: true });
-  }
-
-  const fileStreams = ['debug', 'total', 'single', 'multi', 'error', 'details'].reduce(
-    (acc, type) => {
-      const filename = `${basePath}/${currentMonth}-${currentTime}_${type}.csv`;
-      acc[type] = fs.createWriteStream(filename);
-      return acc;
-    },
-    {} as Record<string, fs.WriteStream>
-  );
-
-  const csvStreamSingle = format({ headers: [...headers] });
-  csvStreamSingle.pipe(fileStreams['single']).on('end', () => process.exit());
-
-  const csvStreamMulti = format({ headers: [...headers] });
-  csvStreamMulti.pipe(fileStreams['multi']).on('end', () => process.exit());
-
-  const csvStreamTotal = format({ headers: [...headers] });
-  csvStreamTotal.pipe(fileStreams['total']).on('end', () => process.exit());
-
-  const errorCsvStream = format({ headers: ['Matricule', 'Employé', 'Durée Intercontrat', 'Période'] });
-  errorCsvStream.pipe(fileStreams['error']).on('end', () => process.exit());
-
-  const csvStreamDetails = format({ headers: HeadersDetails });
-  csvStreamDetails.pipe(fileStreams['details']).on('end', () => process.exit());
-
-  return {
-    csvStreamMulti,
-    csvStreamSingle,
-    csvStreamTotal,
-    errorCsvStream,
-    csvStreamDetails,
-  };
-};
-
-const log = {
-  total: 0,
-  failed: 0,
-  successful: 0,
-};
 
 const periods = {
   january: new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDate.parse('2024-01-22')),
   february: new LocalDateRange(LocalDate.parse('2024-01-22'), LocalDate.parse('2024-02-18')),
   march: new LocalDateRange(LocalDate.parse('2024-02-19'), LocalDate.parse('2024-03-17')),
   april: new LocalDateRange(LocalDate.parse('2024-03-18'), LocalDate.parse('2024-04-22')),
-  may: new LocalDateRange(LocalDate.parse('2024-04-22'), LocalDate.parse('2024-05-29')),
+  may: new LocalDateRange(LocalDate.parse('2024-04-22'), LocalDate.parse('2024-05-20')),
 };
 
 export type CleanerResponse = {
-  cleaner: unknown;
+  cleaner: unknown & { firstName: string; lastName: string; silaeId: string };
   shifts: unknown[];
   leaves: unknown[];
   plannings: unknown[];
 };
 
-export const fetchPayrollData = ({ start, end }: LocalDateRange) => {
+const displayTimecardDebug = (
+  timecards: Readonly<Array<WorkingPeriodTimecard>>,
+  logger: ReturnType<typeof prepareEnv>['log']['logger']
+) =>
+  List(timecards)
+    .sortBy(tc => tc.workingPeriod.period.start.toString())
+    .forEach(tc => {
+      logger(tc.debug());
+      logger('-------------------');
+      logger(tc.contract.debug());
+    });
+
+export const fetchPayrollData = async ({ start, end }: LocalDateRange) => {
   const url = 'http://localhost:3000/payroll/' + start.toString() + '/' + end.toString();
 
-  return axios.get(url).then(r => {
-    return r.data as CleanerResponse[];
-  });
+  const r = await axios.get(url);
+  return r.data as CleanerResponse[];
 };
 
-const timecards = ({
+const generatePayrollExports = ({
   period,
   debug = false,
   displayLog = true,
-  splitFiles = true,
-  streams: { csvStreamDebug, csvStreamDetails, csvStreamMulti, csvStreamSingle, csvStreamTotal, errorCsvStream },
+  env: {
+    cvsStream: { csvStreamFull, csvStreamSilae, csvStreamTotal },
+    log: { total, failed, successful, logger },
+  },
 }: {
   period: LocalDateRange;
   debug?: boolean;
   displayLog?: boolean;
-  splitFiles?: boolean;
-  streams: ReturnType<typeof prepareScriptEnv>;
+  env: ReturnType<typeof prepareEnv>;
 }) => {
-  console.log('streams', csvStreamSingle);
+  if (debug) logger('start generatePayrollExports');
 
   return pipe(
     TE.tryCatch(
       () => fetchPayrollData(period),
       e => {
-        console.log(`Fetching cached data went wrong`, e);
+        if (debug) logger(`Fetching cached data went wrong ${e}`);
         return new Error(`Fetching cached data from care data parser went wrong ${e}`);
       }
     ),
-    TE.map(dataCleaners => {
-      log.total = dataCleaners.length;
-      return dataCleaners;
-    }),
+
     TE.chainW(dataCleaners => {
+      total = dataCleaners.length;
       return pipe(
         dataCleaners,
+        // dataCleaners.filter(cleaner => cleaner.cleaner.silaeId === '00159'),
         TE.traverseArray(cleaner =>
           pipe(
             cleaner,
-            flow(parsePayload, TE.fromEither),
+            parsePayload,
+            TE.fromEither,
             TE.map(
               flow(
                 formatPayload,
                 computeTimecardForEmployee(period),
-                E.map(t => {
-                  List(t.timecards)
-                    .sort((a, b) => a.contract.startDate.compareTo(b.contract.startDate))
-                    .forEach(tc => {
-                      if (tc.getTotalIntercontractDuration().toMinutes() > 0) {
-                        errorCsvStream.write({
-                          Matricule: tc.employee.silaeId,
-                          Employé: tc.employee.firstName + ' ' + tc.employee.lastName,
-                          Période: tc.workingPeriod.period.toFormattedString(),
-                          'Durée Intercontrat': formatDurationAs100(
-                            tc.getTotalIntercontractDuration() || Duration.ZERO
-                          ),
-                        });
-                      }
-                    });
-                  if (displayLog) {
-                    List(t.timecards)
-                      .sortBy(tc => tc.workingPeriod.period.start.toString())
-                      .forEach(tc => tc.debug());
-                  }
-                  return t;
-                }),
                 E.map(results => {
-                  const splitedFiles = formatCsvGroupedByContract(results);
-                  if (splitedFiles.size === 1) {
-                    csvStreamSingle.write(splitedFiles.first());
-                  } else {
-                    splitedFiles.forEach((value, key) => csvStreamMulti.write(value));
-                  }
+                  if (displayLog) displayTimecardDebug(results.timecards, logger);
 
-                  const total = formatCsv(results);
-                  csvStreamTotal.write(total);
+                  csvStreamTotal.write(formatCsv(results));
+                  formatCsvDetails(results).forEach((value, key) => csvStreamFull.write(value));
+                  formatCsvSilaeExport(results, logger).forEach((value, key) => csvStreamSilae.write(value));
 
-                  const details = formatCsvDetails(results);
-                  details.forEach((value, key) => csvStreamDetails.write(value));
-
-                  log.successful++;
-                  console.log(
-                    `${total.Salarié} - ${total['Silae Id']} -  OK ${log.successful}/${log.total} (error : ${log.failed})`
-                  );
+                  successful++;
+                  if (debug)
+                    logger(
+                      `${results.employee.firstName} ${results.employee.lastName} - ${results.employee.silaeId} -  OK ${successful}/${total} (error : ${failed})`
+                    );
                   return results;
                 }),
-
                 E.mapLeft(e => {
-                  console.log(`error for ${cleaner.cleaner.firstName} + ${cleaner.cleaner.lastName} ${e}`);
-                  log.failed++;
+                  logger(`error for ${cleaner.cleaner.firstName} + ${cleaner.cleaner.lastName} ${e}`);
+                  failed++;
                   return e;
                 })
               )
@@ -255,31 +108,29 @@ const timecards = ({
           )
         )
       );
+    }),
+    TE.tap(() => {
+      if (debug) logger(`TOO SOON ? total : ${total}\nfailed : ${failed}\nsuccessful : ${successful}`);
+      return TE.right(undefined);
     })
   );
 };
 
 async function main() {
   try {
-    console.log('start');
-
-    const debug = process.argv.some(arg => ['debug', '-debug', '-d', 'd'].includes(arg));
-    const streams = prepareScriptEnv({
+    const debug = process.argv.some(arg => ['--debug', '-d'].includes(arg));
+    const env = prepareEnv({
       period: periods.may,
-      splitFiles: true,
-      debug: false,
-      displayLog: true,
-      timestamp: '',
+      debug,
+      displayLog: false,
     });
+    if (debug) env.log.logger('start of script');
 
-    await timecards({ debug: false, period: periods.may, streams })();
-    for (const streamName in streams) {
-      streams[streamName].end();
+    await generatePayrollExports({ debug, period: periods.may, env })();
+    for (const streamName in env.cvsStream) {
+      env.cvsStream[streamName].end();
     }
-
-    console.log('total', log.total);
-    console.log('failed', log.failed);
-    console.log('successful', log.successful);
+    if (debug) env.log.logger('end of script');
   } catch (e) {
     console.error(e);
   }

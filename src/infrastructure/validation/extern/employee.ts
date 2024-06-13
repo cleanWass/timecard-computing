@@ -92,6 +92,7 @@ export const employeeDataValidator = zod
         const extraDuration = Duration.parse(contract.extraDuration ?? 'PT0M');
         return EmploymentContract.build({
           id: contractId,
+          initialId: contract.initialId || 'no id',
           employeeId: raw.cleaner.silaeId,
           startDate: LocalDate.parse(contract.period.start),
           endDate: O.fromNullable(contract.period.end ? LocalDate.parse(contract.period.end) : null),

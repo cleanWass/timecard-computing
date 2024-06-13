@@ -23,6 +23,7 @@ export class EmploymentContract implements ValueObject {
   public static build(params: ClassAttributes<EmploymentContract>) {
     return new EmploymentContract(
       params.id,
+      params.initialId,
       params.employeeId,
       params.startDate,
       params.endDate,
@@ -41,6 +42,7 @@ export class EmploymentContract implements ValueObject {
 
   private constructor(
     public readonly id: EmploymentContractId,
+    public readonly initialId: EmploymentContractId,
     public readonly employeeId: EmployeeId,
     public readonly startDate: LocalDate,
     public readonly endDate: O.Option<LocalDate>,
@@ -58,6 +60,7 @@ export class EmploymentContract implements ValueObject {
       ValueObject | ContractType | ContractSubType | string | number | boolean | null | undefined
     >()
       .set('id', id)
+      .set('initialId', initialId)
       .set('employeeId', this.employeeId)
       .set('startDate', this.startDate)
       .set(
@@ -107,13 +110,29 @@ export class EmploymentContract implements ValueObject {
     return this.weeklyTotalWorkedHours.equals(Duration.ofHours(35));
   }
 
-  with(params: ClassAttributes<EmploymentContract>) {
-    return EmploymentContract.build(params);
+  with(params: Partial<ClassAttributes<EmploymentContract>>) {
+    return EmploymentContract.build({
+      id: this.id,
+      initialId: this.initialId,
+      employeeId: this.employeeId,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      overtimeAveragingPeriod: this.overtimeAveragingPeriod,
+      weeklyTotalWorkedHours: this.weeklyTotalWorkedHours,
+      workedDays: this.workedDays,
+      weeklyPlannings: this.weeklyPlannings,
+      weeklyNightShiftHours: this.weeklyNightShiftHours,
+      type: this.type,
+      subType: this.subType,
+      extraDuration: this.extraDuration,
+      ...params,
+    });
   }
 
   debug(showPlannings = false) {
     return `
       id: ${this.id}
+      initialId: ${this.initialId}
       employeeId: ${this.employeeId}
       weeklyTotalWorkedHours: ${this.weeklyTotalWorkedHours}
       type: ${this.type}

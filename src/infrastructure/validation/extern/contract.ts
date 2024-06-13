@@ -4,6 +4,7 @@ import { periodValidator } from './temporals';
 
 export const contractValidator = zod.object({
   id: zod.string(),
+  initialId: zod.string(),
   period: periodValidator,
   type: zod.enum(CONTRACT_TYPE),
   subType: zod.string().nullish(),

@@ -38,6 +38,6 @@
     "start": "node ./build/src/app.js",
     "launch": "tsc ; bun start",
     "generate-csv": "tsc ; bun run src/generate-csv-payroll.ts > logs/log.txt",
-    "generate-csv-d": "tsc ; bun run -d src/generate-csv-payroll.ts > logs/log.txt"
+    "generate-csv-d": "tsc ; bun run src/generate-csv-payroll.ts --debug > logs/log.txt"
   }
 }

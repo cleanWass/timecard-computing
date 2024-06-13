@@ -10,7 +10,7 @@ import * as T from 'fp-ts/lib/Task';
 import * as TE from 'fp-ts/lib/TaskEither';
 import { List } from 'immutable';
 import { computeTimecardForEmployee } from '../src/application/timecard-computation/compute-timecard-for-employee';
-import { timecardGroupper } from './application/csv-generation/export-csv';
+import { timecardGrouper } from './application/csv-generation/export-csv';
 import {
   fetchTimecardData,
   validateApiReturn,
@@ -54,7 +54,9 @@ app.post('/timecard', async (req, res) => {
       console.log(
         'timecards',
         JSON.stringify(
-          timecards.timecards.map(t => `${t.contract.id} ${t.contract.type} ${t.contract.subType}`),
+          timecards.timecards.map(
+            t => `${t.contract.id} ${t.contract.type} ${t.contract.subType} ${t.contract.initialId}`
+          ),
           null,
           2
         )
@@ -97,6 +99,7 @@ const formatTimecardComputationReturn = (
         leaves: t.leaves.toArray(),
         contract: {
           id: t.contract.id,
+          initialId: t.contract.initialId,
           startDate: t.contract.startDate.toString(),
           endDate: pipe(
             t.contract.endDate,

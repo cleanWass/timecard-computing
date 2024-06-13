@@ -127,8 +127,7 @@ export class WorkingPeriodTimecard implements ValueObject {
   }
 
   debug() {
-    console.log(
-      `
+    return `
         WorkingPeriodTimecard ${this.id} for ${this.employee.firstName} ${this.employee.lastName} (${this.employee.id})
         MealTickets: ${this.mealTickets}
         Period: ${this.workingPeriod.period.toFormattedString()}
@@ -164,8 +163,7 @@ export class WorkingPeriodTimecard implements ValueObject {
         planning: ${this.weeklyPlanning
           .map((slots, day) => `${day} -> ${slots.map(s => s.debug()).join(' | ')}`)
           .join('\n\t\t')}
-      `
-    );
+      `;
   }
 
   static getTotalMealTickets(list: List<WorkingPeriodTimecard>) {
