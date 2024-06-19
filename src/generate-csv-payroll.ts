@@ -110,7 +110,7 @@ const generatePayrollExports = ({
       );
     }),
     TE.tap(() => {
-      if (debug) logger(`TOO SOON ? total : ${total}\nfailed : ${failed}\nsuccessful : ${successful}`);
+      if (debug) logger(` total : ${total}\nfailed : ${failed}\nsuccessful : ${successful}`);
       return TE.right(undefined);
     })
   );
