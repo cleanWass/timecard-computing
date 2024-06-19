@@ -25,7 +25,7 @@ const formatObjectDurations = (rawObject: { [key in (typeof WorkedHoursHeaders)[
     return { ...res, [code]: durationAs100 === '0' ? '' : durationAs100 };
   }, {});
 
-type TimecardComputationResult = ExtractEitherRightType<ReturnType<typeof computeTimecardForEmployee>>;
+export type TimecardComputationResult = ExtractEitherRightType<ReturnType<typeof computeTimecardForEmployee>>;
 
 const generateDayData = (headers: ReadonlyArray<string>, dayDataGetter: (day: DayOfWeek, index: number) => string) =>
   headers.reduce(

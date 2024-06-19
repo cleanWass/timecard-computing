@@ -1,6 +1,8 @@
 import { LocalDate } from '@js-joda/core';
 import axios from 'axios';
 import * as E from 'fp-ts/Either';
+import * as RA from 'fp-ts/ReadonlyArray';
+
 import { flow, pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import { List } from 'immutable';
@@ -47,7 +49,7 @@ export const fetchPayrollData = async ({ start, end }: LocalDateRange) => {
   return r.data as CleanerResponse[];
 };
 
-const generatePayrollExports = ({
+export const generatePayrollExports = ({
   period,
   debug = false,
   displayLog = true,
@@ -111,10 +113,26 @@ const generatePayrollExports = ({
         )
       );
     }),
-    TE.tap(() => {
+    TE.tap(t => {
       if (debug) logger(` total : ${total}\nfailed : ${failed}\nsuccessful : ${successful}`);
-      return TE.right(undefined);
-    })
+      return TE.right(t);
+    }),
+    TE.chainW(results =>
+      pipe(
+        results,
+        RA.sequence(E.Applicative),
+        E.fold(
+          e => {
+            logger(`error for ${e}`);
+            return TE.left(e);
+          },
+          values => {
+            logger(`values for ${values}`);
+            return TE.of(values);
+          }
+        )
+      )
+    )
   );
 };
 
@@ -128,7 +146,7 @@ async function main() {
     });
     if (debug) env.log.logger('start of script');
 
-    await generatePayrollExports({ debug, period: periods.may, env })();
+    const t = await generatePayrollExports({ debug, period: periods.may, env })();
     for (const streamName in env.cvsStream) {
       env.cvsStream[streamName].end();
     }

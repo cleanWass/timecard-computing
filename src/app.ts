@@ -1,8 +1,10 @@
+import { LocalDate } from '@js-joda/core';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import express from 'express';
 
 import { pipe } from 'fp-ts/function';
+import * as RA from 'fp-ts/lib/ReadonlyArray';
 import * as E from 'fp-ts/lib/Either';
 import * as O from 'fp-ts/lib/Option';
 import * as T from 'fp-ts/lib/Task';
@@ -10,12 +12,16 @@ import * as T from 'fp-ts/lib/Task';
 import * as TE from 'fp-ts/lib/TaskEither';
 import { List } from 'immutable';
 import { computeTimecardForEmployee } from '../src/application/timecard-computation/compute-timecard-for-employee';
-import { timecardGrouper } from './application/csv-generation/export-csv';
+import { TimecardComputationResult } from './application/csv-generation/export-csv';
+import { prepareEnv } from './application/csv-generation/prepare-env';
+import { LocalDateRange } from './domain/models/local-date-range';
+import { generatePayrollExports } from './generate-csv-payroll';
 import {
   fetchTimecardData,
   validateApiReturn,
   validateRequestPayload,
 } from './infrastructure/server/timecard-route-service';
+import { ExtractEitherRightType } from './~shared/util/types';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -41,29 +47,16 @@ app.post('/timecard', async (req, res) => {
     TE.bind('raw', ({ params }) => fetchTimecardData(params)),
     TE.bind('data', ({ raw }) => pipe(raw, validateApiReturn, TE.fromEither)),
     TE.bind('timecards', ({ params: { period }, data }) =>
-      pipe(data, computeTimecardForEmployee(period), formatTimecardComputationReturn)
+      pipe(data, computeTimecardForEmployee(period), E.map(formatTimecardComputationReturn), TE.fromEither)
     ),
     TE.bind('prospectiveTimecards', ({ params: { period, prospectiveShifts }, data }) =>
       pipe(
         { ...data, shifts: data.shifts.concat(List(prospectiveShifts)) },
         computeTimecardForEmployee(period),
-        formatTimecardComputationReturn
+        E.map(formatTimecardComputationReturn),
+        TE.fromEither
       )
     ),
-    TE.bind('tmp', ({ data, timecards }) => {
-      console.log(
-        'timecards',
-        JSON.stringify(
-          timecards.timecards.map(
-            t => `${t.contract.id} ${t.contract.type} ${t.contract.subType} ${t.contract.initialId}`
-          ),
-          null,
-          2
-        )
-      );
-      // timecardGroupper(data.contracts);
-      return TE.right({ timecards, prospectiveTimecards: timecards });
-    }),
     TE.map(({ timecards, prospectiveTimecards }) => ({
       ...timecards,
       prospectiveTimecards: prospectiveTimecards.timecards,
@@ -85,46 +78,68 @@ app.post('/timecard', async (req, res) => {
   )();
 });
 
-const formatTimecardComputationReturn = (
-  computationResult: ReturnType<ReturnType<typeof computeTimecardForEmployee>>
-) => {
-  return pipe(
-    computationResult,
-    E.map(result => ({
-      employee: result.employee,
-      period: { start: result.period.start.toString(), end: result.period.end.toString() },
-      timecards: result.timecards.map(t => ({
-        id: t.id,
-        shifts: t.shifts.toArray(),
-        leaves: t.leaves.toArray(),
-        contract: {
-          id: t.contract.id,
-          initialId: t.contract.initialId,
-          startDate: t.contract.startDate.toString(),
-          endDate: pipe(
-            t.contract.endDate,
-            O.fold(
-              () => undefined,
-              e => e.toString()
-            )
-          ),
-          type: t.contract.type,
-          subType: t.contract.subType,
-          weeklyTotalWorkedHours: t.contract.weeklyTotalWorkedHours.toString(),
-          weeklyPlannings: t.contract.weeklyPlannings
-            .map((planning, period) => ({
-              period: { start: period.start.toString(), end: period.end.toString() },
-              planning: planning.toJSON(),
-            }))
-            .valueSeq()
-            .toArray(),
-        },
-        workedHours: t.workedHours.toObject(),
-        mealTickets: t.mealTickets,
-        rentability: t.rentability,
-        period: { start: t.workingPeriod.period.start.toString(), end: t.workingPeriod.period.end.toString() },
-      })),
-    })),
-    TE.fromEither
-  );
-};
+app.post('/payroll', async (req, res) => {
+  const startDate = LocalDate.parse(req.body.startDate);
+  const endDate = LocalDate.parse(req.body.endDate);
+
+  const period = new LocalDateRange(startDate, endDate);
+  const env = prepareEnv({
+    period,
+    debug: false,
+    displayLog: false,
+  });
+  await pipe(
+    generatePayrollExports({ period, env }),
+    TE.map(RA.map(formatTimecardComputationReturn)),
+    TE.fold(
+      e => {
+        console.error('Error in TE.fold:', e);
+        return T.of(res.status(500).json({ error: e }));
+      },
+      result => {
+        if (result) {
+          return T.of(res.status(200).json(result));
+        } else {
+          console.error('Error in TE.fold: Expected Right, but got Left', result);
+          return T.of(res.status(500).json({ error: 'Unexpected result format' }));
+        }
+      }
+    )
+  )();
+});
+
+const formatTimecardComputationReturn = (result: TimecardComputationResult) => ({
+  employee: result.employee,
+  period: { start: result.period.start.toString(), end: result.period.end.toString() },
+  timecards: result.timecards.map(t => ({
+    id: t.id,
+    shifts: t.shifts.toArray(),
+    leaves: t.leaves.toArray(),
+    contract: {
+      id: t.contract.id,
+      initialId: t.contract.initialId,
+      startDate: t.contract.startDate.toString(),
+      endDate: pipe(
+        t.contract.endDate,
+        O.fold(
+          () => undefined,
+          e => e.toString()
+        )
+      ),
+      type: t.contract.type,
+      subType: t.contract.subType,
+      weeklyTotalWorkedHours: t.contract.weeklyTotalWorkedHours.toString(),
+      weeklyPlannings: t.contract.weeklyPlannings
+        .map((planning, period) => ({
+          period: { start: period.start.toString(), end: period.end.toString() },
+          planning: planning.toJSON(),
+        }))
+        .valueSeq()
+        .toArray(),
+    },
+    workedHours: t.workedHours.toObject(),
+    mealTickets: t.mealTickets,
+    rentability: t.rentability,
+    period: { start: t.workingPeriod.period.start.toString(), end: t.workingPeriod.period.end.toString() },
+  })),
+});
