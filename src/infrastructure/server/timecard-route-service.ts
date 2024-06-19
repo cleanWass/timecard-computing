@@ -17,9 +17,10 @@ interface TimecardRouteParams {
   prospectiveShifts: ProspectiveShift[];
 }
 
-export const fetchDataForEmployee = (silaeId: string, { start, end }: LocalDateRange) =>
-  axios
-    .post('http://localhost:3000/employee-data', {
+export const fetchDataForEmployee = (silaeId: string, { start, end }: LocalDateRange) => {
+  const url = `${process.env.CARE_DATA_PARSER_URL || 'http://localhost:3000'}/employee-data`;
+  return axios
+    .post(url, {
       silaeId,
       period: {
         startDate: start.toString(),
@@ -28,6 +29,7 @@ export const fetchDataForEmployee = (silaeId: string, { start, end }: LocalDateR
     })
     .then(r => r.data)
     .catch(e => console.log(`error while fetching for ${silaeId} ${e.response.data}`));
+};
 
 export const parseRequestPayload = (payload: unknown) => validateRoutePayload(timecardRoutesPayloadValidator)(payload);
 

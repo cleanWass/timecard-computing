@@ -39,7 +39,9 @@ const displayTimecardDebug = (
     });
 
 export const fetchPayrollData = async ({ start, end }: LocalDateRange) => {
-  const url = 'http://localhost:3000/payroll/' + start.toString() + '/' + end.toString();
+  const url = `${
+    process.env.CARE_DATA_PARSER_URL || 'http://localhost:3000'
+  }/payroll/${start.toString()}/${end.toString()}`;
 
   const r = await axios.get(url);
   return r.data as CleanerResponse[];
