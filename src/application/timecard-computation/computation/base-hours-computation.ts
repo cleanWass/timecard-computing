@@ -24,5 +24,5 @@ export const computeLeavesHours = (timecard: WorkingPeriodTimecard) => {
 export const computeTotalNormalHoursAvailable = (timecard: WorkingPeriodTimecard) =>
   timecard.register(
     'TotalNormalAvailable',
-    getTotalDuration(timecard.leaves.filter(leave => leave.compensation === 'PAID'))
+    getTotalDuration(timecard.leaves.filter(leave => leave.compensation === 'PAID' && leave.absenceType === 'HOLIDAY'))
   );
