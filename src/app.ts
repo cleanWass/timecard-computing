@@ -31,10 +31,12 @@ const PORT = process.env.PORT || 3001;
 app.use(
   cors({
     origin: '*',
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type'],
   })
 );
+
+app.options('*', cors());
 
 app.use(bodyParser.json());
 
