@@ -79,7 +79,6 @@ export class HolidayComputationService {
 
       monthDaySpecification(of(APRIL, 1)),
       monthDaySpecification(of(MAY, 9)),
-      monthDaySpecification(of(MAY, 20)),
 
       // easterComputationSpecificationPlus(0, yearsInPeriod),
       // easterComputationSpecificationPlus(39, yearsInPeriod),

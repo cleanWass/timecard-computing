@@ -8,7 +8,9 @@ export const prepareEnv = ({
   period,
   debug = false,
   displayLog = true,
+  persistence = 'logs',
 }: {
+  persistence?: 'logs' | 'rh' | 'none';
   debug: boolean;
   displayLog: boolean;
   period: LocalDateRange;
@@ -17,7 +19,7 @@ export const prepareEnv = ({
   const month = period.end.month().toString().toLowerCase();
   const currentTime = LocalTime.now().format(DateTimeFormatter.ofPattern('HH:mm'));
   const currentDay = LocalDate.now().format(DateTimeFormatter.ofPattern('dd.MM'));
-  const basePath = `exports/${year}/${month}/${currentDay}/${currentTime}`;
+  const basePath = persistence === 'rh' ? `exports/rendu` : `exports/${year}/${month}/${currentDay}/${currentTime}`;
 
   if (debug) {
     [debug, displayLog].forEach((flag, index) => console.log(`${['debug', 'displayLog'][index]} ${flag}`));
@@ -41,7 +43,8 @@ export const prepareEnv = ({
 
   const fileStreams = ['silae', 'total', 'full'].reduce(
     (acc, type) => {
-      const filename = `${basePath}/${month}-${currentTime}_${type}.csv`;
+      const filename =
+        persistence === 'logs' ? `${basePath}/${month}-${currentTime}_${type}.csv` : `${basePath}/${type}.csv`;
       acc[type] = fs.createWriteStream(filename);
       return acc;
     },

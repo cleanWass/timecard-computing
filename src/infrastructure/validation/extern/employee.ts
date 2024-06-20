@@ -3,7 +3,7 @@ import * as O from 'fp-ts/Option';
 import { List, Map, Set } from 'immutable';
 import zod from 'zod';
 import { Employee } from '../../../domain/models/employee-registration/employee/employee';
-import { EMPLOYEE_ROLE } from '../../../domain/models/employee-registration/employee/EMPLOYEE_ROLE';
+import { EMPLOYEE_ROLE } from '../../../domain/models/employee-registration/employee/employee-role';
 import { ContractSubType } from '../../../domain/models/employment-contract-management/employment-contract/contract-sub-type';
 import {
   EmploymentContract,
@@ -92,7 +92,7 @@ export const employeeDataValidator = zod
         const extraDuration = Duration.parse(contract.extraDuration ?? 'PT0M');
         return EmploymentContract.build({
           id: contractId,
-          initialId: contract.initialId || 'no id',
+          initialId: contract.initialId || 'fake' + contractId.split('-')[0],
           employeeId: raw.cleaner.silaeId,
           startDate: LocalDate.parse(contract.period.start),
           endDate: O.fromNullable(contract.period.end ? LocalDate.parse(contract.period.end) : null),

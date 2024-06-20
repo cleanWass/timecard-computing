@@ -19,6 +19,7 @@ const periods = {
   march: new LocalDateRange(LocalDate.parse('2024-02-19'), LocalDate.parse('2024-03-17')),
   april: new LocalDateRange(LocalDate.parse('2024-03-18'), LocalDate.parse('2024-04-22')),
   may: new LocalDateRange(LocalDate.parse('2024-04-22'), LocalDate.parse('2024-05-20')),
+  june: new LocalDateRange(LocalDate.parse('2024-05-20'), LocalDate.parse('2024-06-16')),
 };
 
 export type CleanerResponse = {
@@ -93,7 +94,7 @@ export const generatePayrollExports = ({
 
                   csvStreamTotal.write(formatCsv(results));
                   formatCsvDetails(results).forEach((value, key) => csvStreamFull.write(value));
-                  formatCsvSilaeExport(results, logger).forEach((value, key) => csvStreamSilae.write(value));
+                  formatCsvSilaeExport(results).forEach((value, key) => csvStreamSilae.write(value));
 
                   successful++;
                   if (debug)
@@ -140,13 +141,14 @@ async function main() {
   try {
     const debug = process.argv.some(arg => ['--debug', '-d'].includes(arg));
     const env = prepareEnv({
-      period: periods.may,
+      period: periods.june,
       debug,
       displayLog: false,
+      persistence: 'rh',
     });
     if (debug) env.log.logger('start of script');
 
-    const t = await generatePayrollExports({ debug, period: periods.may, env })();
+    const t = await generatePayrollExports({ debug, period: periods.june, env })();
     for (const streamName in env.cvsStream) {
       env.cvsStream[streamName].end();
     }

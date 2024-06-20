@@ -1,4 +1,3 @@
 debug true
 displayLog false
-basePath exports/2024/may/13.06/04:22
-create directory
+basePath exports/rendu

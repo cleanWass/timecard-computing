@@ -11,6 +11,7 @@ import * as T from 'fp-ts/lib/Task';
 
 import * as TE from 'fp-ts/lib/TaskEither';
 import { List } from 'immutable';
+import * as path from 'node:path';
 import { computeTimecardForEmployee } from '../src/application/timecard-computation/compute-timecard-for-employee';
 import { TimecardComputationResult } from './application/csv-generation/export-csv';
 import { prepareEnv } from './application/csv-generation/prepare-env';
@@ -21,6 +22,8 @@ import {
   validateApiReturn,
   validateRequestPayload,
 } from './infrastructure/server/timecard-route-service';
+import { ParseError } from './~shared/error/ParseError';
+import { TimecardComputationError } from './~shared/error/TimecardComputationError';
 import { ExtractEitherRightType } from './~shared/util/types';
 
 const app = express();
@@ -84,6 +87,7 @@ app.post('/payroll', async (req, res) => {
 
   const period = new LocalDateRange(startDate, endDate);
   const env = prepareEnv({
+    persistence: 'logs',
     period,
     debug: false,
     displayLog: false,
@@ -106,6 +110,56 @@ app.post('/payroll', async (req, res) => {
       }
     )
   )();
+});
+
+app.post('/download-export', async (req, res) => {
+  try {
+    const startDate = LocalDate.parse(req.body.startDate);
+    const endDate = LocalDate.parse(req.body.endDate);
+    const type = req.body.type;
+
+    const period = new LocalDateRange(startDate, endDate);
+    const env = prepareEnv({
+      persistence: 'rh',
+      period,
+      debug: false,
+      displayLog: false,
+    });
+
+    let error: Error | ParseError | TimecardComputationError | undefined = undefined;
+    const result = await pipe(
+      generatePayrollExports({ period, env }),
+      TE.map(RA.map(formatTimecardComputationReturn)),
+      TE.tap(results => TE.of(results)),
+      TE.fold(
+        e => {
+          console.error('Error in TE.fold:', e);
+          error = e;
+          return T.of(undefined);
+        },
+        result => T.of(result)
+      )
+    )();
+
+    setTimeout(() => {
+      if (!error) {
+        const filePath = path.join(process.cwd(), `/exports/rendu/${type}.csv`);
+        console.log('Sending file:', filePath);
+        res.sendFile(filePath, err => {
+          if (err) {
+            console.error("Erreur lors de l'envoi du fichier :", err);
+            res.status(500).send("Erreur lors de l'envoi du fichier.");
+          }
+        });
+      } else {
+        console.error('Error in TE.fold: Expected Right, but got Left', result);
+        res.status(500).json({ error });
+      }
+    }, 5000);
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
 const formatTimecardComputationReturn = (result: TimecardComputationResult) => ({

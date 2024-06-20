@@ -8,7 +8,7 @@ import { Employee } from '../../domain/models/employee-registration/employee/emp
 import {
   EMPLOYEE_ROLE_TRANSLATIONS,
   EmployeeRole,
-} from '../../domain/models/employee-registration/employee/EMPLOYEE_ROLE';
+} from '../../domain/models/employee-registration/employee/employee-role';
 import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
@@ -145,24 +145,12 @@ export const timecardGrouper = (contracts: List<EmploymentContract>) => {
   return contracts;
 };
 
-export const formatCsvSilaeExport = (
-  row: TimecardComputationResult,
-  logger: ReturnType<typeof prepareEnv>['log']['logger']
-) => {
+export const formatCsvSilaeExport = (row: TimecardComputationResult) => {
   const listTcs = List(row.timecards);
   const contracts = row.contracts.sortBy(contract => contract.startDate.toString());
-  logger(`format csv silae export, contracts in entry : ${contracts.map(c => c.debug()).join('\n')}`);
   const test = contracts.reduce((groupedContracts, contract, index, te) => {
-    logger(`step ${index}: 
-    groupedContract${groupedContracts
-      .keySeq()
-      .map(k => k.join(','))
-      .join(' | ')}
-    contract${contract.debug()}
-    `);
     // cas ou map vide
     if (groupedContracts.size === 0) {
-      logger(`case of first entry`);
       return groupedContracts.set(Set([contract.initialId]), List([contract]));
     }
 
@@ -182,7 +170,6 @@ export const formatCsvSilaeExport = (
       contract.type === 'CDI' &&
       isContractContiguousWithPreviousContract
     ) {
-      logger('case of first contracts are complement dheures then cdi');
       return groupedContracts
         .delete(lastEntryKey)
         .set(Set(lastEntryKey.add(contract.initialId)), previousContractsList.concat(contract));
@@ -191,13 +178,11 @@ export const formatCsvSilaeExport = (
     // cas ou un contrat avec le meme initialId est deja present
     const findKey = groupedContracts.findKey((_, initialIds) => initialIds.has(contract.initialId));
     if (findKey) {
-      logger(`case of same contract`);
       return groupedContracts.update(findKey, contracts => contracts?.push(contract));
     }
 
     // cas ou c'est un complément d'heure
     if (contract.subType === 'complement_heure') {
-      logger(`case of complement d'heure`);
       return groupedContracts
         .delete(lastEntryKey || Set(['']))
         .set(
@@ -211,21 +196,11 @@ export const formatCsvSilaeExport = (
       lastContractAdded.weeklyTotalWorkedHours.equals(contract.weeklyTotalWorkedHours) &&
       isContractContiguousWithPreviousContract
     ) {
-      logger(`case of same weekly hours`);
       return groupedContracts.update(lastEntryKey || Set([contract.initialId]), contracts => contracts?.push(contract));
     }
-    logger('default case');
+
     return groupedContracts.set(Set([contract.initialId]), List([contract]));
   }, OrderedMap<Set<string>, List<EmploymentContract>>());
-
-  logger(
-    `result of the grouping : 
-      size -> ${test.size} 
-      ${test
-        .keySeq()
-        .map(ids => ids.join(', '))
-        .join('||')}`
-  );
 
   const res = test
     .keySeq()

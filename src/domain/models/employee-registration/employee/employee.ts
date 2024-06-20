@@ -1,7 +1,7 @@
 import { LocalDate } from '@js-joda/core';
 import { Map, ValueObject } from 'immutable';
 import { EmployeeId } from './employee-id';
-import { EmployeeRole } from './EMPLOYEE_ROLE';
+import { EmployeeRole } from './employee-role';
 
 export class Employee implements ValueObject {
   public static build(params: {

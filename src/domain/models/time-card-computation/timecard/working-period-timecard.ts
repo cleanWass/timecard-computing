@@ -128,7 +128,9 @@ export class WorkingPeriodTimecard implements ValueObject {
 
   debug() {
     return `
-        WorkingPeriodTimecard ${this.id} for ${this.employee.firstName} ${this.employee.lastName} (${this.employee.id})
+        WorkingPeriodTimecard ${this.id} for ${this.employee.firstName} ${this.employee.lastName} (${
+          this.employee.silaeId
+        })
         MealTickets: ${this.mealTickets}
         Period: ${this.workingPeriod.period.toFormattedString()}
         Contract: ${this.contract.id} ${formatDuration(this.contract.weeklyTotalWorkedHours)} / week - ${
