@@ -28,17 +28,19 @@ import { TimecardComputationError } from './~shared/error/TimecardComputationErr
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+app.use(
+  cors({
+    origin: '*',
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type'],
+  })
+);
+
 app.use(bodyParser.json());
 
 app.listen(PORT, () => {
   console.log(`Timecard Computing Server is running on port ${PORT}`);
 });
-
-app.use(
-  cors({
-    origin: '*',
-  })
-);
 
 app.post('/timecard', async (req, res) => {
   console.log('/timecard', { body: req.body, params: req.params });
