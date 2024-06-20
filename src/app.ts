@@ -4,9 +4,9 @@ import cors from 'cors';
 import express from 'express';
 
 import { pipe } from 'fp-ts/function';
-import * as RA from 'fp-ts/lib/ReadonlyArray';
 import * as E from 'fp-ts/lib/Either';
 import * as O from 'fp-ts/lib/Option';
+import * as RA from 'fp-ts/lib/ReadonlyArray';
 import * as T from 'fp-ts/lib/Task';
 
 import * as TE from 'fp-ts/lib/TaskEither';
@@ -24,7 +24,6 @@ import {
 } from './infrastructure/server/timecard-route-service';
 import { ParseError } from './~shared/error/ParseError';
 import { TimecardComputationError } from './~shared/error/TimecardComputationError';
-import { ExtractEitherRightType } from './~shared/util/types';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -130,7 +129,6 @@ app.post('/download-export', async (req, res) => {
     const result = await pipe(
       generatePayrollExports({ period, env }),
       TE.map(RA.map(formatTimecardComputationReturn)),
-      TE.tap(results => TE.of(results)),
       TE.fold(
         e => {
           console.error('Error in TE.fold:', e);
@@ -145,12 +143,21 @@ app.post('/download-export', async (req, res) => {
       if (!error) {
         const filePath = path.join(process.cwd(), `/exports/rendu/${type}.csv`);
         console.log('Sending file:', filePath);
-        res.sendFile(filePath, err => {
-          if (err) {
-            console.error("Erreur lors de l'envoi du fichier :", err);
-            res.status(500).send("Erreur lors de l'envoi du fichier.");
+        res.sendFile(
+          filePath,
+          {
+            headers: {
+              'Content-Disposition': `attachment; filename=${type}.csv`,
+              'Content-Type': 'text/csv',
+            },
+          },
+          err => {
+            if (err) {
+              console.error("Erreur lors de l'envoi du fichier :", err);
+              res.status(500).send("Erreur lors de l'envoi du fichier.");
+            }
           }
-        });
+        );
       } else {
         console.error('Error in TE.fold: Expected Right, but got Left', result);
         res.status(500).json({ error });
