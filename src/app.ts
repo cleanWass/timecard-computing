@@ -151,8 +151,10 @@ app.post('/download-export', async (req, res) => {
           filePath,
           {
             headers: {
-              'Content-Disposition': `attachment; filename=${type}.csv`,
-              'Content-Type': 'text/csv',
+              tes: 'test',
+              'Content-Type': 'application/csv',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'POST,PATCH,OPTIONS',
             },
           },
           err => {
