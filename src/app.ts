@@ -36,6 +36,10 @@ app.use(
   })
 );
 
+app.all('*', (req, res, next) => {
+  console.log('Request:', req.method, req.url, req.body, req.headers);
+});
+
 app.options('*', cors());
 
 app.use(bodyParser.json());
