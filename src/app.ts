@@ -31,16 +31,12 @@ const PORT = process.env.PORT || 3001;
 app.use(
   cors({
     origin: '*',
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 
 app.all('*', (req, res, next) => {
   console.log('Request:', req.method, req.url, req.body, req.headers);
 });
-
-app.options('*', cors());
 
 app.use(bodyParser.json());
 
@@ -89,6 +85,7 @@ app.post('/timecard', async (req, res) => {
 });
 
 app.post('/payroll', async (req, res) => {
+  console.log('/payroll', { body: req.body, params: req.params });
   const startDate = LocalDate.parse(req.body.startDate);
   const endDate = LocalDate.parse(req.body.endDate);
 
