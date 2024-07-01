@@ -1,38 +1,57 @@
 import { List, Map, ValueObject } from 'immutable';
-import { EmployeeId } from '../../employee-registration/employee/employee-id';
+import { Employee } from '../../employee-registration/employee/employee';
 import { EmploymentContract } from '../../employment-contract-management/employment-contract/employment-contract';
-import { EmploymentContractId } from '../../employment-contract-management/employment-contract/employment-contract-id';
 import { LocalDateRange } from '../../local-date-range';
 import { WorkingPeriod } from '../working-period/working-period';
-import { WorkingPeriodTimecard } from './working-period-timecard';
+import { WeeklyTimecardRecapId } from './weekly-timecard-recap-id';
+import { WorkingPeriodTimecard } from '../timecard/working-period-timecard';
 
 export class WeeklyTimecardRecap implements ValueObject {
-  public static build(params: {
-    employeeId: EmployeeId;
-    employmentContractId: EmploymentContractId;
-    period: LocalDateRange;
+  private static count = 0;
+  public static build({
+    week,
+    employee,
+    workingPeriods,
+    employmentContracts,
+    workingPeriodTimecards,
+  }: {
+    week: LocalDateRange;
+    employee: Employee;
+    workingPeriods: List<WorkingPeriod>;
+    employmentContracts: List<EmploymentContract>;
+    workingPeriodTimecards: List<WorkingPeriodTimecard>;
   }) {
-    return new WeeklyTimecardRecap(params.employeeId, params.employmentContractId, params.period);
+    return new WeeklyTimecardRecap(
+      `${WeeklyTimecardRecap.count++}`,
+      employee,
+      week,
+      workingPeriods,
+      employmentContracts,
+      workingPeriodTimecards
+    );
   }
 
   private _vo: Map<string, ValueObject | string | number | boolean>;
 
   private constructor(
     public readonly id: WeeklyTimecardRecapId,
-    public readonly employeeId: EmployeeId,
-    public readonly employmentContracts: List<EmploymentContractId>,
+    public readonly employee: Employee,
     public readonly week: LocalDateRange,
-    public readonly workingPeriodTimecards: List<WorkingPeriodTimecard['id']>,
-    public readonly workingPeriod: List<WorkingPeriod['id']>
+    public readonly workingPeriods: List<WorkingPeriod>,
+    public readonly employmentContracts: List<EmploymentContract>,
+    public readonly workingPeriodTimecards: List<WorkingPeriodTimecard>
   ) {
     this._vo = Map<string, ValueObject | string | number | boolean>()
-      .set('employeeId', this.employeeId)
-      .set('employmentContractId', this.employmentContractId)
-      .set('period', this.period);
+      .set('id', this.id)
+      .set('employee', this.employee)
+      .set('employmentContracts', this.employmentContracts)
+      .set('week', this.week)
+      .set('workingPeriodTimecards', this.workingPeriodTimecards)
+      .set('workingPeriods', this.workingPeriods);
   }
 
   equals(other: unknown): boolean {
-    return this._vo.equals((other as WorkingPeriod)?._vo);
+    return this._vo.equals((other as WeeklyTimecardRecap)?._vo);
   }
 
   hashCode(): number {
@@ -43,15 +62,33 @@ export class WeeklyTimecardRecap implements ValueObject {
     return JSON.stringify(this._vo.toJSON());
   }
 
-  isComplete({ overtimeAveragingPeriod }: EmploymentContract) {
-    return this.period.duration().equals(overtimeAveragingPeriod);
+  debug(): string {
+    return `
+  WeeklyTimecardRecap # ${this.id}
+  employee: ${this.employee.firstName} ${this.employee.lastName} - (${this.employee.silaeId}
+  contracts: ${this.employmentContracts.map(c => c.debug()).join('\n')}
+  week: ${this.week.toFormattedString()}
+  workingPeriods: ${this.workingPeriods.map(wp => wp.toString()).join('\n')}
+  workingPeriodTimecards: ${this.workingPeriodTimecards.map(wpt => wpt.id).join(', ')}
+    `;
   }
 
-  with(params: Partial<WorkingPeriod>): WorkingPeriod {
-    return new WorkingPeriod(
-      params.employeeId ?? this.employeeId,
-      params.employmentContractId ?? this.employmentContractId,
-      params.period ?? this.period
+  getTotalWorkedHours() {
+    return WorkingPeriodTimecard.getTotalWorkedHours(this.workingPeriodTimecards);
+  }
+
+  getTotalMealTickets() {
+    return WorkingPeriodTimecard.getTotalMealTickets(this.workingPeriodTimecards);
+  }
+
+  with(params: Partial<WeeklyTimecardRecap>): WeeklyTimecardRecap {
+    return new WeeklyTimecardRecap(
+      params.id ?? this.id,
+      params.employee ?? this.employee,
+      params.week ?? this.week,
+      params.workingPeriods ?? this.workingPeriods,
+      params.employmentContracts ?? this.employmentContracts,
+      params.workingPeriodTimecards ?? this.workingPeriodTimecards
     );
   }
 }

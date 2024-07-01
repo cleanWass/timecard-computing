@@ -9,20 +9,18 @@ import { EmploymentContract } from '../../domain/models/employment-contract-mana
 import { Leave } from '../../domain/models/leave-recording/leave/leave';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { LocalTimeSlot } from '../../domain/models/local-time-slot';
-import { ProspectiveShift } from '../../domain/models/mission-delivery/shift/prospective-shift';
 import { Shift } from '../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
-import { computeRentabilityForEmployee } from '../rentability-computation/compute-rentability-for-employee';
 import { computeExtraHoursByRate, computeTotalAdditionalHours } from './computation/additionnal-hours-computation';
-import { inferTotalIntercontractAndTotalContract } from './computation/infer-total-intercontract-and-total-contract';
-import { computeMealTickets } from './computation/meal-tickets-computation';
 import {
   computeLeavesHours,
   computeTotalNormalHoursAvailable,
   computeWorkedHours,
 } from './computation/base-hours-computation';
+import { inferTotalIntercontractAndTotalContract } from './computation/infer-total-intercontract-and-total-contract';
+import { computeMealTickets } from './computation/meal-tickets-computation';
 import { computeSurchargedHours } from './computation/surcharged-hours-computation';
 import {
   groupLeavesByWorkingPeriods,
@@ -31,6 +29,7 @@ import {
 } from './computation/working-period-computation';
 import { curateLeaves, filterShifts } from './curation/shifts-and-period-curation';
 import { generateInactiveShiftsIfPartialWeek } from './generation/inactive-shifts-generation';
+import { generateWeeklyTimecardRecap } from './generation/weekly-timecard-recap-generation';
 
 const findContract = (contracts: List<EmploymentContract>) => (workingPeriod: WorkingPeriod) =>
   pipe(
@@ -130,13 +129,15 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
           )
         )
       ),
-      E.map(({ timecards, workingPeriods, groupedShifts }) => ({
+      E.bind('weeklyRecaps', ({ timecards }) => generateWeeklyTimecardRecap(List(timecards), employee, period)),
+      E.map(({ timecards, workingPeriods, groupedShifts, weeklyRecaps }) => ({
         period,
         employee,
         workingPeriods,
         groupedShifts,
         timecards,
         contracts,
+        weeklyRecaps,
       }))
     );
 };

@@ -12,9 +12,11 @@ import * as T from 'fp-ts/lib/Task';
 import * as TE from 'fp-ts/lib/TaskEither';
 import { List } from 'immutable';
 import * as path from 'node:path';
+import * as process from 'node:process';
 import { computeTimecardForEmployee } from '../src/application/timecard-computation/compute-timecard-for-employee';
 import { TimecardComputationResult } from './application/csv-generation/export-csv';
 import { prepareEnv } from './application/csv-generation/prepare-env';
+import { Employee } from './domain/models/employee-registration/employee/employee';
 import { LocalDateRange } from './domain/models/local-date-range';
 import { generatePayrollExports } from './generate-csv-payroll';
 import {
@@ -24,6 +26,7 @@ import {
 } from './infrastructure/server/timecard-route-service';
 import { ParseError } from './~shared/error/ParseError';
 import { TimecardComputationError } from './~shared/error/TimecardComputationError';
+import * as AWS from 'aws-sdk';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -40,8 +43,18 @@ app.use(
 
 app.use(bodyParser.json());
 
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+});
+
+const s3 = new AWS.S3();
+
 app.listen(PORT, () => {
+  console.log('env:', process.env);
   console.log(`Timecard Computing Server is running on port ${PORT}`);
+  console.log(s3);
 });
 
 app.post('/timecard', async (req, res) => {
@@ -176,38 +189,74 @@ app.post('/download-export', async (req, res) => {
   }
 });
 
-const formatTimecardComputationReturn = (result: TimecardComputationResult) => ({
-  employee: result.employee,
-  period: { start: result.period.start.toString(), end: result.period.end.toString() },
-  timecards: result.timecards.map(t => ({
-    id: t.id,
-    shifts: t.shifts.toArray(),
-    leaves: t.leaves.toArray(),
-    contract: {
-      id: t.contract.id,
-      initialId: t.contract.initialId,
-      startDate: t.contract.startDate.toString(),
+const formatTimecardComputationReturn = (result: TimecardComputationResult) => {
+  return {
+    employee: result.employee,
+    period: { start: result.period.start.toString(), end: result.period.end.toString() },
+    timecards: result.timecards.map(t => ({
+      id: t.id,
+      shifts: t.shifts.toArray(),
+      leaves: t.leaves.toArray(),
+      contract: {
+        id: t.contract.id,
+        initialId: t.contract.initialId,
+        startDate: t.contract.startDate.toString(),
+        endDate: pipe(
+          t.contract.endDate,
+          O.fold(
+            () => undefined,
+            e => e.toString()
+          )
+        ),
+        type: t.contract.type,
+        subType: t.contract.subType,
+        weeklyTotalWorkedHours: t.contract.weeklyTotalWorkedHours.toString(),
+        weeklyPlannings: t.contract.weeklyPlannings
+          .map((planning, period) => ({
+            period: { start: period.start.toString(), end: period.end.toString() },
+            planning: planning.toJSON(),
+          }))
+          .valueSeq()
+          .toArray(),
+      },
+      workedHours: t.workedHours.toObject(),
+      mealTickets: t.mealTickets,
+      rentability: t.rentability,
+      period: { start: t.workingPeriod.period.start.toString(), end: t.workingPeriod.period.end.toString() },
+    })),
+    weeklyRecaps: result.weeklyRecaps
+      .map(recap => ({
+        id: recap.id,
+        week: { start: recap.week.start.toString(), end: recap.week.end.toString() },
+        workingPeriods: recap.workingPeriods.toJS(),
+        timecardIds: recap.workingPeriodTimecards.map(t => t.id).toArray(),
+        contractIds: recap.employmentContracts.map(c => c.id).toArray(),
+        workedHours: recap.getTotalWorkedHours().toObject(),
+        mealTickets: recap.getTotalMealTickets(),
+      }))
+      .valueSeq()
+      .toArray(),
+    contracts: result.contracts.map(c => ({
+      id: c.id,
+      initialId: c.initialId,
+      startDate: c.startDate.toString(),
       endDate: pipe(
-        t.contract.endDate,
+        c.endDate,
         O.fold(
           () => undefined,
           e => e.toString()
         )
       ),
-      type: t.contract.type,
-      subType: t.contract.subType,
-      weeklyTotalWorkedHours: t.contract.weeklyTotalWorkedHours.toString(),
-      weeklyPlannings: t.contract.weeklyPlannings
+      type: c.type,
+      subType: c.subType,
+      weeklyTotalWorkedHours: c.weeklyTotalWorkedHours.toString(),
+      weeklyPlannings: c.weeklyPlannings
         .map((planning, period) => ({
           period: { start: period.start.toString(), end: period.end.toString() },
           planning: planning.toJSON(),
         }))
         .valueSeq()
         .toArray(),
-    },
-    workedHours: t.workedHours.toObject(),
-    mealTickets: t.mealTickets,
-    rentability: t.rentability,
-    period: { start: t.workingPeriod.period.start.toString(), end: t.workingPeriod.period.end.toString() },
-  })),
-});
+    })),
+  };
+};
