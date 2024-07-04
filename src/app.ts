@@ -31,22 +31,21 @@ import * as AWS from 'aws-sdk';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Middleware de journalisation
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  console.log(`Requête reçue: ${req.method} ${req.url}`);
+  console.log('En-têtes:', req.headers);
+  console.log('Corps:', req.body);
   next();
 });
 
 app.use(
   cors({
-    origin: '*',
+    origin: 'https://manager-app-wfq6.onrender.com',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
-
-app.all('*', (req, res, next) => {
-  console.log('Request:', req.method, req.url, req.body, req.headers);
-});
 
 app.use(bodyParser.json());
 
