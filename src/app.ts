@@ -44,9 +44,9 @@ app.use(
   })
 );
 
-// app.all('*', (req, res, next) => {
-//   console.log('Request:', req.method, req.url, req.body, req.headers);
-// });
+app.all('*', (req, res, next) => {
+  console.log('Request:', req.method, req.url, req.body, req.headers);
+});
 
 app.use(bodyParser.json());
 
