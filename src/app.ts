@@ -203,6 +203,7 @@ const formatTimecardComputationReturn = (result: TimecardComputationResult) => {
       id: t.id,
       shifts: t.shifts.toArray(),
       leaves: t.leaves.toArray(),
+      planning: t.weeklyPlanning.toJSON(),
       contract: {
         id: t.contract.id,
         initialId: t.contract.initialId,
