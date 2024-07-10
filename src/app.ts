@@ -41,7 +41,7 @@ app.use((req, res, next) => {
 
 app.use(
   cors({
-    origin: 'https://manager-app-wfq6.onrender.com',
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
