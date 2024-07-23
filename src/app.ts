@@ -2,6 +2,7 @@ import { LocalDate } from '@js-joda/core';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import express from 'express';
+import 'dotenv/config';
 
 import { pipe } from 'fp-ts/function';
 import * as E from 'fp-ts/lib/Either';
@@ -10,6 +11,7 @@ import * as RA from 'fp-ts/lib/ReadonlyArray';
 import * as T from 'fp-ts/lib/Task';
 
 import * as TE from 'fp-ts/lib/TaskEither';
+import fs from 'fs';
 import { List } from 'immutable';
 import * as path from 'node:path';
 import * as process from 'node:process';
@@ -31,13 +33,13 @@ import * as AWS from 'aws-sdk';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware de journalisation
-app.use((req, res, next) => {
-  console.log(`Requête reçue: ${req.method} ${req.url}`);
-  console.log('En-têtes:', req.headers);
-  console.log('Corps:', req.body);
-  next();
-});
+// // Middleware de journalisation
+// app.use((req, res, next) => {
+//   console.log(`Requête reçue: ${req.method} ${req.url}`);
+//   console.log('En-têtes:', req.headers);
+//   console.log('Corps:', req.body);
+//   next();
+// });
 
 app.use(
   cors({
@@ -58,9 +60,7 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 app.listen(PORT, () => {
-  console.log('env:', process.env);
   console.log(`Timecard Computing Server is running on port ${PORT}`);
-  console.log(s3);
 });
 
 app.post('/timecard', async (req, res) => {
@@ -136,6 +136,7 @@ app.post('/payroll', async (req, res) => {
 });
 
 app.post('/download-export', async (req, res) => {
+  console.log('/download-export', { body: req.body, params: req.params });
   try {
     const startDate = LocalDate.parse(req.body.startDate);
     const endDate = LocalDate.parse(req.body.endDate);
@@ -163,37 +164,67 @@ app.post('/download-export', async (req, res) => {
       )
     )();
 
-    setTimeout(() => {
-      if (!error) {
-        const filePath = path.join(process.cwd(), `/exports/rendu/${type}.csv`);
-        console.log('Sending file:', filePath);
-        res.sendFile(
-          filePath,
-          {
-            headers: {
-              tes: 'test',
-              'Content-Type': 'application/csv',
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'POST,PATCH,OPTIONS',
-            },
-          },
-          err => {
+    if (!error) {
+      const filePath = path.join(process.cwd(), `/exports/rendu/${type}.csv`);
+      console.log('Uploading file to S3:', filePath);
+
+      const fileStream = fs.createReadStream(filePath);
+      const uploadParams = {
+        Bucket: process.env.AWS_S3_BUCKET_NAME || 'payrollexports',
+        Key: `exports/${type}.csv`,
+        Body: fileStream,
+        ContentType: 'text/csv',
+      };
+      setTimeout(
+        () =>
+          s3.upload(uploadParams, (err, data) => {
             if (err) {
-              console.error("Erreur lors de l'envoi du fichier :", err);
-              res.status(500).send("Erreur lors de l'envoi du fichier.");
+              console.error('Error uploading file:', err);
+              res.status(500).send("Erreur lors de l'envoi du fichier sur S3.");
+            } else {
+              console.log('File uploaded successfully:', data.Location);
+              res.status(200).json({ downloadUrl: data.Location });
             }
-          }
-        );
-      } else {
-        console.error('Error in TE.fold: Expected Right, but got Left', result);
-        res.status(500).json({ error });
-      }
-    }, 5000);
+          }),
+        5000
+      );
+    } else {
+      console.error('Error in TE.fold: Expected Right, but got Left', result);
+      res.status(500).json({ error });
+    }
   } catch (error) {
     console.error('Unexpected error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+//   setTimeout(() => {
+//     if (!error) {
+//       const filePath = path.join(process.cwd(), `/exports/rendu/${type}.csv`);
+//       console.log('Sending file:', filePath);
+//       res.sendFile(
+//         filePath,
+//         {
+//           headers: {
+//             tes: 'test',
+//             'Content-Type': 'application/csv',
+//             'Access-Control-Allow-Origin': '*',
+//             'Access-Control-Allow-Methods': 'POST,PATCH,OPTIONS',
+//           },
+//         },
+//         err => {
+//           if (err) {
+//             console.error('Erreur lors de l\'envoi du fichier :', err);
+//             res.status(500).send('Erreur lors de l\'envoi du fichier.');
+//           }
+//         }
+//       );
+//     } else {
+//       console.error('Error in TE.fold: Expected Right, but got Left', result);
+//       res.status(500).json({error});
+//     }
+//   }, 5000);
+// }
 
 const formatTimecardComputationReturn = (result: TimecardComputationResult) => {
   return {
