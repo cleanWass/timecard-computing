@@ -153,7 +153,6 @@ app.post('/download-export', async (req, res) => {
     let error: Error | ParseError | TimecardComputationError | undefined = undefined;
     const result = await pipe(
       generatePayrollExports({ period, env }),
-      TE.map(RA.map(formatTimecardComputationReturn)),
       TE.fold(
         e => {
           console.error('Error in TE.fold:', e);

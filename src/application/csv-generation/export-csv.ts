@@ -137,20 +137,26 @@ const getCsvOutput = (
   };
 };
 
-export const timecardGrouper = (contracts: List<EmploymentContract>) => {
-  const test = contracts.reduce((groupedContracts, contract) => {
-    return groupedContracts;
-  }, List<List<EmploymentContract>>());
-
-  return contracts;
-};
-
-export const formatCsvSilaeExport = (row: TimecardComputationResult) => {
+export const formatCsvSilaeExport = (
+  row: TimecardComputationResult,
+  logger: ReturnType<typeof prepareEnv>['log']['logger']
+) => {
   const listTcs = List(row.timecards);
   const contracts = row.contracts.sortBy(contract => contract.startDate.toString());
   const test = contracts.reduce((groupedContracts, contract, index, te) => {
+    logger('---------------------------');
+    logger(
+      'groupedContracts : ' +
+        JSON.stringify(
+          groupedContracts.map(cs => cs.map(c => c.initialId).join(', ')),
+          null,
+          2
+        )
+    );
+    logger('contract : ' + contract.type + ' ' + contract.subType + ' ' + contract.initialId);
     // cas ou map vide
     if (groupedContracts.size === 0) {
+      logger('cas ou map vide');
       return groupedContracts.set(Set([contract.initialId]), List([contract]));
     }
 
@@ -170,6 +176,7 @@ export const formatCsvSilaeExport = (row: TimecardComputationResult) => {
       contract.type === 'CDI' &&
       isContractContiguousWithPreviousContract
     ) {
+      logger('cas complement heure + CDI + continu');
       return groupedContracts
         .delete(lastEntryKey)
         .set(Set(lastEntryKey.add(contract.initialId)), previousContractsList.concat(contract));
@@ -178,11 +185,13 @@ export const formatCsvSilaeExport = (row: TimecardComputationResult) => {
     // cas ou un contrat avec le meme initialId est deja present
     const findKey = groupedContracts.findKey((_, initialIds) => initialIds.has(contract.initialId));
     if (findKey) {
+      logger('cas ou un contrat avec le meme initialId est deja present');
       return groupedContracts.update(findKey, contracts => contracts?.push(contract));
     }
 
     // cas ou c'est un complément d'heure
     if (contract.subType === 'complement_heure') {
+      logger('cas ou c est un complement d heure');
       return groupedContracts
         .delete(lastEntryKey || Set(['']))
         .set(
@@ -191,14 +200,18 @@ export const formatCsvSilaeExport = (row: TimecardComputationResult) => {
         );
     }
     if (
-      contract.type !== 'CDD' &&
+      contract.type === 'CDI' &&
       lastContractAdded &&
       lastContractAdded.weeklyTotalWorkedHours.equals(contract.weeklyTotalWorkedHours) &&
       isContractContiguousWithPreviousContract
     ) {
-      return groupedContracts.update(lastEntryKey || Set([contract.initialId]), contracts => contracts?.push(contract));
+      logger('cas ou c est un CDI et que les heures sont les memes');
+      return groupedContracts
+        .delete(lastEntryKey || Set(['']))
+        .set(lastEntryKey.add(contract.initialId) || Set([contract.initialId]), previousContractsList.concat(contract));
     }
 
+    logger('cas default');
     return groupedContracts.set(Set([contract.initialId]), List([contract]));
   }, OrderedMap<Set<string>, List<EmploymentContract>>());
 
@@ -211,7 +224,21 @@ export const formatCsvSilaeExport = (row: TimecardComputationResult) => {
     .groupBy(tc => tc.contract.initialId)
     .map(timecards => timecards.sortBy(tc => tc.workingPeriod.period.start.toString()));
 
-  return res
-    .map((tcs, contract) => getCsvOutput(row.employee, row.period, tcs, tcs.first()?.contract, true))
-    .valueSeq();
+  logger(
+    'result  -->  ' +
+      JSON.stringify(
+        res.map((tcs, contract) => getCsvOutput(row.employee, row.period, tcs, tcs.first()?.contract, true)).valueSeq(),
+        null,
+        2
+      )
+  );
+  logger('============');
+  logger(
+    JSON.stringify(
+      res.toArray().map(tcs => tcs.map(tc => tc.contract.initialId).join(', ')),
+      null,
+      2
+    )
+  );
+  return res.map(tcs => getCsvOutput(row.employee, row.period, tcs, tcs.first()?.contract, true)).valueSeq();
 };
