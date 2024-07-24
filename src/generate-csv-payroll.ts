@@ -12,6 +12,7 @@ import { computeTimecardForEmployee } from './application/timecard-computation/c
 import { LocalDateRange } from './domain/models/local-date-range';
 import { WorkingPeriodTimecard } from './domain/models/time-card-computation/timecard/working-period-timecard';
 import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
+import { writeToString } from 'fast-csv';
 
 const periods = {
   january: new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDate.parse('2024-01-22')),
@@ -56,7 +57,7 @@ export const generatePayrollExports = ({
   debug = false,
   displayLog = true,
   env: {
-    cvsStream: { csvStreamFull, csvStreamSilae, csvStreamTotal },
+    cvsStream: { csvStreamDebug, csvStreamSilae },
     log: { total, failed, successful, logger },
   },
 }: {
@@ -66,6 +67,9 @@ export const generatePayrollExports = ({
   env: ReturnType<typeof prepareEnv>;
 }) => {
   if (debug) logger('start generatePayrollExports');
+
+  let silaeBuffer: ReturnType<typeof formatCsvSilaeExport> = [];
+  let debugBuffer: ReturnType<typeof formatCsvDetails> = [];
 
   return pipe(
     TE.tryCatch(
@@ -80,7 +84,7 @@ export const generatePayrollExports = ({
       total = dataCleaners.length;
       return pipe(
         dataCleaners,
-        // dataCleaners.filter(cleaner => cleaner.cleaner.silaeId === '01210'),
+        // dataCleaners.filter(cleaner => cleaner.cleaner.silaeId === '01304'),
         TE.traverseArray(cleaner =>
           pipe(
             cleaner,
@@ -93,9 +97,12 @@ export const generatePayrollExports = ({
                 E.map(results => {
                   if (displayLog) displayTimecardDebug(results.timecards, logger);
 
-                  csvStreamTotal.write(formatCsv(results));
-                  formatCsvDetails(results).forEach((value, key) => csvStreamFull.write(value));
-                  formatCsvSilaeExport(results, logger).forEach((value, key) => csvStreamSilae.write(value));
+                  // csvStreamTotal.write(formatCsv(results));
+                  // formatCsvDetails(results).forEach((value, key) => csvStreamFull.write(value));
+                  // csvStreamSilae.write(formatCsvSilaeExport(results, logger));
+                  logger(`silae buffer Atm : ${JSON.stringify(silaeBuffer, null, 2)}`);
+                  silaeBuffer = silaeBuffer.concat(formatCsvSilaeExport(results, logger));
+                  debugBuffer = debugBuffer.concat(formatCsvDetails(results));
 
                   successful++;
                   if (debug)
@@ -129,7 +136,8 @@ export const generatePayrollExports = ({
             return TE.left(e);
           },
           values => {
-            logger(`values for ${values}`);
+            silaeBuffer.forEach(v => csvStreamSilae.write(v));
+            debugBuffer.forEach(v => csvStreamDebug.write(v));
             return TE.of(values);
           }
         )
@@ -145,7 +153,7 @@ async function main() {
       period: periods.july,
       debug,
       displayLog: true,
-      persistence: 'logs',
+      persistence: 'rh',
     });
     if (debug) env.log.logger('start of script');
 

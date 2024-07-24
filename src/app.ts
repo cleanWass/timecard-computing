@@ -147,7 +147,7 @@ app.post('/download-export', async (req, res) => {
       persistence: 'rh',
       period,
       debug: false,
-      displayLog: false,
+      displayLog: true,
     });
 
     let error: Error | ParseError | TimecardComputationError | undefined = undefined;
@@ -162,7 +162,9 @@ app.post('/download-export', async (req, res) => {
         result => T.of(result)
       )
     )();
-
+    for (const streamName in env.cvsStream) {
+      env.cvsStream[streamName].end();
+    }
     if (!error) {
       const filePath = path.join(process.cwd(), `/exports/rendu/${type}.csv`);
       console.log('Uploading file to S3:', filePath);

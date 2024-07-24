@@ -232,7 +232,7 @@ export const formatCsvSilaeExport = (
         2
       )
   );
-  logger('============');
+  logger('=======RESULT========');
   logger(
     JSON.stringify(
       res.toArray().map(tcs => tcs.map(tc => tc.contract.initialId).join(', ')),
@@ -240,5 +240,8 @@ export const formatCsvSilaeExport = (
       2
     )
   );
-  return res.map(tcs => getCsvOutput(row.employee, row.period, tcs, tcs.first()?.contract, true)).valueSeq();
+  return res
+    .map(tcs => getCsvOutput(row.employee, row.period, tcs, tcs.first()?.contract, true))
+    .valueSeq()
+    .toArray();
 };

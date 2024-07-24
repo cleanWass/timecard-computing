@@ -51,19 +51,19 @@ export const prepareEnv = ({
     {} as Record<'silae' | 'total' | 'full', fs.WriteStream>
   );
 
-  const csvStreamFull = format({ headers: [...FullHeaders] });
-  const csvStreamTotal = format({ headers: [...TotalHeaders] });
+  const csvStreamDebug = format({ headers: [...FullHeaders] });
+  const csvStreamCompiled = format({ headers: [...TotalHeaders] });
   const csvStreamSilae = format({ headers: [...SilaeHeaders] });
 
-  csvStreamFull.pipe(fileStreams.full).on('end', () => process.exit());
-  csvStreamTotal.pipe(fileStreams.total).on('end', () => process.exit());
+  csvStreamDebug.pipe(fileStreams.full).on('end', () => process.exit());
+  csvStreamCompiled.pipe(fileStreams.total).on('end', () => process.exit());
   csvStreamSilae.pipe(fileStreams.silae).on('end', () => process.exit());
 
   return {
     cvsStream: {
       csvStreamSilae,
-      csvStreamTotal,
-      csvStreamFull,
+      csvStreamCompiled,
+      csvStreamDebug,
     },
     log: {
       logger,

@@ -15,4 +15,4 @@ package-lock.json
 /exports/*
 /yarn.lock
 
-.env*
+.env.local
