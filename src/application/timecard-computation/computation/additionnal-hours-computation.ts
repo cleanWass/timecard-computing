@@ -60,7 +60,7 @@ export const computeTotalAdditionalHours = (timecard: WorkingPeriodTimecard) => 
     .register(
       'TotalAdditionalHours',
       Duration.ofMinutes(
-        Math.ceil(getGreaterDuration(totalAdditionalHours.minus(totalNormalHours), Duration.ZERO).toMinutes() / 15) * 15
+        Math.ceil(getGreaterDuration(totalAdditionalHours.minus(totalNormalHours), Duration.ZERO).toMinutes())
       )
     );
 };
