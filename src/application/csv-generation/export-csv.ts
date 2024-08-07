@@ -12,7 +12,7 @@ import {
 import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
-import { formatDurationAs100 } from '../../~shared/util/joda-helper';
+import { formatDurationAs100, getFirstDayOfWeek } from '../../~shared/util/joda-helper';
 import { ExtractEitherRightType, keys } from '../../~shared/util/types';
 import { computeTimecardForEmployee } from '../timecard-computation/compute-timecard-for-employee';
 import { DayHeaders, DoneDayHeaders, PlanningDayHeaders, WorkedHoursHeaders } from './headers';
@@ -96,6 +96,15 @@ const getPeriodValue = (timecards: List<WorkingPeriodTimecard>, periodToCompute:
 };
 
 export const getFunctionTranslations = (role: EmployeeRole) => EMPLOYEE_ROLE_TRANSLATIONS[role];
+
+export const formatCsvWeekly = (row: TimecardComputationResult) => {
+  const timecards = List(row.timecards);
+  return timecards
+    .groupBy(tc => getFirstDayOfWeek(tc.workingPeriod.period.start).toString())
+    .map(tcs => getCsvOutput(row.employee, WorkingPeriodTimecard.getTotalWorkingPeriod(tcs), tcs))
+    .valueSeq()
+    .toArray();
+};
 
 const getCsvOutput = (
   employee: Employee,

@@ -41,29 +41,32 @@ export const prepareEnv = ({
     );
   };
 
-  const fileStreams = ['silae', 'total', 'full'].reduce(
+  const fileStreams = ['silae', 'total', 'full', 'weekly'].reduce(
     (acc, type) => {
       const filename =
         persistence === 'logs' ? `${basePath}/${month}-${currentTime}_${type}.csv` : `${basePath}/${type}.csv`;
       acc[type] = fs.createWriteStream(filename);
       return acc;
     },
-    {} as Record<'silae' | 'total' | 'full', fs.WriteStream>
+    {} as Record<'silae' | 'total' | 'full' | 'weekly', fs.WriteStream>
   );
 
   const csvStreamDebug = format({ headers: [...FullHeaders] });
   const csvStreamCompiled = format({ headers: [...TotalHeaders] });
   const csvStreamSilae = format({ headers: [...SilaeHeaders] });
+  const csvStreamWeekly = format({ headers: [...TotalHeaders] });
 
   csvStreamDebug.pipe(fileStreams.full).on('end', () => process.exit());
   csvStreamCompiled.pipe(fileStreams.total).on('end', () => process.exit());
   csvStreamSilae.pipe(fileStreams.silae).on('end', () => process.exit());
+  csvStreamWeekly.pipe(fileStreams.weekly).on('end', () => process.exit());
 
   return {
     cvsStream: {
       csvStreamSilae,
       csvStreamCompiled,
       csvStreamDebug,
+      csvStreamWeekly,
     },
     log: {
       logger,

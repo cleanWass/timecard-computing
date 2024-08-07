@@ -199,34 +199,6 @@ app.post('/download-export', async (req, res) => {
   }
 });
 
-//   setTimeout(() => {
-//     if (!error) {
-//       const filePath = path.join(process.cwd(), `/exports/rendu/${type}.csv`);
-//       console.log('Sending file:', filePath);
-//       res.sendFile(
-//         filePath,
-//         {
-//           headers: {
-//             tes: 'test',
-//             'Content-Type': 'application/csv',
-//             'Access-Control-Allow-Origin': '*',
-//             'Access-Control-Allow-Methods': 'POST,PATCH,OPTIONS',
-//           },
-//         },
-//         err => {
-//           if (err) {
-//             console.error('Erreur lors de l\'envoi du fichier :', err);
-//             res.status(500).send('Erreur lors de l\'envoi du fichier.');
-//           }
-//         }
-//       );
-//     } else {
-//       console.error('Error in TE.fold: Expected Right, but got Left', result);
-//       res.status(500).json({error});
-//     }
-//   }, 5000);
-// }
-
 const formatTimecardComputationReturn = (result: TimecardComputationResult) => {
   return {
     employee: result.employee,
@@ -249,6 +221,7 @@ const formatTimecardComputationReturn = (result: TimecardComputationResult) => {
         ),
         type: t.contract.type,
         subType: t.contract.subType,
+        extraDuration: t.contract.extraDuration,
         weeklyTotalWorkedHours: t.contract.weeklyTotalWorkedHours.toString(),
         weeklyPlannings: t.contract.weeklyPlannings
           .map((planning, period) => ({
