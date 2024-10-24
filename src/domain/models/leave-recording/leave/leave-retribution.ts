@@ -14,7 +14,7 @@ export const LEAVE_REASON = [
   'WORK_ILLNESS',
   'WORK_INJURY',
   'CLOSED_SITE',
-  'COMMUTE INJURY',
+  'COMMUTE_INJURY',
   'FAMILY_LEAVE',
   'PAYED_LEAVE',
   'SICK_CHILD',
@@ -28,14 +28,14 @@ export type LeaveRetribution = 'PAID' | 'UNPAID' | 'HOLIDAY';
 export type PaidLeaveReason =
   | 'HOLIDAY'
   | 'CLOSED_SITE'
-  | 'COMMUTE INJURY'
+  | 'COMMUTE_INJURY'
   | 'FAMILY_LEAVE'
   | 'PAYED_LEAVE'
   | 'SICK_CHILD'
   | 'TRAINING_LEAVE';
 
 export const isPaidLeaveReason = (reason: string): reason is PaidLeaveReason =>
-  ['CLOSED_SITE', 'COMMUTE INJURY', 'FAMILY_LEAVE', 'PAYED_LEAVE', 'SICK_CHILD', 'TRAINING_LEAVE'].includes(reason);
+  ['CLOSED_SITE', 'COMMUTE_INJURY', 'FAMILY_LEAVE', 'PAYED_LEAVE', 'SICK_CHILD', 'TRAINING_LEAVE'].includes(reason);
 
 export type UnpaidLeaveReason =
   | 'ILLNESS'
