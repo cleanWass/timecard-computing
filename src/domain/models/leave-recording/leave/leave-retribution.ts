@@ -5,6 +5,7 @@ export const LEAVE_REASON = [
   'DISCIPLINARY_LAID_OFF',
   'LEAVE_ABSENCE_PAID',
   'MATERNITY_LEAVE',
+  'BIRTH_LEAVE',
   'PARENTAL_LEAVE',
   'PATERNITY_LEAVE',
   'SABBATICAL_LEAVE',
@@ -45,6 +46,7 @@ export type UnpaidLeaveReason =
   | 'MATERNITY_LEAVE'
   | 'PARENTAL_LEAVE'
   | 'PATERNITY_LEAVE'
+  | 'BIRTH_LEAVE'
   | 'SABBATICAL_LEAVE'
   | 'UNAUTHORIZED_LEAVE'
   | 'UNAUTHORIZED_LEAVE_UNPAID'
@@ -61,6 +63,7 @@ export const isUnpaidLeaveReason = (reason: string): reason is UnpaidLeaveReason
     'MATERNITY_LEAVE',
     'PARENTAL_LEAVE',
     'PATERNITY_LEAVE',
+    'BIRTH_LEAVE',
     'SABBATICAL_LEAVE',
     'UNAUTHORIZED_LEAVE_UNPAID',
     'UNAUTHORIZED_LEAVE',
