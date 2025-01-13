@@ -15,11 +15,18 @@ export const prepareEnv = ({
   displayLog: boolean;
   period: LocalDateRange;
 }) => {
-  const year = period.end.year().toString();
-  const month = period.end.month().toString().toLowerCase();
+  const year = period.start.year().toString();
+  const month = period.start.month().toString().toLowerCase();
   const currentTime = LocalTime.now().format(DateTimeFormatter.ofPattern('HH:mm'));
   const currentDay = LocalDate.now().format(DateTimeFormatter.ofPattern('dd.MM'));
-  const basePath = persistence === 'rh' ? `exports/rendu` : `exports/${year}/${month}/${currentDay}/${currentTime}`;
+  const basePath =
+    persistence === 'rh'
+      ? `exports/rendu`
+      : persistence === 'none'
+      ? `rh-logs/${period.start.format(DateTimeFormatter.ofPattern('dd-MM-yy'))}_${period.end
+          .minusDays(1)
+          .format(DateTimeFormatter.ofPattern('dd-MM-yy'))}`
+      : `exports/${year}/${month}/${currentDay}/${currentTime}`;
 
   if (debug) {
     [debug, displayLog].forEach((flag, index) => console.log(`${['debug', 'displayLog'][index]} ${flag}`));
