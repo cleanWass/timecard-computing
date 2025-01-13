@@ -102,11 +102,21 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
     shifts: List<Shift>;
     leaves: List<Leave>;
     contracts: List<EmploymentContract>;
-  }) =>
-    pipe(
+  }) => {
+    if (contracts.isEmpty() && shifts.isEmpty()) {
+      return E.right({
+        period,
+        employee,
+        workingPeriods: List(),
+        groupedShifts: List(),
+        timecards: [],
+        contracts,
+        weeklyRecaps: Map(),
+      });
+    }
+    return pipe(
       E.Do,
       E.bind('workingPeriods', () => splitPeriodIntoWorkingPeriods(contracts, period)),
-
       E.bind('groupedShifts', ({ workingPeriods }) => groupShiftsByWorkingPeriods(shifts, workingPeriods)),
       E.bind('groupedLeaves', ({ workingPeriods }) => groupLeavesByWorkingPeriods(leaves, workingPeriods)),
       E.bind('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) =>
@@ -140,4 +150,5 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
         weeklyRecaps,
       }))
     );
+  };
 };
