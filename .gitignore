@@ -16,3 +16,4 @@ package-lock.json
 /yarn.lock
 
 .env.local
+/rh-logs/
