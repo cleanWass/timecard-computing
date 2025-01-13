@@ -97,6 +97,11 @@ const getPeriodValue = (timecards: List<WorkingPeriodTimecard>, periodToCompute:
 
 export const getFunctionTranslations = (role: EmployeeRole) => EMPLOYEE_ROLE_TRANSLATIONS[role];
 
+export const formatCsvTotal = (row: TimecardComputationResult) => {
+  const timecards = List(row.timecards);
+  return [getCsvOutput(row.employee, WorkingPeriodTimecard.getTotalWorkingPeriod(timecards), timecards)];
+};
+
 export const formatCsvWeekly = (row: TimecardComputationResult) => {
   const timecards = List(row.timecards);
   return timecards

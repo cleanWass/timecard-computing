@@ -6,6 +6,7 @@ import * as TE from 'fp-ts/TaskEither';
 import { List } from 'immutable';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { ProspectiveShift } from '../../domain/models/mission-delivery/shift/prospective-shift';
+import { FetchError } from '../../~shared/error/FetchError';
 import { ParseError } from '../../~shared/error/ParseError';
 import { employeeDataValidator } from '../validation/extern/employee';
 import { timecardRoutesPayloadValidator } from '../validation/routes/timecard-route-payload';
@@ -14,7 +15,7 @@ import { validateRoutePayload } from '../validation/validate-route-payload';
 interface TimecardRouteParams {
   silaeId: string;
   period: LocalDateRange;
-  prospectiveShifts: ProspectiveShift[];
+  prospectiveShifts?: ProspectiveShift[];
 }
 
 export const fetchDataForEmployee = (silaeId: string, { start, end }: LocalDateRange) => {
@@ -28,7 +29,28 @@ export const fetchDataForEmployee = (silaeId: string, { start, end }: LocalDateR
       },
     })
     .then(r => r.data)
-    .catch(e => console.log(`error while fetching for ${silaeId} ${e.response.data}`));
+    .catch(e => console.log(`error while fetching for ${silaeId} ${JSON.stringify(e.response.data)}`));
+};
+
+export const fetchActiveCleanersForPeriod = ({ start, end }: LocalDateRange) => {
+  const url = `${process.env.CARE_DATA_PARSER_URL || 'http://localhost:3000'}/active-cleaners`;
+  return axios
+    .post(url, {
+      period: {
+        startDate: start.toString(),
+        endDate: end.toString(),
+      },
+    })
+    .then(
+      r =>
+        r.data as {
+          [key in 'silaeId' | 'id' | 'role' | 'firstName' | 'lastName']: string;
+        }[]
+    );
+  // .catch(e => {
+  //   console.log(`error while fetching activeCleaners ${e.response.data}`);
+  //   return new FetchError('error while fetching activeCleaners');
+  // });
 };
 
 export const parseRequestPayload = (payload: unknown) => validateRoutePayload(timecardRoutesPayloadValidator)(payload);
@@ -84,5 +106,11 @@ export const fetchTimecardData = ({ silaeId, period }: TimecardRouteParams) =>
     () => fetchDataForEmployee(silaeId, period),
     e => new ParseError(`Fetching from care data parser went wrong ${e}`)
   );
+
+export const fetchTimecardDataForEmployees = (period: LocalDateRange) =>
+  TE.tryCatchK(
+    () => fetchActiveCleanersForPeriod(period),
+    e => new FetchError(`Fetching from care data parser went wrong ${e}`)
+  )();
 
 export const validateApiReturn = (data: unknown) => pipe(data, parseApiReturn, formatApiReturn);
