@@ -11,6 +11,7 @@ import { LocalDateRange } from '../../domain/models/local-date-range';
 import { LocalTimeSlot } from '../../domain/models/local-time-slot';
 import { Shift } from '../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { WeeklyTimecardRecap } from '../../domain/models/time-card-computation/weekly-timecard-recap/weekly-timecard-recap';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
 import { computeExtraHoursByRate, computeTotalAdditionalHours } from './computation/additionnal-hours-computation';
@@ -107,11 +108,11 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
       return E.right({
         period,
         employee,
-        workingPeriods: List(),
-        groupedShifts: List(),
-        timecards: [],
+        workingPeriods: List<WorkingPeriod>(),
+        groupedShifts: Map<WorkingPeriod, List<Shift>>(),
+        timecards: [] as WorkingPeriodTimecard[],
         contracts,
-        weeklyRecaps: Map(),
+        weeklyRecaps: Map<LocalDateRange, WeeklyTimecardRecap>(),
       });
     }
     return pipe(
@@ -148,7 +149,8 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
         timecards,
         contracts,
         weeklyRecaps,
-      }))
+      })),
+      t => t
     );
   };
 };
