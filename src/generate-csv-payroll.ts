@@ -22,6 +22,7 @@ const periods = {
   june: new LocalDateRange(LocalDate.parse('2024-05-20'), LocalDate.parse('2024-06-16')),
   july: new LocalDateRange(LocalDate.parse('2024-06-17'), LocalDate.parse('2024-07-21')),
   september: new LocalDateRange(LocalDate.parse('2024-08-19'), LocalDate.parse('2024-09-22')),
+  test: new LocalDateRange(LocalDate.parse('2024-10-21'), LocalDate.parse('2024-10-31')),
 };
 
 export type CleanerResponse = {
@@ -159,14 +160,14 @@ async function main() {
   try {
     const debug = process.argv.some(arg => ['--debug', '-d'].includes(arg));
     const env = prepareEnv({
-      period: periods.september,
+      period: periods.test,
       debug,
       displayLog: true,
       persistence: 'logs',
     });
     if (debug) env.log.logger('start of script');
 
-    const t = await generatePayrollExports({ debug, period: periods.september, env })();
+    const t = await generatePayrollExports({ debug, period: periods.test, env })();
     for (const streamName in env.cvsStream) {
       env.cvsStream[streamName].end();
     }

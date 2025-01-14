@@ -161,8 +161,8 @@ async function main() {
       // ['22.07.2024', '31.07.2024'],
       // ['19.08.2024', '31.08.2024'],
       // ['23.09.2024', '30.09.2024'],
-      // ['21.10.2024', '31.10.2024'],
-      ['18.11.2024', '30.11.2024'],
+      ['21.10.2024', '31.10.2024'],
+      // ['18.11.2024', '30.11.2024'],
     ];
 
     for (const [startStr, endStr] of periods) {
@@ -185,26 +185,6 @@ async function main() {
       }
       if (debug) env.log.logger('end of script');
     }
-
-    // for (let i = 0; i < 1; i++) {
-    //   const current = start.plusMonths(i);
-    //   const month = new LocalDateRange(current, current.plusMonths(1));
-    //
-    //   const env = prepareEnv({
-    //     period: month,
-    //     debug,
-    //     displayLog: true,
-    //     persistence: 'none',
-    //   });
-    //   if (debug) env.log.logger('start of script');
-    //
-    //   const t = await generateCsvFromUncachedDataForPeriod({ debug, period: month, env })();
-    //
-    //   for (const streamName in env.cvsStream) {
-    //     env.cvsStream[streamName].end();
-    //   }
-    //   if (debug) env.log.logger('end of script');
-    // }
   } catch (e) {
     console.error(e);
   }
