@@ -6,7 +6,11 @@ import { flow, pipe } from 'fp-ts/function';
 import * as RA from 'fp-ts/ReadonlyArray';
 import * as TE from 'fp-ts/TaskEither';
 import { List } from 'immutable';
-import { formatCsvDetails, formatCsvSilaeExport, formatCsvWeekly } from './application/csv-generation/export-csv';
+import {
+  formatCsvDetails,
+  formatCsvSilaeExport,
+  formatCsvWeekly,
+} from './application/csv-generation/export-csv';
 import { prepareEnv } from './application/csv-generation/prepare-env';
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
@@ -22,7 +26,7 @@ const periods = {
   june: new LocalDateRange(LocalDate.parse('2024-05-20'), LocalDate.parse('2024-06-16')),
   july: new LocalDateRange(LocalDate.parse('2024-06-17'), LocalDate.parse('2024-07-21')),
   september: new LocalDateRange(LocalDate.parse('2024-08-19'), LocalDate.parse('2024-09-22')),
-  test: new LocalDateRange(LocalDate.parse('2024-10-21'), LocalDate.parse('2024-10-31')),
+  test: new LocalDateRange(LocalDate.parse('2024-02-26'), LocalDate.parse('2024-03-04')),
 };
 
 export type CleanerResponse = {
@@ -81,7 +85,10 @@ export const generatePayrollExports = ({
         return new Error(`Fetching cached data from care data parser went wrong ${e}`);
       }
     ),
-
+    TE.map(t => {
+      console.log('1', JSON.stringify(t, null, 2));
+      return t;
+    }),
     TE.chainW(dataCleaners => {
       total = dataCleaners.length;
       return pipe(
@@ -121,7 +128,9 @@ export const generatePayrollExports = ({
                   return results;
                 }),
                 E.mapLeft(e => {
-                  logger(`error for ${cleaner.cleaner.firstName} + ${cleaner.cleaner.lastName} ${e}`);
+                  logger(
+                    `error for ${cleaner.cleaner.firstName} + ${cleaner.cleaner.lastName} ${e}`
+                  );
                   failed++;
                   return e;
                 })
@@ -177,4 +186,4 @@ async function main() {
   }
 }
 
-main().catch(e => console.error(e));
+// main().catch(e => console.error(e));

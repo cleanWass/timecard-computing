@@ -1,18 +1,9 @@
-import { ChronoUnit, DateTimeFormatter, Duration, LocalDate } from '@js-joda/core';
+import { ChronoUnit, DateTimeFormatter, DayOfWeek, Duration, LocalDate, TemporalAdjusters } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
-import { Map, ValueObject } from 'immutable';
+import { List, Map, ValueObject } from 'immutable';
 import { IllegalArgumentError } from '../~shared/error/illegal-argument-error';
 
 export class LocalDateRange implements ValueObject {
-  public static of(
-    start: LocalDate, // inclusive
-    end: LocalDate // exclusive
-  ): E.Either<IllegalArgumentError, LocalDateRange> {
-    return end.isAfter(start)
-      ? E.right(new LocalDateRange(start, end))
-      : E.left(new IllegalArgumentError(`Start (${start}) must be before End (${end}).`));
-  }
-
   private readonly valueObject: ValueObject;
 
   constructor(
@@ -20,6 +11,15 @@ export class LocalDateRange implements ValueObject {
     public readonly end: LocalDate
   ) {
     this.valueObject = Map<string, LocalDate>().set('start', this.start).set('end', this.end);
+  }
+
+  public static of(
+    start: LocalDate, // inclusive
+    end: LocalDate // exclusive
+  ): E.Either<IllegalArgumentError, LocalDateRange> {
+    return end.isAfter(start)
+      ? E.right(new LocalDateRange(start, end))
+      : E.left(new IllegalArgumentError(`Start (${start}) must be before End (${end}).`));
   }
 
   equals(other: unknown): boolean {
@@ -62,7 +62,9 @@ export class LocalDateRange implements ValueObject {
   }
 
   toLocalDateArray(): Array<LocalDate> {
-    return Array.from([...Array(this.numberOfDays() || 0)].keys()).map(current => this.start.plusDays(current));
+    return Array.from([...Array(this.numberOfDays() || 0)].keys()).map(current =>
+      this.start.plusDays(current)
+    );
   }
 
   startOverlaps(addend: LocalDateRange) {
@@ -77,6 +79,51 @@ export class LocalDateRange implements ValueObject {
     );
   }
 
+  divideIntoLocalDateRange(chronoUnit: ChronoUnit) {
+    const numberOfChronoUnits = Math.ceil(ChronoUnit.DAYS.between(
+      this.start.atStartOfDay(),
+      this.end.atStartOfDay().minusDays(1)
+    ) / chronoUnit.duration().toDays());
+
+    console.log('numberOfChronoUnits', numberOfChronoUnits);
+    console.log('compare', Math.max(chronoUnit.compareTo(ChronoUnit.DAYS), 1));
+    return List(Array.from(new Array(numberOfChronoUnits))).reduce((acc, curr, currentIndex) => {
+      return acc.push(
+        new LocalDateRange(
+          this.start.plus(currentIndex, chronoUnit),
+          this.start.plus(
+            currentIndex + Math.max(chronoUnit.compareTo(ChronoUnit.DAYS), 1),
+            chronoUnit
+          )
+        )
+      );
+    }, List<LocalDateRange>());
+  }
+
+  divideIntoCalendarWeeks() {
+    const numberOfWeeks = ChronoUnit.WEEKS.between(this.start.atStartOfDay(), this.end.atStartOfDay());
+
+    let weeks = List<LocalDateRange>();
+    const firstMonday = this.start.with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY))
+    if (this.start.dayOfWeek() !== DayOfWeek.MONDAY) {
+      weeks = weeks.push(new LocalDateRange(this.start, firstMonday));
+    }
+    console.log('weeks ->', weeks.map(range => range.toFormattedString()).toArray().join(' | '));
+    return weeks.concat(new LocalDateRange(firstMonday, this.end).divideIntoLocalDateRange(ChronoUnit.WEEKS));
+  }
+
+  divideIntoCalendarMonths() {
+    const numberOfMonths = ChronoUnit.MONTHS.between(this.start.atStartOfDay(), this.end.atStartOfDay());
+
+    let months = List<LocalDateRange>();
+    const firstDayOfMonth = this.start.with(TemporalAdjusters.firstDayOfMonth())
+    if (this.start.dayOfMonth() !== 1) {
+      months = months.push(new LocalDateRange(this.start, firstDayOfMonth));
+    }
+    console.log('months ->', months.map(range => range.toFormattedString()).toArray().join(' | '));
+    return months.concat(new LocalDateRange(firstDayOfMonth, this.end).divideIntoLocalDateRange(ChronoUnit.MONTHS));
+  }
+
   commonRange(rangeToTest: LocalDateRange) {
     if (!this.overlaps(rangeToTest)) return null;
     const start = this.start.isBefore(rangeToTest.start) ? rangeToTest.start : this.start;
@@ -89,6 +136,7 @@ export class LocalDateRange implements ValueObject {
     const newEnd = end ?? this.end;
     return new LocalDateRange(newStart, newEnd);
   }
+
   private includesAddendEnd(addend: LocalDateRange) {
     return addend.end.isAfter(this.start) && addend.end.isBefore(this.end);
   }

@@ -1,11 +1,14 @@
 import { Leave } from '../../../domain/models/leave-recording/leave/leave';
+import {
+  ModulationDataWorkingPeriodCard
+} from '../../../domain/models/modulation-data/modulation-data-working-period-card';
 import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { formatDurationAs100, getTotalDuration } from '../../../~shared/util/joda-helper';
 
-export const computeWorkedHours = (timecard: WorkingPeriodTimecard) =>
+export const computeWorkedHours = (timecard: WorkingPeriodTimecard | ModulationDataWorkingPeriodCard) =>
   timecard.register('TotalWeekly', getTotalDuration(timecard.shifts));
 
-export const computeLeavesHours = (timecard: WorkingPeriodTimecard) => {
+export const computeLeavesHours = (timecard: WorkingPeriodTimecard | ModulationDataWorkingPeriodCard) => {
   const computeDuration = (condition: (l: Leave) => boolean = () => true) =>
     getTotalDuration(timecard.leaves.filter(condition));
 
@@ -21,7 +24,7 @@ export const computeLeavesHours = (timecard: WorkingPeriodTimecard) => {
     .register('TotalLeavesUnpaid', leavesUnpaidDuration);
 };
 
-export const computeTotalNormalHoursAvailable = (timecard: WorkingPeriodTimecard) =>
+export const computeTotalNormalHoursAvailable = (timecard: WorkingPeriodTimecard | ModulationDataWorkingPeriodCard) =>
   timecard.register(
     'TotalNormalAvailable',
     getTotalDuration(timecard.leaves.filter(leave => leave.compensation === 'PAID' && leave.absenceType === 'HOLIDAY'))

@@ -17,29 +17,30 @@ export const filterContractsForPeriod =
   (period: LocalDateRange) => (contracts: List<EmploymentContract>) =>
     contracts.filter(contract => contract.period(period.end).overlaps(period));
 
-const computeWorkingPeriods = (period: LocalDateRange) => (contracts: List<EmploymentContract>) =>
-  pipe(
-    contracts,
-    E.fromPredicate(
-      crts => true,
-      () => new TimecardComputationError('No contract matches this period 1')
-    ),
-    E.map(crts =>
-      crts.reduce(
-        (acc, { employeeId, id: employmentContractId, weeklyPlannings }) =>
-          acc.concat(
-            weeklyPlannings.keySeq().map(period =>
-              WorkingPeriod.build({
-                employeeId,
-                employmentContractId,
-                period,
-              })
-            )
-          ),
-        List<WorkingPeriod>()
+export const computeWorkingPeriods =
+  (period: LocalDateRange) => (contracts: List<EmploymentContract>) =>
+    pipe(
+      contracts,
+      E.fromPredicate(
+        crts => true,
+        () => new TimecardComputationError('No contract matches this period 1')
+      ),
+      E.map(crts =>
+        crts.reduce(
+          (acc, { employeeId, id: employmentContractId, weeklyPlannings }) =>
+            acc.concat(
+              weeklyPlannings.keySeq().map(period =>
+                WorkingPeriod.build({
+                  employeeId,
+                  employmentContractId,
+                  period,
+                })
+              )
+            ),
+          List<WorkingPeriod>()
+        )
       )
-    )
-  );
+    );
 
 export const splitPeriodIntoWorkingPeriods = (
   contracts: List<EmploymentContract>,

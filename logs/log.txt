@@ -1,0 +1,5 @@
+debug true
+displayLog true
+basePath rh-logs/16-12-24_31-12-24
+create directory
+dataCleaners :  399

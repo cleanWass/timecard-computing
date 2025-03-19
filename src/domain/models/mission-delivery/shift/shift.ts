@@ -122,6 +122,10 @@ export class Shift implements ValueObject, IShift {
     return new LocalTimeSlot(this.startTime.toLocalTime(), this.getEndLocalTime());
   }
 
+  getDate() {
+    return this.startTime.toLocalDate();
+  }
+
   getStartTime(): LocalDateTime {
     return this.startTime;
   }

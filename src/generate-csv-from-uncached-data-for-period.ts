@@ -67,7 +67,9 @@ export const generateCsvFromUncachedDataForPeriod = ({
     fetchTimecardDataForEmployees(period),
     TE.map(dataCleaners => {
       console.log('dataCleaners : ', dataCleaners.length);
-      return dataCleaners.filter(cle => !!cle?.silaeId).toSorted((a, b) => (a.silaeId || '')?.localeCompare(b.silaeId));
+      return dataCleaners
+        .filter(cle => !!cle?.silaeId)
+        .toSorted((a, b) => (a.silaeId || '')?.localeCompare(b.silaeId));
     }),
     TE.chainW(TE.traverseSeqArray(({ silaeId }) => fetchTimecardData_O({ period, silaeId }))),
     TE.chainW(dataCleaners => {
@@ -108,7 +110,9 @@ export const generateCsvFromUncachedDataForPeriod = ({
                   return results;
                 }),
                 E.mapLeft(e => {
-                  logger(`error for ${cleaner.cleaner.firstName} + ${cleaner.cleaner.lastName} ${e}`);
+                  logger(
+                    `error for ${cleaner.cleaner.firstName} + ${cleaner.cleaner.lastName} ${e}`
+                  );
                   failed++;
                   return e;
                 })
@@ -161,9 +165,10 @@ async function main() {
       // ['22.07.2024', '31.07.2024'],
       // ['19.08.2024', '31.08.2024'],
       // ['23.09.2024', '30.09.2024'],
-      ['21.10.2024', '31.10.2024'],
+      // ['21.10.2024', '31.10.2024'],
       // ['18.11.2024', '30.11.2024'],
-    ];
+      ['16.12.2024', '31.12.2024'],
+    ] as const;
 
     for (const [startStr, endStr] of periods) {
       const start = LocalDate.parse(startStr, DateTimeFormatter.ofPattern('dd.MM.yyyy'));
@@ -190,4 +195,4 @@ async function main() {
   }
 }
 
-main().catch(e => console.error(e));
+// main().catch(e => console.error(e));

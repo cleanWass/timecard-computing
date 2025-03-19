@@ -147,12 +147,14 @@ export class EmploymentContract implements ValueObject {
                   `
 ${period.toFormattedString()}
 ${planning
-  .map((slots, day) => `\t\t${day} -> ${slots.isEmpty() ? ' // ' : slots.map(s => s.debug()).join(' | ')}`)
+  .map(
+    (slots, day) =>
+      `\t\t${day} -> ${slots.isEmpty() ? ' // ' : slots.map(s => s.debug()).join(' | ')}`
+  )
   .join('\n')}`
               )
               .join('\n---------\n')}`
           : ''
-      }
-    `;
+      }`;
   }
 }

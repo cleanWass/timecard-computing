@@ -59,7 +59,10 @@ export const exportPayrollOnGoogleDrive = null;
 export const main = () => {
   const periods = getPeriodAsDateRanges(periods_2025);
 
-  console.log('getCurrentPeriodRanges for current day : ' + LocalDate.now(), getCurrentPeriodRanges(periods));
+  console.log(
+    'getCurrentPeriodRanges for current day : ' + LocalDate.now(),
+    getCurrentPeriodRanges(periods)
+  );
 };
 
-main();
+// main();

@@ -1,80 +1,65 @@
-import { Duration, LocalDate } from '@js-joda/core';
+import { ChronoUnit, Duration, LocalDate } from '@js-joda/core';
 import { EmploymentContract } from '../../../../../src/domain/models/employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../../../../../src/domain/models/local-date-range';
 import { WorkingPeriod } from '../../../../../src/domain/models/time-card-computation/working-period/working-period';
 
-const employeeId = 'ezafkze';
-const employmentContractId = 'pz^rgkz';
+const localDateRange = new LocalDateRange(LocalDate.of(2024, 6, 1), LocalDate.of(2024, 8, 1));
+const localDateRangeCopy = new LocalDateRange(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 1, 7));
 
-const clone = (base: WorkingPeriod, params?: Partial<Parameters<typeof WorkingPeriod.build>[0]>) =>
-  WorkingPeriod.build({
-    employeeId: params?.employeeId ?? base.employeeId,
-    employmentContractId: params?.employmentContractId ?? base.employmentContractId,
-    period: params?.period ?? base.period,
-  });
-
-const firstWeekOf2023 = WorkingPeriod.build({
-  employeeId,
-  employmentContractId,
-  period: new LocalDateRange(LocalDate.parse('2023-01-02'), LocalDate.parse('2023-01-09')),
-});
-
-const partialFirstWeekOf2023 = WorkingPeriod.build({
-  employeeId,
-  employmentContractId,
-  period: new LocalDateRange(LocalDate.parse('2023-01-05'), LocalDate.parse('2023-01-09')),
-});
-
-const otherPartialFirstWeekOf2023 = WorkingPeriod.build({
-  employeeId,
-  employmentContractId,
-  period: new LocalDateRange(LocalDate.parse('2023-01-02'), LocalDate.parse('2023-01-04')),
-});
-
-describe('WorkingPeriod', () => {
+describe('LocalDateRange', () => {
   describe('.equals', () => {
     it('returns true with identical objects', () => {
-      expect(firstWeekOf2023.equals(firstWeekOf2023)).toBe(true);
-    });
-
-    it('returns true with identical objects', () => {
-      expect(firstWeekOf2023.equals(clone(firstWeekOf2023))).toBe(true);
-    });
-
-    it('returns false with different objects', () => {
-      expect(
-        firstWeekOf2023.equals(
-          clone(firstWeekOf2023, {
-            period: firstWeekOf2023.period.with({
-              end: firstWeekOf2023.period.end.plusDays(1),
-            }),
-          })
-        )
-      ).toBe(false);
+      expect(localDateRange.equals(localDateRangeCopy)).toBe(true);
     });
   });
 
-  describe('.isComplete', () => {
-    it('returns true when the period is complete', () => {
+  describe('.divideIntoPeriods', () => {
+    // it('returns an array of periods', () => {
+    //   console.log(localDateRange.toFormattedString());
+    //   console.log(
+    //     localDateRange
+    //       .divideIntoLocalDateRange(ChronoUnit.MONTHS)
+    //       .map(range => range.toFormattedString())
+    //       .toArray()
+    //   );
+    //   expect(localDateRange.divideIntoLocalDateRange(ChronoUnit.MONTHS)).toBe(true);
+    // });
+    it('splits a range into Calendar Week', () => {
+      console.log(localDateRange.toFormattedString());
+      console.log(
+        localDateRange
+          .divideIntoCalendarWeeks()
+          .map(range => range.toFormattedString())
+          .toArray()
+      );
+      console.log('numbersOfDays', localDateRangeCopy.numberOfDays());
       expect(
-        firstWeekOf2023.isComplete({
-          overtimeAveragingPeriod: Duration.ofDays(7),
-        } as EmploymentContract)
-      ).toBe(true);
+        localDateRange
+          .divideIntoCalendarWeeks()
+          .map(rge => rge.toFormattedString())
+          .toArray()
+      ).toStrictEqual([
+        '01/06/24 -> 03/06/24',
+        '03/06/24 -> 10/06/24',
+        '10/06/24 -> 17/06/24',
+        '17/06/24 -> 24/06/24',
+        '24/06/24 -> 01/07/24',
+        '01/07/24 -> 08/07/24',
+        '08/07/24 -> 15/07/24',
+        '15/07/24 -> 22/07/24',
+        '22/07/24 -> 29/07/24',
+        '29/07/24 -> 05/08/24',
+      ]);
     });
-    it('returns false when the period is not complete', () => {
-      expect(
-        partialFirstWeekOf2023.isComplete({
-          overtimeAveragingPeriod: Duration.ofDays(7),
-        } as EmploymentContract)
-      ).toBe(false);
-    });
-    it('returns false when the period is not complete', () => {
-      expect(
-        otherPartialFirstWeekOf2023.isComplete({
-          overtimeAveragingPeriod: Duration.ofDays(7),
-        } as EmploymentContract)
-      ).toBe(false);
+    it('splits a range into Calendar Months', () => {
+      console.log(localDateRange.toFormattedString());
+      console.log(
+        localDateRange
+          .divideIntoCalendarMonths()
+          .map(range => range.toFormattedString())
+          .toArray()
+      );
+      expect(localDateRange.divideIntoCalendarMonths()).toBe(true);
     });
   });
 });
