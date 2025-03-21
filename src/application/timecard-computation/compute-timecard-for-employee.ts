@@ -14,7 +14,10 @@ import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation
 import { WeeklyTimecardRecap } from '../../domain/models/time-card-computation/weekly-timecard-recap/weekly-timecard-recap';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
-import { computeExtraHoursByRate, computeTotalAdditionalHours } from './computation/additionnal-hours-computation';
+import {
+  computeExtraHoursByRate,
+  computeTotalAdditionalHours,
+} from './computation/additionnal-hours-computation';
 import {
   computeLeavesHours,
   computeTotalNormalHoursAvailable,
@@ -28,7 +31,11 @@ import {
   groupShiftsByWorkingPeriods,
   splitPeriodIntoWorkingPeriods,
 } from './computation/working-period-computation';
-import { curateLeaves, filterShifts } from './curation/shifts-and-period-curation';
+import {
+  curateLeaves,
+  filterBenchingShifts,
+  filterShifts,
+} from './curation/shifts-and-period-curation';
 import { generateInactiveShiftsIfPartialWeek } from './generation/inactive-shifts-generation';
 import { generateWeeklyTimecardRecap } from './generation/weekly-timecard-recap-generation';
 
@@ -56,7 +63,10 @@ const initializeWorkingPeriodTimecard = ({
     contract,
     employee,
     workingPeriod,
-    weeklyPlanning: contract.weeklyPlannings.get(workingPeriod.period, Map<DayOfWeek, Set<LocalTimeSlot>>()),
+    weeklyPlanning: contract.weeklyPlannings.get(
+      workingPeriod.period,
+      Map<DayOfWeek, Set<LocalTimeSlot>>()
+    ),
     shifts,
     leaves,
   });
@@ -79,6 +89,7 @@ export const computeWorkingPeriodTimecard: (
     initializeWorkingPeriodTimecard,
     curateLeaves,
     filterShifts,
+    filterBenchingShifts,
     generateInactiveShiftsIfPartialWeek,
     computeTotalNormalHoursAvailable,
     computeWorkedHours,
@@ -118,8 +129,12 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
     return pipe(
       E.Do,
       E.bind('workingPeriods', () => splitPeriodIntoWorkingPeriods(contracts, period)),
-      E.bind('groupedShifts', ({ workingPeriods }) => groupShiftsByWorkingPeriods(shifts, workingPeriods)),
-      E.bind('groupedLeaves', ({ workingPeriods }) => groupLeavesByWorkingPeriods(leaves, workingPeriods)),
+      E.bind('groupedShifts', ({ workingPeriods }) =>
+        groupShiftsByWorkingPeriods(shifts, workingPeriods)
+      ),
+      E.bind('groupedLeaves', ({ workingPeriods }) =>
+        groupLeavesByWorkingPeriods(leaves, workingPeriods)
+      ),
       E.bind('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) =>
         pipe(
           workingPeriods.toArray(),
@@ -140,7 +155,9 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
           )
         )
       ),
-      E.bind('weeklyRecaps', ({ timecards }) => generateWeeklyTimecardRecap(List(timecards), employee, period)),
+      E.bind('weeklyRecaps', ({ timecards }) =>
+        generateWeeklyTimecardRecap(List(timecards), employee, period)
+      ),
       E.map(({ timecards, workingPeriods, groupedShifts, weeklyRecaps }) => ({
         period,
         employee,

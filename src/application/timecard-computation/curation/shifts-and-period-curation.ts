@@ -29,7 +29,10 @@ export const getCuratedShifts = (leave: Leave, shift: Shift) =>
 
       return List([
         beforeLeave.toDuration().toMillis() > 0 &&
-          shift.with({ id: `${shift.id}-before Leave ${leave.debug()}`, duration: beforeLeave.toDuration() }),
+          shift.with({
+            id: `${shift.id}-before Leave ${leave.debug()}`,
+            duration: beforeLeave.toDuration(),
+          }),
         afterLeave.toDuration().toMillis() > 0 &&
           shift.with({
             id: `${shift.id}-after Leave ${leave.debug()}`,
@@ -40,6 +43,13 @@ export const getCuratedShifts = (leave: Leave, shift: Shift) =>
     }),
     E.getOrElse(() => List([shift]))
   );
+
+export const filterBenchingShifts = (timecard: WorkingPeriodTimecard) =>
+  timecard.with({
+    shifts: timecard.shifts.filter(
+      shift => shift.clientId !== '0010Y00000Ijn8cQAB' || shift.type !== 'Intercontrat'
+    ),
+  });
 
 export const filterShifts = (timecard: WorkingPeriodTimecard) => {
   const shifts = timecard.shifts.flatMap(shift => {
@@ -68,7 +78,8 @@ export const curateLeaves = (timecard: WorkingPeriodTimecard) => {
   );
 
   const filterOutPaidLeavesCanceledByHolidays = (leave: Leave) =>
-    leave.compensation !== 'PAID' || !holidays.some(holiday => holiday.getInterval().overlaps(leave.getInterval()));
+    leave.compensation !== 'PAID' ||
+    !holidays.some(holiday => holiday.getInterval().overlaps(leave.getInterval()));
 
   const leaves = timecard.leaves
     .filterNot(leave => leave.absenceType === 'HOLIDAY')

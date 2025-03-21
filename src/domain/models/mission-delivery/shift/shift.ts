@@ -1,4 +1,12 @@
-import { ChronoUnit, DateTimeFormatter, Duration, Instant, LocalDateTime, LocalTime, ZoneId } from '@js-joda/core';
+import {
+  ChronoUnit,
+  DateTimeFormatter,
+  Duration,
+  Instant,
+  LocalDateTime,
+  LocalTime,
+  ZoneId,
+} from '@js-joda/core';
 import { Interval } from '@js-joda/extra';
 import { Map, ValueObject } from 'immutable';
 import { TypeProps } from '../../../../~shared/util/types';
@@ -104,7 +112,9 @@ export class Shift implements ValueObject, IShift {
   getInterval(): Interval {
     return Interval.of(
       Instant.from(LocalDateTime.from(this.startTime).atZone(ZoneId.of('Europe/Paris'))),
-      Instant.from(LocalDateTime.from(this.startTime.plus(this.duration)).atZone(ZoneId.of('Europe/Paris')))
+      Instant.from(
+        LocalDateTime.from(this.startTime.plus(this.duration)).atZone(ZoneId.of('Europe/Paris'))
+      )
     );
   }
 
@@ -127,8 +137,10 @@ export class Shift implements ValueObject, IShift {
   }
 
   debug(): string {
-    return `${this.startTime.format(DateTimeFormatter.ofPattern('dd/MM/yy: HH:mm'))} -> ${this.startTime
-      .plus(this.duration)
-      .format(DateTimeFormatter.ofPattern('HH:mm'))}`;
+    return `${this.startTime.format(
+      DateTimeFormatter.ofPattern('dd/MM/yy: HH:mm')
+    )} -> ${this.startTime.plus(this.duration).format(DateTimeFormatter.ofPattern('HH:mm'))} ${
+      this.clientName
+    } ${this.clientId} ${this.type}`;
   }
 }
