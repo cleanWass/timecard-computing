@@ -3,10 +3,10 @@ import { ModulationDataWorkingPeriodCard } from '../../../domain/models/modulati
 import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
 import { formatDurationAs100, getTotalDuration } from '../../../~shared/util/joda-helper';
 
-export const computeWorkedHours = (timecard: WorkingPeriodTimecard) =>
+export const computeModulationWorkedHours = (timecard: ModulationDataWorkingPeriodCard) =>
   timecard.register('TotalWeekly', getTotalDuration(timecard.shifts));
 
-export const computeLeavesHours = (timecard: WorkingPeriodTimecard) => {
+export const computeModulationLeavesHours = (timecard: ModulationDataWorkingPeriodCard) => {
   const computeDuration = (condition: (l: Leave) => boolean = () => true) =>
     getTotalDuration(timecard.leaves.filter(condition));
 
@@ -22,7 +22,7 @@ export const computeLeavesHours = (timecard: WorkingPeriodTimecard) => {
     .register('TotalLeavesUnpaid', leavesUnpaidDuration);
 };
 
-export const computeTotalNormalHoursAvailable = (timecard: WorkingPeriodTimecard) =>
+export const computeTotalNormalHoursAvailable = (timecard: ModulationDataWorkingPeriodCard) =>
   timecard.register(
     'TotalNormalAvailable',
     getTotalDuration(

@@ -4,6 +4,7 @@ import { formatDurationAs100 } from '../../../~shared/util/joda-helper';
 import { Employee } from '../employee-registration/employee/employee';
 import { EmploymentContract } from '../employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../local-date-range';
+import { HoursTypeCodes } from '../time-card-computation/timecard/worked-hours-rate';
 import { WorkingPeriod } from '../time-card-computation/working-period/working-period';
 import { ModulationDataWorkingPeriodCard } from './modulation-data-working-period-card';
 
@@ -80,6 +81,14 @@ export class ModulationDataWeeklyCard implements ValueObject {
           .map(wpt => `${wpt.id}->${wpt.workingPeriod.period.toFormattedString()}`)
           .join(', ')}`
   }
+  WorkedHours: 
+    ${this.getTotalWorkedHours()
+      .toSeq()
+      .map((duration, rate) =>
+        duration.isZero() ? `` : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`
+      )
+      .filter(s => s)
+      .join('\n\t\t')}
     `;
   }
 

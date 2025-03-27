@@ -1,16 +1,21 @@
 import { List, Map, ValueObject } from 'immutable';
+import { formatDuration, formatDurationAs100 } from '../../../~shared/util/joda-helper';
 import { Employee } from '../employee-registration/employee/employee';
 import { EmploymentContract } from '../employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../local-date-range';
+import { HoursTypeCodes } from '../time-card-computation/timecard/worked-hours-rate';
 import { WorkingPeriod } from '../time-card-computation/working-period/working-period';
 import { ModulationDataMonthlyCard } from './modulation-data-monthly-card';
 import { ModulationDataWeeklyCard } from './modulation-data-weekly-card';
 import { ModulationDataWorkingPeriodCard } from './modulation-data-working-period-card';
+import { SurchargedHoursPool } from './surcharged-hours-pool';
+import { Duration } from '@js-joda/core';
 
 export type ModulationDataRecapId = string;
 
 export class ModulationDataRecap implements ValueObject {
   private static count = 0;
+
   public static build({
     period,
     employee,
@@ -78,6 +83,35 @@ export class ModulationDataRecap implements ValueObject {
   debug(): string {
     return `
   ModulationDataRecap # ${this.id}
+  Semester: ${this.period.toFormattedString()}
+  Contractual hours: ${formatDuration(
+    this.modulationDataWorkingPeriodCards.reduce(
+      (acc, wpc) => acc.plus(wpc.getModulatedInProportionWorkingTime()),
+      Duration.ZERO
+    )
+  )}
+  WorkedHours: 
+    ${this.getTotalWorkedHours()
+      .toSeq()
+      .map((duration, rate) =>
+        duration.isZero() ? `` : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`
+      )
+      .filter(s => s)
+      .join('\n\t\t')}
+  SurchargedHoursPool:
+    ${this.getTotalSurchargedHoursPool()
+      .toSeq()
+      .map((duration, rate) =>
+        duration.isZero() ? `` : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`
+      )
+      .filter(s => s)
+      .join('\n\t\t')}
+      `;
+  }
+
+  fullDebug(): string {
+    return `
+  ModulationDataRecap # ${this.id}
   employee: ${this.employee.firstName} ${this.employee.lastName} - (${this.employee.silaeId}
   contracts: ${this.employmentContracts.map(c => c.debug()).join('\n')}
   semester: ${this.period.toFormattedString()}
@@ -87,12 +121,52 @@ export class ModulationDataRecap implements ValueObject {
     .join(', ')}
   modulationDataWeeklyCards: ${this.modulationDataWeeklyCards.map(wpt => wpt.id).join(', ')}
   modulationDataMonthlyCards: ${this.modulationDataMonthlyCards.map(wpt => wpt.id).join(', ')}
-    `;
+  WorkedHours: 
+    ${this.getTotalWorkedHours()
+      .toSeq()
+      .map((duration, rate) =>
+        duration.isZero() ? `` : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`
+      )
+      .filter(s => s)
+      .join('\n\t\t')}
+  SurchargedHoursPool:
+    ${this.getTotalSurchargedHoursPool()
+      .toSeq()
+      .map((duration, rate) =>
+        duration.isZero() ? `` : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`
+      )
+      .filter(s => s)
+      .join('\n\t\t')}
+      `;
   }
 
   getTotalWorkedHours() {
     return ModulationDataWorkingPeriodCard.getTotalWorkedHours(
       this.modulationDataWorkingPeriodCards
+    );
+  }
+
+  getTotalSurchargedHoursPool() {
+    return this.modulationDataWorkingPeriodCards.reduce(
+      (acc, wpc) =>
+        new SurchargedHoursPool({
+          ElevenPercentRateComplementary: acc.ElevenPercentRateComplementary.plus(
+            wpc.surchargedHoursPool.ElevenPercentRateComplementary
+          ),
+          TenPercentRateComplementary: acc.TenPercentRateComplementary.plus(
+            wpc.surchargedHoursPool.TenPercentRateComplementary
+          ),
+          TwentyFivePercentRateComplementary: acc.TwentyFivePercentRateComplementary.plus(
+            wpc.surchargedHoursPool.TwentyFivePercentRateComplementary
+          ),
+          TwentyFivePercentRateSupplementary: acc.TwentyFivePercentRateSupplementary.plus(
+            wpc.surchargedHoursPool.TwentyFivePercentRateSupplementary
+          ),
+          FiftyPercentRateSupplementary: acc.FiftyPercentRateSupplementary.plus(
+            wpc.surchargedHoursPool.FiftyPercentRateSupplementary
+          ),
+        }),
+      new SurchargedHoursPool()
     );
   }
 

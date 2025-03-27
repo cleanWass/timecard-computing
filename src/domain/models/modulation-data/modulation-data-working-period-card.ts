@@ -19,9 +19,15 @@ import {
   WorkedHoursRecapType,
 } from '../time-card-computation/timecard/worked-hours-rate';
 import { WorkingPeriod } from '../time-card-computation/working-period/working-period';
+import {
+  SurchargedHoursPool,
+  SurchargedHoursPoolRate,
+  SurchargedHoursPoolType,
+} from './surcharged-hours-pool';
 
 const HALF_YEAR_PERIOD_TOTAL_WORKING_HOURS = 1607 / 2;
 const BASE_FULL_TIME_WORKING_HOURS = 35;
+export const MODULATED_FULL_TIME_DURATION = Duration.ofHours(30).plusMinutes(54);
 
 type ModulationDataWorkingPeriodCardId = string;
 
@@ -40,6 +46,7 @@ export class ModulationDataWorkingPeriodCard implements ValueObject {
     leaves: List<Leave>;
 
     workedHours?: WorkedHoursRecapType;
+    surchargedHoursPool?: SurchargedHoursPoolType;
     mealTickets?: number;
   }) {
     return new ModulationDataWorkingPeriodCard(
@@ -48,6 +55,7 @@ export class ModulationDataWorkingPeriodCard implements ValueObject {
       params.contract,
       params.workingPeriod,
       params.workedHours ?? new WorkedHoursRecap(),
+      params.surchargedHoursPool ?? new SurchargedHoursPool(),
       params.weeklyPlanning ?? Map<DayOfWeek, Set<LocalTimeSlot>>(),
       params.shifts,
       params.leaves ?? List<Leave>(),
@@ -64,6 +72,7 @@ export class ModulationDataWorkingPeriodCard implements ValueObject {
     public readonly contract: EmploymentContract,
     public readonly workingPeriod: WorkingPeriod,
     public readonly workedHours: WorkedHoursRecapType,
+    public readonly surchargedHoursPool: SurchargedHoursPoolType,
     public readonly weeklyPlanning: WeeklyPlanning,
     public readonly shifts: List<Shift>,
     public readonly leaves: List<Leave>,
@@ -76,6 +85,7 @@ export class ModulationDataWorkingPeriodCard implements ValueObject {
       .set('contract', this.contract)
       .set('workingPeriod', this.workingPeriod)
       .set('workedHours', this.workedHours)
+      .set('surchargedHoursPool', this.surchargedHoursPool)
       .set('shifts', this.shifts)
       .set('leaves', this.leaves)
       .set('inactiveShifts', this.inactiveShifts)
@@ -119,12 +129,17 @@ export class ModulationDataWorkingPeriodCard implements ValueObject {
       params.contract ?? this.contract,
       params.workingPeriod ?? this.workingPeriod,
       params.workedHours ?? this.workedHours,
+      params.surchargedHoursPool ?? this.surchargedHoursPool,
       params.weeklyPlanning ?? this.weeklyPlanning,
       params.shifts ?? this.shifts,
       params.leaves ?? this.leaves,
       params.inactiveShifts ?? this.inactiveShifts,
       params.mealTickets ?? this.mealTickets
     );
+  }
+
+  addSurchargedHoursToPool(rate: SurchargedHoursPoolRate, duration: Duration) {
+    return this.with({ surchargedHoursPool: this.surchargedHoursPool.set(rate, duration) });
   }
 
   register(workedHoursRate: WorkedHoursRate, duration: Duration): ModulationDataWorkingPeriodCard {
@@ -177,7 +192,16 @@ export class ModulationDataWorkingPeriodCard implements ValueObject {
             this.shifts.reduce((total, shift) => total.plus(shift.duration), Duration.ZERO)
           )}
          ----------------------
-          InactiveShifts: ${this.inactiveShifts.map(s => s.debug()).join(' | ')}
+          surcharged hours pool: 
+            ${this.surchargedHoursPool
+              .toSeq()
+              .map((duration, rate) =>
+                duration.isZero()
+                  ? ``
+                  : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`
+              )
+              .filter(s => s)
+              .join('\n\t\t')}
          ----------------------
           ${
             showPlanning

@@ -1,4 +1,4 @@
-import { ChronoUnit, DayOfWeek, LocalDate } from '@js-joda/core';
+import { DayOfWeek, Duration, LocalDate } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
@@ -13,18 +13,19 @@ import { Shift } from '../../domain/models/mission-delivery/shift/shift';
 import { ModulationDataMonthlyCard } from '../../domain/models/modulation-data/modulation-data-monthly-card';
 import { ModulationDataRecap } from '../../domain/models/modulation-data/modulation-data-recap';
 import { ModulationDataWeeklyCard } from '../../domain/models/modulation-data/modulation-data-weekly-card';
-import { ModulationDataWorkingPeriodCard } from '../../domain/models/modulation-data/modulation-data-working-period-card';
+import {
+  MODULATED_FULL_TIME_DURATION,
+  ModulationDataWorkingPeriodCard,
+} from '../../domain/models/modulation-data/modulation-data-working-period-card';
 import { WorkedHoursRecap } from '../../domain/models/time-card-computation/timecard/worked-hours-rate';
-import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
-import { WeeklyTimecardRecap } from '../../domain/models/time-card-computation/weekly-timecard-recap/weekly-timecard-recap';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
 import { sequenceList } from '../../~shared/util/sequence-list';
-import {
-  computeLeavesHours,
-  computeWorkedHours,
-} from '../timecard-computation/computation/base-hours-computation';
 import { computeWorkingPeriods } from '../timecard-computation/computation/working-period-computation';
+import {
+  computeModulationLeavesHours,
+  computeModulationWorkedHours,
+} from './computation/base-hours-computation';
 
 function initializeModulationDataWorkingPeriodCard(
   contract: EmploymentContract,
@@ -62,19 +63,6 @@ export const computeModulationDataForEmployee =
   }) => {
     return pipe(
       E.Do,
-      E.bind('recap', () =>
-        E.right(
-          ModulationDataRecap.build({
-            employmentContracts: contracts,
-            modulationDataWeeklyCards: List<ModulationDataWeeklyCard>(),
-            modulationDataWorkingPeriodCards: List<ModulationDataWorkingPeriodCard>(),
-            modulationDataMonthlyCards: List<ModulationDataMonthlyCard>(),
-            period: period,
-            workingPeriods: List<WorkingPeriod>(),
-            employee,
-          })
-        )
-      ),
       E.bind('weeks', () => E.right(period.divideIntoCalendarWeeks())),
       E.bind('workingsPeriods', ({ weeks }) => pipe(contracts, computeWorkingPeriods(period))),
       E.bind('modulationDataWorkingPeriodRecaps', ({ workingsPeriods }) =>
@@ -92,8 +80,39 @@ export const computeModulationDataForEmployee =
                     workingPeriod,
                     shifts
                   ),
-                  computeWorkedHours,
-                  computeLeavesHours
+                  wpc => {
+                    if (contract.isFullTime())
+                      return wpc.addSurchargedHoursToPool(
+                        'TwentyFivePercentRateSupplementary',
+                        Duration.ofMinutes(
+                          Math.ceil(
+                            (Duration.ofHours(8).toMinutes() /
+                              MODULATED_FULL_TIME_DURATION.toMinutes()) *
+                              wpc.getModulatedInProportionWorkingTime().toMinutes()
+                          )
+                        )
+                      );
+                    if (contract.isExtraHours()) {
+                      return wpc.addSurchargedHoursToPool(
+                        'TenPercentRateComplementary',
+                        Duration.ofMinutes(
+                          ((contract.extraDuration || Duration.ZERO)?.toMinutes() /
+                            contract.weeklyTotalWorkedHours.toMinutes()) *
+                            wpc.getModulatedInProportionWorkingTime().toMinutes()
+                        ) || Duration.ZERO
+                      );
+                    } // TODO adjust in proportion
+                    return wpc.with({
+                      surchargedHoursPool: wpc.surchargedHoursPool.set(
+                        'ElevenPercentRateComplementary',
+                        Duration.ofMinutes(
+                          Math.ceil(wpc.getModulatedInProportionWorkingTime().toMinutes() * 0.1)
+                        )
+                      ),
+                    });
+                  },
+                  computeModulationWorkedHours,
+                  computeModulationLeavesHours
                 )
               )
             )
@@ -126,9 +145,30 @@ export const computeModulationDataForEmployee =
             sequenceList
           )
       ),
+      E.bind(
+        'modulationDataRecaps',
+        ({
+          weeks,
+          workingsPeriods,
+          modulationDataWorkingPeriodRecaps,
+          modulationDataWeeklyRecaps,
+        }) =>
+          E.right(
+            ModulationDataRecap.build({
+              employmentContracts: contracts,
+              modulationDataWeeklyCards: modulationDataWeeklyRecaps,
+              modulationDataWorkingPeriodCards: modulationDataWorkingPeriodRecaps,
+              modulationDataMonthlyCards: List<ModulationDataMonthlyCard>(),
+              period: period,
+              workingPeriods: List<WorkingPeriod>(),
+              employee,
+            })
+          )
+      ),
       E.map(
         ({
           workingsPeriods,
+          modulationDataRecaps,
           modulationDataWeeklyRecaps,
           modulationDataWorkingPeriodRecaps,
           weeks,
@@ -140,7 +180,10 @@ ${weeks.map(w => w.toFormattedString()).join('\n')}
             ---------------------
             ---------------------
            workingPeriods: 
-${workingsPeriods.map(wp => `${wp.period.toFormattedString()}`).join('\n')}
+${workingsPeriods
+  .sort((a, b) => a.period.start.compareTo(b.period.start))
+  .map(wp => `${wp.period.toFormattedString()}`)
+  .join('\n')}
             ---------------------
             ---------------------
            modulationDataWeeklyRecap: 
@@ -151,8 +194,8 @@ ${modulationDataWeeklyRecaps.map(wr => wr.debug()).join('\n')}
 ${modulationDataWorkingPeriodRecaps.map(wpr => wpr.debug()).join('')}
             ---------------------
             ---------------------
-           weeks: 
-${weeks.map(w => w.toFormattedString()).join(' ')}
+           modulationDataRecaps: 
+${modulationDataRecaps.debug()}
             ---------------------
             ---------------------`
           );
@@ -185,128 +228,3 @@ const findContract = (contracts: List<EmploymentContract>) => (workingPeriod: Wo
     contracts.find(c => c.id === workingPeriod.employmentContractId),
     E.fromNullable(new TimecardComputationError('Missing contract'))
   );
-
-// const initializeWorkingPeriodTimecard = ({
-//   shifts,
-//   leaves,
-//   contract,
-//   workingPeriod,
-//   employee,
-// }: {
-//   shifts: List<Shift>;
-//   leaves: List<Leave>;
-//   contract: EmploymentContract;
-//   employee: Employee;
-//   workingPeriod: WorkingPeriod;
-// }) =>
-//   WorkingPeriodTimecard.build({
-//     contract,
-//     employee,
-//     workingPeriod,
-//     weeklyPlanning: contract.weeklyPlannings.get(
-//       workingPeriod.period,
-//       Map<DayOfWeek, Set<LocalTimeSlot>>()
-//     ),
-//     shifts,
-//     leaves,
-//   });
-//
-// export const computeWorkingPeriodTimecard: (
-//   workingPeriod: WorkingPeriod,
-//   shifts: List<Shift>,
-//   leaves: List<Leave>,
-//   contract: EmploymentContract,
-//   employee: Employee
-// ) => WorkingPeriodTimecard = (workingPeriod, shifts, leaves, contract, employee) => {
-//   return pipe(
-//     {
-//       contract,
-//       employee,
-//       workingPeriod,
-//       shifts,
-//       leaves,
-//     },
-//     initializeWorkingPeriodTimecard,
-//     curateLeaves,
-//     filterShifts,
-//     generateInactiveShiftsIfPartialWeek,
-//     computeTotalNormalHoursAvailable,
-//     computeWorkedHours,
-//     computeLeavesHours,
-//     computeTotalAdditionalHours,
-//     computeExtraHoursByRate,
-//     computeSurchargedHours,
-//     computeMealTickets,
-//     inferTotalIntercontractAndTotalContract
-//     // computeRentabilityForEmployee
-//   );
-// };
-//
-// export const computeTimecardForEmployee = (period: LocalDateRange) => {
-//   return ({
-//     employee,
-//     shifts,
-//     contracts,
-//     leaves,
-//   }: {
-//     employee: Employee;
-//     shifts: List<Shift>;
-//     leaves: List<Leave>;
-//     contracts: List<EmploymentContract>;
-//   }) => {
-//     if (contracts.isEmpty() && shifts.isEmpty()) {
-//       return E.right({
-//         period,
-//         employee,
-//         workingPeriods: List<WorkingPeriod>(),
-//         groupedShifts: Map<WorkingPeriod, List<Shift>>(),
-//         timecards: [] as WorkingPeriodTimecard[],
-//         contracts,
-//         weeklyRecaps: Map<LocalDateRange, WeeklyTimecardRecap>(),
-//       });
-//     }
-//     return pipe(
-//       E.Do,
-//       E.bind('workingPeriods', () => splitPeriodIntoWorkingPeriods(contracts, period)),
-//       E.bind('groupedShifts', ({ workingPeriods }) =>
-//         groupShiftsByWorkingPeriods(shifts, workingPeriods)
-//       ),
-//       E.bind('groupedLeaves', ({ workingPeriods }) =>
-//         groupLeavesByWorkingPeriods(leaves, workingPeriods)
-//       ),
-//       E.bind('timecards', ({ workingPeriods, groupedShifts, groupedLeaves }) =>
-//         pipe(
-//           workingPeriods.toArray(),
-//           E.traverseArray(wp =>
-//             pipe(
-//               wp,
-//               findContract(contracts),
-//               E.map(({ contract, workingPeriod }) =>
-//                 computeWorkingPeriodTimecard(
-//                   workingPeriod,
-//                   groupedShifts.get(workingPeriod, List<Shift>()),
-//                   groupedLeaves.get(workingPeriod, List<Leave>()),
-//                   contract,
-//                   employee
-//                 )
-//               )
-//             )
-//           )
-//         )
-//       ),
-//       E.bind('weeklyRecaps', ({ timecards }) =>
-//         generateWeeklyTimecardRecap(List(timecards), employee, period)
-//       ),
-//       E.map(({ timecards, workingPeriods, groupedShifts, weeklyRecaps }) => ({
-//         period,
-//         employee,
-//         workingPeriods,
-//         groupedShifts,
-//         timecards,
-//         contracts,
-//         weeklyRecaps,
-//       })),
-//       t => t
-//     );
-//   };
-// };
