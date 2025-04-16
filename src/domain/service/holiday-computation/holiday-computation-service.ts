@@ -12,33 +12,34 @@ type HolidaySpecification = (d: LocalDate) => boolean;
 const monthDaySpecification = (monthDay: MonthDay) => (localDate: LocalDate) =>
   monthDay.equals(MonthDay.of(localDate.month(), localDate.dayOfMonth()));
 
-const easterComputationSpecificationPlus = (dayShift: number, years: Set<Year>) => (localDate: LocalDate) =>
-  years
-    .map(year => year.value())
-    .map(y => {
-      const g = (y % 19) + 1;
-      const c = ~~(y / 100) + 1;
-      const l = ~~((3 * c) / 4) - 12;
-      let m = 3;
-      let e = (11 * g + 20 + ~~((8 * c + 5) / 25) - 5 - l) % 30;
-      let d;
-      if (e < 0) {
-        e += 30;
-      }
-      if ((e === 25 && g > 11) || e === 24) {
-        e++;
-      }
-      d = 44 - e;
-      if (d < 21) {
-        d += 30;
-      }
-      if ((d += 7 - ((~~((5 * y) / 4) - l - 10 + d) % 7)) > 31) {
-        d -= 31;
-        m = 4;
-      }
-      return LocalDate.of(y, m, d).plusDays(dayShift);
-    })
-    .has(localDate);
+const easterComputationSpecificationPlus =
+  (dayShift: number, years: Set<Year>) => (localDate: LocalDate) =>
+    years
+      .map(year => year.value())
+      .map(y => {
+        const g = (y % 19) + 1;
+        const c = ~~(y / 100) + 1;
+        const l = ~~((3 * c) / 4) - 12;
+        let m = 3;
+        let e = (11 * g + 20 + ~~((8 * c + 5) / 25) - 5 - l) % 30;
+        let d;
+        if (e < 0) {
+          e += 30;
+        }
+        if ((e === 25 && g > 11) || e === 24) {
+          e++;
+        }
+        d = 44 - e;
+        if (d < 21) {
+          d += 30;
+        }
+        if ((d += 7 - ((~~((5 * y) / 4) - l - 10 + d) % 7)) > 31) {
+          d -= 31;
+          m = 4;
+        }
+        return LocalDate.of(y, m, d).plusDays(dayShift);
+      })
+      .has(localDate);
 
 const supportedCodes = Array.from(new Array(95))
   .map((_, index) => `FR-${index}`)
@@ -59,7 +60,10 @@ export class HolidayComputationService {
         );
   }
 
-  private computeFrIdfDates(period: LocalDateRange, additionalDates = Set<LocalDate>()): Set<LocalDate> {
+  private computeFrIdfDates(
+    period: LocalDateRange,
+    additionalDates = Set<LocalDate>()
+  ): Set<LocalDate> {
     const numberOfDays = period?.start.until(period.end, ChronoUnit.DAYS);
     const daysInPeriod = Set(
       Array.from(new Array(numberOfDays))
@@ -77,12 +81,11 @@ export class HolidayComputationService {
       monthDaySpecification(of(NOVEMBER, 11)),
       monthDaySpecification(of(DECEMBER, 25)),
 
-      monthDaySpecification(of(APRIL, 1)),
-      monthDaySpecification(of(MAY, 9)),
-
-      // easterComputationSpecificationPlus(0, yearsInPeriod),
-      // easterComputationSpecificationPlus(39, yearsInPeriod),
-    ]).concat(additionalDates.map(date => monthDaySpecification(of(date.month(), date.dayOfMonth()))));
+      easterComputationSpecificationPlus(1, yearsInPeriod),
+      easterComputationSpecificationPlus(39, yearsInPeriod),
+    ]).concat(
+      additionalDates.map(date => monthDaySpecification(of(date.month(), date.dayOfMonth())))
+    );
     return daysInPeriod.filter(date => specs.some(matches => matches(date)));
   }
 }
