@@ -48,6 +48,37 @@ function initializeModulationDataWorkingPeriodCard(
   });
 }
 
+const computeSurchargedHoursPool = (wpc: ModulationDataWorkingPeriodCard) => {
+  const contract = wpc.contract;
+  if (contract.isFullTime())
+    return wpc.addSurchargedHoursToPool(
+      'TwentyFivePercentRateSupplementary',
+      Duration.ofMinutes(
+        Math.ceil(
+          (Duration.ofHours(8).toMinutes() / MODULATED_FULL_TIME_DURATION.toMinutes()) *
+            wpc.getModulatedInProportionWorkingTime().toMinutes()
+        )
+      )
+    );
+  // MIGHT NOT BE NECESSARY : no extra hours for modulation according to RH
+  if (contract.isExtraHours()) {
+    return wpc.addSurchargedHoursToPool(
+      'TenPercentRateComplementary',
+      Duration.ofMinutes(
+        ((contract.extraDuration || Duration.ZERO)?.toMinutes() /
+          contract.weeklyTotalWorkedHours.toMinutes()) *
+          wpc.getModulatedInProportionWorkingTime().toMinutes()
+      ) || Duration.ZERO
+    );
+  }
+  return wpc.with({
+    surchargedHoursPool: wpc.surchargedHoursPool.set(
+      'ElevenPercentRateComplementary',
+      Duration.ofMinutes(Math.ceil(wpc.getModulatedInProportionWorkingTime().toMinutes() * 0.1))
+    ),
+  });
+};
+
 export const computeModulationDataForEmployee =
   (period: LocalDateRange) =>
   ({
@@ -80,37 +111,7 @@ export const computeModulationDataForEmployee =
                     workingPeriod,
                     shifts
                   ),
-                  wpc => {
-                    if (contract.isFullTime())
-                      return wpc.addSurchargedHoursToPool(
-                        'TwentyFivePercentRateSupplementary',
-                        Duration.ofMinutes(
-                          Math.ceil(
-                            (Duration.ofHours(8).toMinutes() /
-                              MODULATED_FULL_TIME_DURATION.toMinutes()) *
-                              wpc.getModulatedInProportionWorkingTime().toMinutes()
-                          )
-                        )
-                      );
-                    if (contract.isExtraHours()) {
-                      return wpc.addSurchargedHoursToPool(
-                        'TenPercentRateComplementary',
-                        Duration.ofMinutes(
-                          ((contract.extraDuration || Duration.ZERO)?.toMinutes() /
-                            contract.weeklyTotalWorkedHours.toMinutes()) *
-                            wpc.getModulatedInProportionWorkingTime().toMinutes()
-                        ) || Duration.ZERO
-                      );
-                    } // TODO adjust in proportion
-                    return wpc.with({
-                      surchargedHoursPool: wpc.surchargedHoursPool.set(
-                        'ElevenPercentRateComplementary',
-                        Duration.ofMinutes(
-                          Math.ceil(wpc.getModulatedInProportionWorkingTime().toMinutes() * 0.1)
-                        )
-                      ),
-                    });
-                  },
+                  computeSurchargedHoursPool,
                   computeModulationWorkedHours,
                   computeModulationLeavesHours
                 )
