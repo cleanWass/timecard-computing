@@ -57,8 +57,10 @@ export const employeeDataValidator = zod
   .transform(raw => {
     const contractPlanningsGroupedByContractId = raw.plannings.reduce(
       (map, curr) =>
-        map.update(curr.contract.id, List<[PlanningValidatorType, ClosedPeriodValidatorType]>(), list =>
-          list.push([curr.planning, curr.period])
+        map.update(
+          curr.contract.id,
+          List<[PlanningValidatorType, ClosedPeriodValidatorType]>(),
+          list => list.push([curr.planning, curr.period])
         ),
       Map<ContractValidatorType['id'], List<[PlanningValidatorType, ClosedPeriodValidatorType]>>()
     );
@@ -70,10 +72,14 @@ export const employeeDataValidator = zod
           id: shift.id || 'no id',
           clientId: shift.clientId || 'no client id',
           clientName: shift.clientName || 'no client name',
-          startTime: LocalDateTime.of(LocalDate.parse(shift.date), LocalTime.parse(shift.startTime)),
+          startTime: LocalDateTime.of(
+            LocalDate.parse(shift.date),
+            LocalTime.parse(shift.startTime)
+          ),
           duration: Duration.parse(shift.duration),
           type: shift.type,
           employeeId: raw.cleaner.silaeId,
+          silaeId: raw.cleaner.silaeId,
         })
       ),
       leaves: (raw.leaves || []).map(leave =>
@@ -88,14 +94,18 @@ export const employeeDataValidator = zod
       ),
       contracts: contractPlanningsGroupedByContractId.keySeq().map(contractId => {
         // @ts-ignore
-        const { contract, planning } = raw.plannings.find(planning => planning.contract.id === contractId);
+        const { contract, planning } = raw.plannings.find(
+          planning => planning.contract.id === contractId
+        );
         const extraDuration = Duration.parse(contract.extraDuration ?? 'PT0M');
         return EmploymentContract.build({
           id: contractId,
           initialId: contract.initialId || 'fake' + contractId.split('-')[0],
           employeeId: raw.cleaner.silaeId,
           startDate: LocalDate.parse(contract.period.start),
-          endDate: O.fromNullable(contract.period.end ? LocalDate.parse(contract.period.end) : null),
+          endDate: O.fromNullable(
+            contract.period.end ? LocalDate.parse(contract.period.end) : null
+          ),
           overtimeAveragingPeriod: Duration.ofDays(7),
           weeklyTotalWorkedHours: Duration.parse(contract.weeklyHours),
           workedDays: Set(keys(planning).map(d => DayOfWeek[d])),
@@ -110,7 +120,10 @@ export const employeeDataValidator = zod
                 const slots =
                   curr[0][day]?.map(slot => {
                     let startTime = LocalTime.parse(slot.startTime);
-                    return new LocalTimeSlot(startTime, Duration.parse(slot.duration).addTo(startTime));
+                    return new LocalTimeSlot(
+                      startTime,
+                      Duration.parse(slot.duration).addTo(startTime)
+                    );
                   }) || Set<LocalTimeSlot>();
                 return acc.set(DayOfWeek[day], Set(slots));
               }, Map<DayOfWeek, Set<LocalTimeSlot>>());

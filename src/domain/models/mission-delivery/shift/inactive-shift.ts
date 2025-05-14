@@ -6,8 +6,17 @@ import '@js-joda/timezone';
 
 export class InactiveShift extends Shift {
   public static count = 0;
-  public static build(params: { startTime: LocalDateTime; duration: Duration; employeeId: EmployeeId }) {
-    return new InactiveShift(`${InactiveShift.count++}`, params.startTime, params.duration, params.employeeId);
+  public static build(params: {
+    startTime: LocalDateTime;
+    duration: Duration;
+    employeeId: EmployeeId;
+  }) {
+    return new InactiveShift(
+      `${InactiveShift.count++}`,
+      params.startTime,
+      params.duration,
+      params.employeeId
+    );
   }
 
   private constructor(

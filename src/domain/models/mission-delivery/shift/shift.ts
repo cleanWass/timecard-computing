@@ -3,6 +3,7 @@ import {
   DateTimeFormatter,
   Duration,
   Instant,
+  LocalDate,
   LocalDateTime,
   LocalTime,
   ZoneId,
@@ -11,6 +12,7 @@ import { Interval } from '@js-joda/extra';
 import { Map, ValueObject } from 'immutable';
 import { TypeProps } from '../../../../~shared/util/types';
 import { EmployeeId } from '../../employee-registration/employee/employee-id';
+import { SilaeId } from '../../employee-registration/employee/silae-id';
 import { LocalTimeSlot } from '../../local-time-slot';
 import { ClientId } from '../../sales-contract-management/client/client-id';
 import { RequirementId } from '../../sales-contract-management/requirement/requirement-id';
@@ -26,10 +28,13 @@ export type IShift = {
   clientId: ClientId;
   clientName: string;
   type: ShiftReason;
+  silaeId?: string;
   employeeId: EmployeeId;
   replacedShiftId?: ShiftId;
   requirementIds?: RequirementId[];
   serviceContractId?: ServiceContractId;
+  precedenceDate?: LocalDate;
+  parentAffectationId?: string;
 };
 
 export class Shift implements ValueObject, IShift {
@@ -38,12 +43,15 @@ export class Shift implements ValueObject, IShift {
     clientName,
     duration,
     employeeId,
+    silaeId,
     id,
     replacedShiftId,
     requirementIds,
     serviceContractId,
     startTime,
     type,
+    precedenceDate,
+    parentAffectationId,
   }: IShift) {
     return new Shift(
       id,
@@ -53,9 +61,12 @@ export class Shift implements ValueObject, IShift {
       clientName,
       type,
       employeeId,
+      silaeId,
       serviceContractId,
       requirementIds,
-      replacedShiftId
+      replacedShiftId,
+      precedenceDate,
+      parentAffectationId
     );
   }
 
@@ -69,9 +80,12 @@ export class Shift implements ValueObject, IShift {
     public readonly clientName: string,
     public readonly type: ShiftReason,
     public readonly employeeId: EmployeeId,
+    public readonly silaeId?: SilaeId,
     public readonly serviceContractId?: ServiceContractId,
     public readonly requirementIds?: RequirementId[],
-    public readonly replacedShiftId?: ShiftId
+    public readonly replacedShiftId?: ShiftId,
+    public readonly precedenceDate?: LocalDate,
+    public readonly parentAffectationId?: string
   ) {
     this._vo = Map<string | ShiftReason, TypeProps<IShift>>()
       .set('id', this.id)
@@ -83,7 +97,10 @@ export class Shift implements ValueObject, IShift {
       .set('type', this.type)
       .set('clientName', this.clientName)
       .set('employeeId', this.employeeId)
-      .set('replacedShiftId', this.replacedShiftId);
+      .set('silaeId', this.silaeId)
+      .set('replacedShiftId', this.replacedShiftId)
+      .set('precedenceDate', this.precedenceDate)
+      .set('parentAffectationId', this.parentAffectationId);
   }
 
   equals(other: unknown): boolean {
@@ -103,9 +120,12 @@ export class Shift implements ValueObject, IShift {
       clientName: params.clientName ?? this.clientName,
       type: params.type ?? this.type,
       employeeId: params.employeeId ?? this.employeeId,
+      silaeId: params.silaeId ?? this.silaeId,
       serviceContractId: params.serviceContractId ?? this.serviceContractId,
       requirementIds: params.requirementIds ?? this.requirementIds,
       replacedShiftId: params.replacedShiftId ?? this.replacedShiftId,
+      precedenceDate: params.precedenceDate ?? this.precedenceDate,
+      parentAffectationId: params.parentAffectationId ?? this.parentAffectationId,
     });
   }
 
