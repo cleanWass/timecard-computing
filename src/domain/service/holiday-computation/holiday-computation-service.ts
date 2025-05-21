@@ -1,7 +1,7 @@
 import { ChronoUnit, LocalDate, Month, MonthDay, Year } from '@js-joda/core';
 import * as E from 'fp-ts/lib/Either';
 import { Set } from 'immutable';
-import { LocalDateRange } from 'src/domain/models/local-date-range';
+import { LocalDateRange } from '../../models/local-date-range';
 import { IllegalArgumentError } from '../../~shared/error/illegal-argument-error';
 
 const { JANUARY, APRIL, MAY, JULY, AUGUST, NOVEMBER, DECEMBER } = Month;
@@ -53,6 +53,20 @@ export class HolidayComputationService {
   ): E.Either<IllegalArgumentError, Set<LocalDate>> {
     return supportedCodes.includes(iso31662Code)
       ? E.right(this.computeFrIdfDates(period, additionalDates))
+      : E.left(
+          new IllegalArgumentError(
+            `Cannot compute holidays for ISO 3166-2 code ${iso31662Code}. Supported codes are ${supportedCodes}.`
+          )
+        );
+  }
+
+  isHoliday(
+    iso31662Code: string,
+    date: LocalDate,
+    additionalDates = Set<LocalDate>()
+  ): E.Either<IllegalArgumentError, boolean> {
+    return supportedCodes.includes(iso31662Code)
+      ? E.right(this.computeFrIdfDates(new LocalDateRange(date, date), additionalDates).has(date))
       : E.left(
           new IllegalArgumentError(
             `Cannot compute holidays for ISO 3166-2 code ${iso31662Code}. Supported codes are ${supportedCodes}.`

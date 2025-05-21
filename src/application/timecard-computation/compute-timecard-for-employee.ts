@@ -38,6 +38,7 @@ import {
 } from './curation/shifts-and-period-curation';
 import { generateInactiveShiftsIfPartialWeek } from './generation/inactive-shifts-generation';
 import { generateWeeklyTimecardRecap } from './generation/weekly-timecard-recap-generation';
+import { attributeSurchargedHoursToShifts } from './premium-hours-attribution/attribute-surcharged-hours-to-shifts';
 
 const findContract = (contracts: List<EmploymentContract>) => (workingPeriod: WorkingPeriod) =>
   pipe(
@@ -99,7 +100,7 @@ export const computeWorkingPeriodTimecard: (
     computeSurchargedHours,
     computeMealTickets,
     inferTotalIntercontractAndTotalContract,
-    deter
+    attributeSurchargedHoursToShifts
     // computeRentabilityForEmployee
   );
 };
@@ -167,8 +168,7 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
         timecards,
         contracts,
         weeklyRecaps,
-      })),
-      t => t
+      }))
     );
   };
 };

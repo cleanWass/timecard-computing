@@ -1,7 +1,7 @@
-import { DayOfWeek, Duration, LocalDate } from '@js-joda/core';
+import { DateTimeFormatter, DayOfWeek, Duration, LocalDate } from '@js-joda/core';
 import { List, Map, Set, ValueObject } from 'immutable';
 import { formatDuration, formatDurationAs100 } from '../../../../~shared/util/joda-helper';
-import { keys } from '../../../../~shared/util/types';
+import { keys, TypeProps } from '../../../../~shared/util/types';
 import { Employee } from '../../employee-registration/employee/employee';
 import {
   EmploymentContract,
@@ -19,8 +19,24 @@ import {
   WorkedHoursRecap,
   WorkedHoursRecapType,
 } from '../../cost-efficiency/worked-hours-rate';
+import { AnalyzedShift } from '../../cost-efficiency/analyzed-shift';
 
 type WorkingPeriodTimecardId = string;
+
+export interface IWorkingPeriodTimecard {
+  id: WorkingPeriodTimecardId;
+  employee: Employee;
+  contract: EmploymentContract;
+  workingPeriod: WorkingPeriod;
+  workedHours: WorkedHoursRecapType;
+  weeklyPlanning: WeeklyPlanning;
+  shifts: List<Shift>;
+  leaves: List<Leave>;
+  inactiveShifts: List<InactiveShift>;
+  mealTickets: number;
+  rentability: number;
+  analyzedShifts?: List<AnalyzedShift>;
+}
 
 export class WorkingPeriodTimecard implements ValueObject {
   private static count = 0;
@@ -37,9 +53,10 @@ export class WorkingPeriodTimecard implements ValueObject {
     public readonly leaves: List<Leave>,
     public readonly inactiveShifts: List<InactiveShift>,
     public readonly mealTickets: number,
-    public readonly rentability: number
+    public readonly rentability: number,
+    public readonly analyzedShifts?: List<AnalyzedShift>
   ) {
-    this._vo = Map<string, ValueObject | string | number | boolean>()
+    this._vo = Map<string, TypeProps<IWorkingPeriodTimecard>>()
       .set('id', this.id)
       .set('employee', this.employee)
       .set('contract', this.contract)
@@ -49,7 +66,9 @@ export class WorkingPeriodTimecard implements ValueObject {
       .set('leaves', this.leaves)
       .set('inactiveShifts', this.inactiveShifts)
       .set('mealTickets', this.mealTickets)
-      .set('rentability', this.rentability);
+      .set('rentability', this.rentability)
+      .set('weeklyPlanning', this.weeklyPlanning)
+      .set('analyzedShifts', this.analyzedShifts);
   }
 
   public static build(params: {
@@ -154,7 +173,8 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.leaves ?? this.leaves,
       params.inactiveShifts ?? this.inactiveShifts,
       params.mealTickets ?? this.mealTickets,
-      params.rentability ?? this.rentability
+      params.rentability ?? this.rentability,
+      params.analyzedShifts ?? this.analyzedShifts
     );
   }
 
@@ -203,6 +223,7 @@ export class WorkingPeriodTimecard implements ValueObject {
           .map(s => s.debug())
           .join(' | ')}
         InactiveShifts: ${this.inactiveShifts.map(s => s.debug()).join(' | ')}
+        AnalyzedShifts: ${this.analyzedShifts?.map(s => s.debug()).join(' | ') ?? ''}
         _____
         planning: ${this.weeklyPlanning
           .map((slots, day) => `${day} -> ${slots.map(s => s.debug()).join(' | ')}`)

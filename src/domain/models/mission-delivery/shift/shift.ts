@@ -9,11 +9,14 @@ import {
   ZoneId,
 } from '@js-joda/core';
 import { Interval } from '@js-joda/extra';
-import { Option } from 'fp-ts/Option';
+import { pipe } from 'fp-ts/function';
+import { getOrElse, Option } from 'fp-ts/Option';
 import { Map, ValueObject } from 'immutable';
+import { formatDurationAs100 } from '../../../../~shared/util/joda-helper';
 import { TypeProps } from '../../../../~shared/util/types';
 import { EmployeeId } from '../../employee-registration/employee/employee-id';
 import { SilaeId } from '../../employee-registration/employee/silae-id';
+import { EmploymentContract } from '../../employment-contract-management/employment-contract/employment-contract';
 import { LocalTimeSlot } from '../../local-time-slot';
 import { ClientId } from '../../sales-contract-management/client/client-id';
 import { RequirementId } from '../../sales-contract-management/requirement/requirement-id';
@@ -88,7 +91,7 @@ export class Shift implements ValueObject, IShift {
     public readonly precedenceDate?: Option<LocalDate>,
     public readonly parentAffectationId?: Option<string>
   ) {
-    this._vo = Map<string | ShiftReason, TypeProps<IShift>>()
+    this._vo = Map<string, TypeProps<IShift>>()
       .set('id', this.id)
       .set('serviceContractId', this.serviceContractId)
       .set('requirementIds', this.requirementIds)
@@ -130,6 +133,16 @@ export class Shift implements ValueObject, IShift {
     });
   }
 
+  getDuration(): Duration {
+    if (this.startTime.plus(this.duration).toLocalTime().compareTo(LocalTime.MIDNIGHT) === 0) {
+      return Duration.between(
+        this.startTime,
+        this.startTime.plus(this.duration).minusMinutes(1)
+      ).plusMinutes(1);
+    }
+    return this.duration;
+  }
+
   getInterval(): Interval {
     return Interval.of(
       Instant.from(LocalDateTime.from(this.startTime).atZone(ZoneId.of('Europe/Paris'))),
@@ -161,11 +174,37 @@ export class Shift implements ValueObject, IShift {
       : this.startTime.toLocalTime().plus(this.duration);
   }
 
+  getPrecedenceDate(): LocalDate {
+    return pipe(
+      this.precedenceDate,
+      getOrElse(() => this.startTime.toLocalDate())
+    );
+  }
+
+  getNightTime() {
+    return this.startTime.toLocalTime().isAfter(LocalTime.of(6))
+      ? this.getTimeSlot().commonRange(EmploymentContract.nightShiftTimeSlots[0])
+      : this.getTimeSlot().commonRange(EmploymentContract.nightShiftTimeSlots[1]);
+  }
+
+  isNightShift() {
+    return (
+      this.startTime.toLocalTime().compareTo(EmploymentContract.nightShiftTimeSlots[1].startTime) >=
+      0
+    );
+  }
+
+  isMorningShift() {
+    return (
+      this.startTime.toLocalTime().compareTo(EmploymentContract.nightShiftTimeSlots[0].endTime) < 0
+    );
+  }
+
   debug(): string {
     return `${this.startTime.format(
       DateTimeFormatter.ofPattern('dd/MM/yy: HH:mm')
     )} -> ${this.startTime.plus(this.duration).format(DateTimeFormatter.ofPattern('HH:mm'))} ${
       this.clientName
-    } ${this.clientId} ${this.type}`;
+    } ${this.clientId} ${this.type} ${formatDurationAs100(this.getDuration())}`;
   }
 }
