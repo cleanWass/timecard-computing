@@ -9,6 +9,7 @@ import {
   ZoneId,
 } from '@js-joda/core';
 import { Interval } from '@js-joda/extra';
+import { Option } from 'fp-ts/Option';
 import { Map, ValueObject } from 'immutable';
 import { TypeProps } from '../../../../~shared/util/types';
 import { EmployeeId } from '../../employee-registration/employee/employee-id';
@@ -33,8 +34,8 @@ export type IShift = {
   replacedShiftId?: ShiftId;
   requirementIds?: RequirementId[];
   serviceContractId?: ServiceContractId;
-  precedenceDate?: LocalDate;
-  parentAffectationId?: string;
+  parentAffectationId?: Option<string>;
+  precedenceDate?: Option<LocalDate>;
 };
 
 export class Shift implements ValueObject, IShift {
@@ -84,8 +85,8 @@ export class Shift implements ValueObject, IShift {
     public readonly serviceContractId?: ServiceContractId,
     public readonly requirementIds?: RequirementId[],
     public readonly replacedShiftId?: ShiftId,
-    public readonly precedenceDate?: LocalDate,
-    public readonly parentAffectationId?: string
+    public readonly precedenceDate?: Option<LocalDate>,
+    public readonly parentAffectationId?: Option<string>
   ) {
     this._vo = Map<string | ShiftReason, TypeProps<IShift>>()
       .set('id', this.id)

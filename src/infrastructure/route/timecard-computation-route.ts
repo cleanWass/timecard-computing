@@ -22,7 +22,12 @@ export const handleTimecardComputationRoute = (req: express.Request, res: expres
     TE.bind('raw', ({ params }) => fetchTimecardData(params)),
     TE.bind('data', ({ raw }) => pipe(raw, validateApiReturn, TE.fromEither)),
     TE.bind('timecards', ({ params: { period }, data }) =>
-      pipe(data, computeTimecardForEmployee(period), E.map(formatTimecardComputationReturn), TE.fromEither)
+      pipe(
+        data,
+        computeTimecardForEmployee(period),
+        E.map(formatTimecardComputationReturn),
+        TE.fromEither
+      )
     ),
     TE.bind('prospectiveTimecards', ({ params: { period, prospectiveShifts }, data }) =>
       pipe(
@@ -50,5 +55,5 @@ export const handleTimecardComputationRoute = (req: express.Request, res: expres
         }
       }
     )
-  )
-}
+  );
+};

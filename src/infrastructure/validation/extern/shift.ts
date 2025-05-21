@@ -9,4 +9,6 @@ export const shiftValidator = zod.object({
   duration: zod.string(),
   clientId: zod.string().nullish(),
   clientName: zod.string().nullish(),
+  parentAffectationId: zod.string().nullish(),
+  precedenceDate: zod.string().nullish(),
 });

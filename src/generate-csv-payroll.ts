@@ -85,10 +85,6 @@ export const generatePayrollExports = ({
         return new Error(`Fetching cached data from care data parser went wrong ${e}`);
       }
     ),
-    TE.map(t => {
-      console.log('1', JSON.stringify(t, null, 2));
-      return t;
-    }),
     TE.chainW(dataCleaners => {
       total = dataCleaners.length;
       return pipe(

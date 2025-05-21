@@ -1,4 +1,5 @@
 import { DayOfWeek, Duration, LocalDate, LocalDateTime, LocalTime } from '@js-joda/core';
+import { pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import { List, Map, Set } from 'immutable';
 import zod from 'zod';
@@ -80,6 +81,8 @@ export const employeeDataValidator = zod
           type: shift.type,
           employeeId: raw.cleaner.silaeId,
           silaeId: raw.cleaner.silaeId,
+          parentAffectationId: O.fromNullable(shift.parentAffectationId),
+          precedenceDate: pipe(shift.precedenceDate, O.fromNullable, O.map(LocalDate.parse)),
         })
       ),
       leaves: (raw.leaves || []).map(leave =>
