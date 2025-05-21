@@ -13,7 +13,12 @@ import { LocalTimeSlot } from '../../local-time-slot';
 import { InactiveShift } from '../../mission-delivery/shift/inactive-shift';
 import { Shift } from '../../mission-delivery/shift/shift';
 import { WorkingPeriod } from '../working-period/working-period';
-import { HoursTypeCodes, WorkedHoursRate, WorkedHoursRecap, WorkedHoursRecapType } from './worked-hours-rate';
+import {
+  HoursTypeCodes,
+  WorkedHoursRate,
+  WorkedHoursRecap,
+  WorkedHoursRecapType,
+} from '../../cost-efficiency/worked-hours-rate';
 
 type WorkingPeriodTimecardId = string;
 
@@ -78,12 +83,16 @@ export class WorkingPeriodTimecard implements ValueObject {
   }
 
   static getTotalMealTickets(list: List<WorkingPeriodTimecard>) {
-    return list.reduce((total, timecard) => total + (timecard.contract.isFullTime() ? 0 : timecard.mealTickets), 0);
+    return list.reduce(
+      (total, timecard) => total + (timecard.contract.isFullTime() ? 0 : timecard.mealTickets),
+      0
+    );
   }
 
   static getTotalWorkingPeriod(list: List<WorkingPeriodTimecard>) {
     const start = list.reduce(
-      (res, tc) => (tc.workingPeriod.period.start.isBefore(res) ? tc.workingPeriod.period.start : res),
+      (res, tc) =>
+        tc.workingPeriod.period.start.isBefore(res) ? tc.workingPeriod.period.start : res,
       LocalDate.MAX
     );
     const end = list.reduce(
@@ -111,8 +120,8 @@ export class WorkingPeriodTimecard implements ValueObject {
 
   getTotalIntercontractDuration() {
     const totalHoursAffected = Duration.ZERO.plus(this.workedHours.TotalWeekly)
-                                       .plus(this.workedHours.TotalLeaves)
-                                       .plus(this.workedHours.TotalInactiveShifts);
+      .plus(this.workedHours.TotalLeaves)
+      .plus(this.workedHours.TotalInactiveShifts);
     return this.contract.weeklyTotalWorkedHours.minus(totalHoursAffected);
   }
 
@@ -128,9 +137,9 @@ export class WorkingPeriodTimecard implements ValueObject {
     return this.contract.type === 'CDD'
       ? Set(DayOfWeek.values())
       : this.weeklyPlanning.reduce(
-        (days, slots, day) => (slots.some(slot => slot.isNight()) ? days.add(day) : days),
-        Set<DayOfWeek>()
-      );
+          (days, slots, day) => (slots.some(slot => slot.isNight()) ? days.add(day) : days),
+          Set<DayOfWeek>()
+        );
   }
 
   with(params: Partial<WorkingPeriodTimecard>): WorkingPeriodTimecard {
@@ -157,43 +166,47 @@ export class WorkingPeriodTimecard implements ValueObject {
 
   debug() {
     return `
-        WorkingPeriodTimecard ${this.id} for ${this.employee.firstName} ${this.employee.lastName} (${
-      this.employee.silaeId
-    })
+        WorkingPeriodTimecard ${this.id} for ${this.employee.firstName} ${
+          this.employee.lastName
+        } (${this.employee.silaeId})
         MealTickets: ${this.mealTickets}
         Period: ${this.workingPeriod.period.toFormattedString()}
-        Contract: ${this.contract.id} ${formatDuration(this.contract.weeklyTotalWorkedHours)} / week - ${
-      this.contract.subType
-    } ${this.contract.extraDuration || ''} \n NightWorker : ${this.getNightOrdinary().join(
-      ', '
-    )} - SundayWorker : ${this.contract.isSundayWorker() ? 'Yes' : 'No'}
+        Contract: ${this.contract.id} ${formatDuration(
+          this.contract.weeklyTotalWorkedHours
+        )} / week - ${this.contract.subType} ${
+          this.contract.extraDuration || ''
+        } \n NightWorker : ${this.getNightOrdinary().join(', ')} - SundayWorker : ${
+          this.contract.isSundayWorker() ? 'Yes' : 'No'
+        }
         WorkedHours: 
             ${this.workedHours
-                  .toSeq()
-                  .map((duration, rate) =>
-                    duration.isZero() ? `` : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`
-                  )
-                  .filter(s => s)
-                  .join('\n\t\t')}
+              .toSeq()
+              .map((duration, rate) =>
+                duration.isZero()
+                  ? ``
+                  : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`
+              )
+              .filter(s => s)
+              .join('\n\t\t')}
         Leaves: ${this.leaves
-                      .sortBy(
-                        s => s.date,
-                        (a, b) => a.compareTo(b)
-                      )
-                      .map(l => l.debug())
-                      .join(' | ')}
+          .sortBy(
+            s => s.date,
+            (a, b) => a.compareTo(b)
+          )
+          .map(l => l.debug())
+          .join(' | ')}
         Shifts: ${this.shifts
-                      .sortBy(
-                        s => s.startTime,
-                        (a, b) => a.compareTo(b)
-                      )
-                      .map(s => s.debug())
-                      .join(' | ')}
+          .sortBy(
+            s => s.startTime,
+            (a, b) => a.compareTo(b)
+          )
+          .map(s => s.debug())
+          .join(' | ')}
         InactiveShifts: ${this.inactiveShifts.map(s => s.debug()).join(' | ')}
         _____
         planning: ${this.weeklyPlanning
-                        .map((slots, day) => `${day} -> ${slots.map(s => s.debug()).join(' | ')}`)
-                        .join('\n\t\t')}
+          .map((slots, day) => `${day} -> ${slots.map(s => s.debug()).join(' | ')}`)
+          .join('\n\t\t')}
       `;
   }
 }

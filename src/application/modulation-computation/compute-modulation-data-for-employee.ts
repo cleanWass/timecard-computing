@@ -17,7 +17,7 @@ import {
   MODULATED_FULL_TIME_DURATION,
   ModulationDataWorkingPeriodCard,
 } from '../../domain/models/modulation-data/modulation-data-working-period-card';
-import { WorkedHoursRecap } from '../../domain/models/time-card-computation/timecard/worked-hours-rate';
+import { WorkedHoursRecap } from '../../domain/models/cost-efficiency/worked-hours-rate';
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
 import { sequenceList } from '../../~shared/util/sequence-list';

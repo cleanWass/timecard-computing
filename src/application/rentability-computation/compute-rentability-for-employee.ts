@@ -3,7 +3,7 @@ import { List, Map, Set } from 'immutable';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { LocalTimeSlot } from '../../domain/models/local-time-slot';
 import { Shift } from '../../domain/models/mission-delivery/shift/shift';
-import { HoursTypeCodes } from '../../domain/models/time-card-computation/timecard/worked-hours-rate';
+import { HoursTypeCodes } from '../../domain/models/cost-efficiency/worked-hours-rate';
 import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
 import {
   formatDuration,
@@ -60,48 +60,58 @@ export const computeRentabilityForEmployee = (timecard: WorkingPeriodTimecard) =
             rate
       : res + (timecard.workedHours[hours].toMinutes() / 60) * baseRate * rate;
   }, 0);
-  console.log('result', result, (result / (timecard.workedHours.TotalWeekly.toMinutes() / 60)).toFixed(2));
+  console.log(
+    'result',
+    result,
+    (result / (timecard.workedHours.TotalWeekly.toMinutes() / 60)).toFixed(2)
+  );
   return timecard.with({
-    rentability: Number.parseFloat((result / (timecard.workedHours.TotalWeekly.toMinutes() / 60)).toFixed(2)),
+    rentability: Number.parseFloat(
+      (result / (timecard.workedHours.TotalWeekly.toMinutes() / 60)).toFixed(2)
+    ),
   });
 };
-export const computeRentabilityForEmployeeTEST = (period: LocalDateRange) => (timecard: WorkingPeriodTimecard) => {
-  // Compute rentability for employee
-  const shifts = timecard.shifts;
-  const clients = shifts.map(shift => shift.clientName || 'no client name').toSet();
-  console.log('clients', clients.toJSON());
-  const totalInterContract = timecard.getTotalIntercontractDuration();
-  const shiftsByClients = shifts.groupBy(shift => shift.clientName || 'no client name');
-  const recurringShiftsByClients = shiftsByClients
-    .map(shifts => shifts.filter(shift => shift.type === 'Permanent'))
-    .map(getTotalDuration);
-  // .map(formatDurationAs100);
-  const unoffShiftsByClients = shiftsByClients
-    .map(shifts => shifts.filter(shift => shift.type === 'Ponctuel'))
-    .map(getTotalDuration)
-    .map(formatDurationAs100);
-  const replacementShiftsByClients = shiftsByClients
-    .map(shifts => shifts.filter(shift => shift.type === 'Remplacement'))
-    .map(getTotalDuration)
-    .map(formatDurationAs100);
+export const computeRentabilityForEmployeeTEST =
+  (period: LocalDateRange) => (timecard: WorkingPeriodTimecard) => {
+    // Compute rentability for employee
+    const shifts = timecard.shifts;
+    const clients = shifts.map(shift => shift.clientName || 'no client name').toSet();
+    console.log('clients', clients.toJSON());
+    const totalInterContract = timecard.getTotalIntercontractDuration();
+    const shiftsByClients = shifts.groupBy(shift => shift.clientName || 'no client name');
+    const recurringShiftsByClients = shiftsByClients
+      .map(shifts => shifts.filter(shift => shift.type === 'Permanent'))
+      .map(getTotalDuration);
+    // .map(formatDurationAs100);
+    const unoffShiftsByClients = shiftsByClients
+      .map(shifts => shifts.filter(shift => shift.type === 'Ponctuel'))
+      .map(getTotalDuration)
+      .map(formatDurationAs100);
+    const replacementShiftsByClients = shiftsByClients
+      .map(shifts => shifts.filter(shift => shift.type === 'Remplacement'))
+      .map(getTotalDuration)
+      .map(formatDurationAs100);
 
-  console.log('totalInterContract', totalInterContract.toString());
-  console.log('shiftsByClients', shiftsByClients.toJS());
-  console.log('recurringShiftsByClients', recurringShiftsByClients.toJS());
-  console.log('unoffShiftsByClients', unoffShiftsByClients.toJS());
-  console.log('replacementShiftsByClients', replacementShiftsByClients.toJS());
+    console.log('totalInterContract', totalInterContract.toString());
+    console.log('shiftsByClients', shiftsByClients.toJS());
+    console.log('recurringShiftsByClients', recurringShiftsByClients.toJS());
+    console.log('unoffShiftsByClients', unoffShiftsByClients.toJS());
+    console.log('replacementShiftsByClients', replacementShiftsByClients.toJS());
 
-  const recurringShiftTotal = timecard.contract.weeklyTotalWorkedHours
-    .minus(recurringShiftsByClients.reduce((acc, curr) => acc.plus(curr), Duration.ZERO))
-    .minus(getTotalDuration(timecard.inactiveShifts));
-  const inactiveShifts = getTotalDuration(timecard.inactiveShifts);
-  console.log('inactiveShifts', formatDuration(inactiveShifts));
-  return 'Rentability computed';
-};
+    const recurringShiftTotal = timecard.contract.weeklyTotalWorkedHours
+      .minus(recurringShiftsByClients.reduce((acc, curr) => acc.plus(curr), Duration.ZERO))
+      .minus(getTotalDuration(timecard.inactiveShifts));
+    const inactiveShifts = getTotalDuration(timecard.inactiveShifts);
+    console.log('inactiveShifts', formatDuration(inactiveShifts));
+    return 'Rentability computed';
+  };
 
 const shiftIsInPlanning = (shift: Shift, timecards: List<WorkingPeriodTimecard>) => {
   return timecards.some(tc => {
-    const dayPlannedSlots = tc.weeklyPlanning.get(shift.startTime.dayOfWeek(), Set<LocalTimeSlot>());
+    const dayPlannedSlots = tc.weeklyPlanning.get(
+      shift.startTime.dayOfWeek(),
+      Set<LocalTimeSlot>()
+    );
     return dayPlannedSlots.some(slot => slot.contains(shift.getTimeSlot()));
   });
 };

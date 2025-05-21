@@ -98,7 +98,8 @@ export const computeWorkingPeriodTimecard: (
     computeExtraHoursByRate,
     computeSurchargedHours,
     computeMealTickets,
-    inferTotalIntercontractAndTotalContract
+    inferTotalIntercontractAndTotalContract,
+    deter
     // computeRentabilityForEmployee
   );
 };

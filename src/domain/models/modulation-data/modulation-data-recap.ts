@@ -3,7 +3,7 @@ import { formatDuration, formatDurationAs100 } from '../../../~shared/util/joda-
 import { Employee } from '../employee-registration/employee/employee';
 import { EmploymentContract } from '../employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../local-date-range';
-import { HoursTypeCodes } from '../time-card-computation/timecard/worked-hours-rate';
+import { HoursTypeCodes } from '../cost-efficiency/worked-hours-rate';
 import { WorkingPeriod } from '../time-card-computation/working-period/working-period';
 import { ModulationDataMonthlyCard } from './modulation-data-monthly-card';
 import { ModulationDataWeeklyCard } from './modulation-data-weekly-card';

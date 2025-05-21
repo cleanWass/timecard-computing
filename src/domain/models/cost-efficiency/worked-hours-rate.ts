@@ -1,7 +1,7 @@
 import { Duration } from '@js-joda/core';
 
 import { Record, RecordOf } from 'immutable';
-import { keys } from '../../../../~shared/util/types';
+import { keys } from '../../../~shared/util/types';
 
 // TODO split computations keys and results keys
 export const HoursTypeCodes = {
