@@ -64,5 +64,3 @@ export const main = () => {
     getCurrentPeriodRanges(periods)
   );
 };
-
-// main();
