@@ -110,7 +110,7 @@ app.post('/download-export', async (req, res) => {
       persistence: 'rh',
       period,
       debug: false,
-      displayLog: true,
+      displayLog: false,
     });
 
     let error: Error | ParseError | TimecardComputationError | undefined = undefined;

@@ -1,12 +1,18 @@
 import { Duration } from '@js-joda/core';
 import { pipe } from 'fp-ts/function';
 import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
-import { formatDuration, getGreaterDuration, getLowerDuration } from '../../../~shared/util/joda-helper';
+import { getGreaterDuration, getLowerDuration } from '../../../~shared/util/joda-helper';
 
 const computeSurchargeWithExtraHours = (timecard: WorkingPeriodTimecard) => {
   const additionalHours = timecard.workedHours.TotalAdditionalHours;
-  const _10PerCentRateHours = getLowerDuration(additionalHours, timecard.contract.extraDuration || Duration.ZERO);
-  const _25PerCentRateHours = getGreaterDuration(additionalHours.minus(_10PerCentRateHours), Duration.ZERO);
+  const _10PerCentRateHours = getLowerDuration(
+    additionalHours,
+    timecard.contract.extraDuration || Duration.ZERO
+  );
+  const _25PerCentRateHours = getGreaterDuration(
+    additionalHours.minus(_10PerCentRateHours),
+    Duration.ZERO
+  );
   return timecard
 
     .register('TenPercentRateComplementary', _10PerCentRateHours)
@@ -18,7 +24,9 @@ const computeSurchargeWithoutExtraHours = (timecard: WorkingPeriodTimecard) => {
   if (additionalHours.isZero() || additionalHours.isNegative()) return timecard;
   const _11PercentRateHours = getLowerDuration(
     additionalHours,
-    Duration.ofMinutes(Math.floor(Number(timecard.contract.weeklyTotalWorkedHours.toMinutes() * 0.1) / 15) * 15)
+    Duration.ofMinutes(
+      Math.floor(Number(timecard.contract.weeklyTotalWorkedHours.toMinutes() * 0.1) / 15) * 15
+    )
   );
   const _25PerCentRateHours = additionalHours.minus(_11PercentRateHours);
   return timecard
@@ -27,7 +35,12 @@ const computeSurchargeWithoutExtraHours = (timecard: WorkingPeriodTimecard) => {
 };
 
 export const computeComplementaryHours = (timecard: WorkingPeriodTimecard) =>
-  pipe(timecard, timecard.contract.isExtraHours() ? computeSurchargeWithExtraHours : computeSurchargeWithoutExtraHours);
+  pipe(
+    timecard,
+    timecard.contract.isExtraHours()
+      ? computeSurchargeWithExtraHours
+      : computeSurchargeWithoutExtraHours
+  );
 
 export const computeSupplementaryHours = (timecard: WorkingPeriodTimecard) => {
   const additionalHours = timecard.workedHours.TotalAdditionalHours;
@@ -44,26 +57,34 @@ export const computeSupplementaryHours = (timecard: WorkingPeriodTimecard) => {
 export const computeTotalAdditionalHours = (timecard: WorkingPeriodTimecard) => {
   const {
     contract: { weeklyTotalWorkedHours },
-    workedHours: { TotalNormalAvailable, TotalInactiveShifts, TotalWeekly, TotalNationalHolidayLeaves },
+    workedHours: {
+      TotalNormalAvailable,
+      TotalInactiveShifts,
+      TotalWeekly,
+      TotalNationalHolidayLeaves,
+    },
   } = timecard;
-  const totalEffectiveHours = TotalWeekly.plus(TotalInactiveShifts).plus(TotalNationalHolidayLeaves);
+  const totalEffectiveHours = TotalWeekly.plus(TotalInactiveShifts);
   const totalAdditionalHours = totalEffectiveHours
     .minus(weeklyTotalWorkedHours)
     .plus(timecard.contract.extraDuration || Duration.ZERO);
 
-  if (totalAdditionalHours.isNegative()) return timecard.register('TotalAdditionalHours', Duration.ZERO);
+  if (totalAdditionalHours.isNegative())
+    return timecard.register('TotalAdditionalHours', Duration.ZERO);
   const totalNormalHours = getLowerDuration(TotalNormalAvailable, totalAdditionalHours);
 
+  const remainingAdditionalHours = Duration.ofMinutes(
+    Math.ceil(
+      getGreaterDuration(totalAdditionalHours.minus(totalNormalHours), Duration.ZERO).toMinutes()
+    )
+  );
   return timecard
     .register('TotalNormal', totalNormalHours)
     .register('TotalNormalAvailable', TotalNormalAvailable.minus(totalNormalHours))
-    .register(
-      'TotalAdditionalHours',
-      Duration.ofMinutes(
-        Math.ceil(getGreaterDuration(totalAdditionalHours.minus(totalNormalHours), Duration.ZERO).toMinutes())
-      )
-    );
+    .register('TotalAdditionalHours', remainingAdditionalHours);
 };
 
 export const computeExtraHoursByRate = (timecard: WorkingPeriodTimecard) =>
-  timecard.contract.isFullTime() ? computeSupplementaryHours(timecard) : computeComplementaryHours(timecard);
+  timecard.contract.isFullTime()
+    ? computeSupplementaryHours(timecard)
+    : computeComplementaryHours(timecard);
