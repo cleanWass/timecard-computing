@@ -6,6 +6,7 @@ import * as TE from 'fp-ts/TaskEither';
 import { List } from 'immutable';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { ProspectiveShift } from '../../domain/models/mission-delivery/shift/prospective-shift';
+import { fetchPayrollData } from '../../generate-csv-payroll';
 import { FetchError } from '../../~shared/error/FetchError';
 import { ParseError } from '../../~shared/error/ParseError';
 import { employeeDataValidator } from '../validation/extern/employee';
@@ -18,42 +19,50 @@ interface TimecardRouteParams {
   prospectiveShifts?: ProspectiveShift[];
 }
 
-export const fetchDataForEmployee = (silaeId: string, { start, end }: LocalDateRange) => {
+export const fetchEmployeeDataFromCache = (period: LocalDateRange) =>
+  TE.tryCatch(
+    () => fetchPayrollData(period),
+    e => {
+      console.log(`Fetching cached data went wrong ${e}`);
+      return new Error(`Fetching cached data from care data parser went wrong ${e}`);
+    }
+  );
+
+export const fetchDataForEmployee = async (silaeId: string, { start, end }: LocalDateRange) => {
   const url = `${process.env.CARE_DATA_PARSER_URL || 'http://localhost:3000'}/employee-data`;
-  return axios
-    .post(url, {
+  try {
+    const r = await axios.post(url, {
       silaeId,
       period: {
         startDate: start.toString(),
         endDate: end.toString(),
       },
-    })
-    .then(r => r.data)
-    .catch(e => console.log(`error while fetching for ${silaeId} ${JSON.stringify(e.response.data)}`));
+    });
+    return r.data;
+  } catch (e) {
+    return console.log(`error while fetching for ${silaeId} ${JSON.stringify(e.response.data)}`);
+  }
 };
 
-export const fetchActiveCleanersForPeriod = ({ start, end }: LocalDateRange) => {
+export const fetchActiveCleanersForPeriod = async ({ start, end }: LocalDateRange) => {
   const url = `${process.env.CARE_DATA_PARSER_URL || 'http://localhost:3000'}/active-cleaners`;
-  return axios
-    .post(url, {
-      period: {
-        startDate: start.toString(),
-        endDate: end.toString(),
-      },
-    })
-    .then(
-      r =>
-        r.data as {
-          [key in 'silaeId' | 'id' | 'role' | 'firstName' | 'lastName']: string;
-        }[]
-    );
+  const r = await axios.post(url, {
+    period: {
+      startDate: start.toString(),
+      endDate: end.toString(),
+    },
+  });
+  return r.data as {
+    [key in 'silaeId' | 'id' | 'role' | 'firstName' | 'lastName']: string;
+  }[];
   // .catch(e => {
   //   console.log(`error while fetching activeCleaners ${e.response.data}`);
   //   return new FetchError('error while fetching activeCleaners');
   // });
 };
 
-export const parseRequestPayload = (payload: unknown) => validateRoutePayload(timecardRoutesPayloadValidator)(payload);
+export const parseRequestPayload = (payload: unknown) =>
+  validateRoutePayload(timecardRoutesPayloadValidator)(payload);
 
 export const formatRequestPayload = (data: ReturnType<typeof parseRequestPayload>) =>
   pipe(
@@ -62,16 +71,20 @@ export const formatRequestPayload = (data: ReturnType<typeof parseRequestPayload
       raw =>
         ({
           ...raw,
-          period: new LocalDateRange(LocalDate.parse(raw.period.start), LocalDate.parse(raw.period.end)),
-          prospectiveShifts: raw.prospectiveShifts.map(({ startTime, duration, employeeId, clientId, clientName }) =>
-            ProspectiveShift.build({
-              id: `ProspectiveShift-${ProspectiveShift.count++}`,
-              startTime: LocalDateTime.parse(startTime),
-              duration: Duration.parse(duration),
-              employeeId,
-              clientId,
-              clientName,
-            })
+          period: new LocalDateRange(
+            LocalDate.parse(raw.period.start),
+            LocalDate.parse(raw.period.end)
+          ),
+          prospectiveShifts: raw.prospectiveShifts.map(
+            ({ startTime, duration, employeeId, clientId, clientName }) =>
+              ProspectiveShift.build({
+                id: `ProspectiveShift-${ProspectiveShift.count++}`,
+                startTime: LocalDateTime.parse(startTime),
+                duration: Duration.parse(duration),
+                employeeId,
+                clientId,
+                clientName,
+              })
           ),
         }) satisfies TimecardRouteParams
     )
@@ -83,9 +96,14 @@ export const parseApiReturn = (data: unknown) =>
     employeeDataValidator.safeParse,
     E.fromPredicate(
       parsedJSON => parsedJSON.success && parsedJSON?.data !== null,
-      e => new ParseError(`safe parse success : ${e.success} \n Error while parsing payload 2 ${e['error']}`)
+      e =>
+        new ParseError(
+          `safe parse success : ${e.success} \n Error while parsing payload 2 ${e['error']}`
+        )
     ),
-    E.chain(parsedJSON => (parsedJSON.success ? E.right(parsedJSON.data) : E.left(new ParseError('data is empty'))))
+    E.chain(parsedJSON =>
+      parsedJSON.success ? E.right(parsedJSON.data) : E.left(new ParseError('data is empty'))
+    )
   );
 
 export const formatApiReturn = (data: ReturnType<typeof parseApiReturn>) =>
@@ -99,7 +117,8 @@ export const formatApiReturn = (data: ReturnType<typeof parseApiReturn>) =>
     }))
   );
 
-export const validateRequestPayload = (payload: unknown) => pipe(payload, parseRequestPayload, formatRequestPayload);
+export const validateRequestPayload = (payload: unknown) =>
+  pipe(payload, parseRequestPayload, formatRequestPayload);
 
 export const fetchTimecardData = ({ silaeId, period }: TimecardRouteParams) =>
   TE.tryCatch(
