@@ -21,7 +21,7 @@ const periods_2025 = {
   Décembre: ['17/11/2025', '14/12/2025'],
 } as const;
 
-export const getPeriodAsDateRanges = (periods: typeof periods_2025) =>
+const getPeriodAsDateRanges = (periods: typeof periods_2025) =>
   keys(periods).reduce(
     (res, month) => ({
       ...res,

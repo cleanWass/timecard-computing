@@ -18,16 +18,23 @@ import { computeTimecardForEmployee } from '../timecard-computation/compute-time
 import { DayHeaders, DoneDayHeaders, PlanningDayHeaders, WorkedHoursHeaders } from './headers';
 import { prepareEnv } from './prepare-env';
 
-const formatObjectDurations = (rawObject: { [key in (typeof WorkedHoursHeaders)[number]]: Duration }) =>
+export const formatObjectDurations = (rawObject: {
+  [key in (typeof WorkedHoursHeaders)[number]]: Duration;
+}) =>
   keys(rawObject).reduce((res, code) => {
     const value = Math.round(((rawObject[code] || Duration.ZERO).toMinutes() / 15) * 15);
     const durationAs100 = formatDurationAs100(Duration.ofMinutes(value), '');
     return { ...res, [code]: durationAs100 === '0' ? '' : durationAs100 };
   }, {});
 
-export type TimecardComputationResult = ExtractEitherRightType<ReturnType<typeof computeTimecardForEmployee>>;
+export type TimecardComputationResult = ExtractEitherRightType<
+  ReturnType<typeof computeTimecardForEmployee>
+>;
 
-const generateDayData = (headers: ReadonlyArray<string>, dayDataGetter: (day: DayOfWeek, index: number) => string) =>
+const generateDayData = (
+  headers: ReadonlyArray<string>,
+  dayDataGetter: (day: DayOfWeek, index: number) => string
+) =>
   headers.reduce(
     (acc, day, index) => ({ ...acc, [day]: dayDataGetter(DayOfWeek.values()[index], index) }),
     {} as { [k in (typeof DayHeaders)[number]]: 'x' | '' }
@@ -35,7 +42,11 @@ const generateDayData = (headers: ReadonlyArray<string>, dayDataGetter: (day: Da
 
 export function formatCsv(row: TimecardComputationResult) {
   const timecards = List(row.timecards);
-  return getCsvOutput(row.employee, WorkingPeriodTimecard.getTotalWorkingPeriod(timecards), timecards);
+  return getCsvOutput(
+    row.employee,
+    WorkingPeriodTimecard.getTotalWorkingPeriod(timecards),
+    timecards
+  );
 }
 
 export const formatCsvDetails = (row: TimecardComputationResult) => {
@@ -50,14 +61,20 @@ export const formatCsvDetails = (row: TimecardComputationResult) => {
     });
 
     const workedDays = generateDayData(DayHeaders, (day, index) => {
-      const date = workingPeriod.period.start.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).plusDays(index);
+      const date = workingPeriod.period.start
+        .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        .plusDays(index);
       return workingPeriod.period.contains(date) ? 'x' : '';
     });
 
     const shifts = generateDayData(DoneDayHeaders, (day, index) => {
-      const date = workingPeriod.period.start.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).plusDays(index);
+      const date = workingPeriod.period.start
+        .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        .plusDays(index);
       const slots = timecard.shifts.filter(shift => shift.startTime.toLocalDate().isEqual(date));
-      return formatDurationAs100(slots?.reduce((acc, slot) => acc.plus(slot.duration), Duration.ZERO) || Duration.ZERO);
+      return formatDurationAs100(
+        slots?.reduce((acc, slot) => acc.plus(slot.duration), Duration.ZERO) || Duration.ZERO
+      );
     });
 
     return {
@@ -90,7 +107,10 @@ export const formatCsvDetails = (row: TimecardComputationResult) => {
   });
 };
 
-const getPeriodValue = (timecards: List<WorkingPeriodTimecard>, periodToCompute: LocalDateRange) => {
+const getPeriodValue = (
+  timecards: List<WorkingPeriodTimecard>,
+  periodToCompute: LocalDateRange
+) => {
   const period = WorkingPeriodTimecard.getTotalWorkingPeriod(timecards);
   return (periodToCompute.commonRange(period) || period).toFormattedString(false);
 };
@@ -99,7 +119,9 @@ export const getFunctionTranslations = (role: EmployeeRole) => EMPLOYEE_ROLE_TRA
 
 export const formatCsvTotal = (row: TimecardComputationResult) => {
   const timecards = List(row.timecards);
-  return [getCsvOutput(row.employee, WorkingPeriodTimecard.getTotalWorkingPeriod(timecards), timecards)];
+  return [
+    getCsvOutput(row.employee, WorkingPeriodTimecard.getTotalWorkingPeriod(timecards), timecards),
+  ];
 };
 
 export const formatCsvWeekly = (row: TimecardComputationResult) => {
@@ -129,7 +151,9 @@ const getCsvOutput = (
     Manager: employee.managerName,
     ...(contractInfo
       ? {
-          'Durée hebdo': `${formatDurationAs100(contract?.weeklyTotalWorkedHours || Duration.ZERO)}h`,
+          'Durée hebdo': `${formatDurationAs100(
+            contract?.weeklyTotalWorkedHours || Duration.ZERO
+          )}h`,
           Contrat: `${contract?.initialId} | ${contract?.type} | ${contract?.subType} | ${formatDurationAs100(
             contract?.extraDuration || Duration.ZERO
           )}`,
@@ -178,7 +202,9 @@ export const formatCsvSilaeExport = (
     const lastEntryKey = groupedContracts.keySeq().last() || Set();
     const previousContractsList = groupedContracts.get(lastEntryKey) || List();
 
-    const isContractContiguousWithPreviousContract = O.getOrElse(() => contract.startDate)(lastContractAdded!.endDate)
+    const isContractContiguousWithPreviousContract = O.getOrElse(() => contract.startDate)(
+      lastContractAdded!.endDate
+    )
       .plusDays(1)
       .isAfter(contract.startDate);
 
@@ -222,7 +248,10 @@ export const formatCsvSilaeExport = (
       logger('cas ou c est un CDI et que les heures sont les memes');
       return groupedContracts
         .delete(lastEntryKey || Set(['']))
-        .set(lastEntryKey.add(contract.initialId) || Set([contract.initialId]), previousContractsList.concat(contract));
+        .set(
+          lastEntryKey.add(contract.initialId) || Set([contract.initialId]),
+          previousContractsList.concat(contract)
+        );
     }
 
     logger('cas default');
@@ -241,7 +270,11 @@ export const formatCsvSilaeExport = (
   logger(
     'result  -->  ' +
       JSON.stringify(
-        res.map((tcs, contract) => getCsvOutput(row.employee, row.period, tcs, tcs.first()?.contract, true)).valueSeq(),
+        res
+          .map((tcs, contract) =>
+            getCsvOutput(row.employee, row.period, tcs, tcs.first()?.contract, true)
+          )
+          .valueSeq(),
         null,
         2
       )
