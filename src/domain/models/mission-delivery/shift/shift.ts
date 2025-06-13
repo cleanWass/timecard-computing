@@ -201,7 +201,7 @@ export class Shift implements ValueObject, IShift {
   }
 
   debug(): string {
-    return `${this.startTime.format(
+    return `${this.employeeId || this.silaeId} ${this.id} ${this.startTime.format(
       DateTimeFormatter.ofPattern('dd/MM/yy: HH:mm')
     )} -> ${this.startTime.plus(this.duration).format(DateTimeFormatter.ofPattern('HH:mm'))} ${
       this.clientName

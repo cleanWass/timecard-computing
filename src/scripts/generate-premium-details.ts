@@ -2,6 +2,7 @@ import { DateTimeFormatter, Duration, LocalDate, LocalTime, Month } from '@js-jo
 import { format } from 'fast-csv';
 import { pipe } from 'fp-ts/lib/function';
 import * as O from 'fp-ts/Option';
+import * as E from 'fp-ts/Either';
 import * as TE from 'fp-ts/TaskEither';
 import fs from 'fs';
 import { List } from 'immutable';
@@ -29,15 +30,21 @@ const generatePremiumDetails = ({
   pipe(
     period,
     fetchEmployeeDataFromCache,
-    // TE.map(cl => [...cl.slice(10, 30)]),
+    TE.tapIO(
+      clR => () =>
+        console.log(
+          `Il y a  ${clR.length} cleaners actifs pour la période ${period.toFormattedString()}`
+        )
+    ),
+    // TE.map(cl => [...cl.slice(0, 1)]),
     TE.chainW(
       TE.traverseSeqArray(cleanerData => {
         return pipe(
           TE.Do,
           TE.bind('data', () => pipe(parsePayload(cleanerData), TE.fromEither)),
-          TE.bind('timecards', ({ data }) =>
-            pipe(data, formatPayload, computeTimecardForEmployee(period), TE.fromEither)
-          )
+          TE.bind('timecards', ({ data }) => {
+            return pipe(data, formatPayload, computeTimecardForEmployee(period), TE.fromEither);
+          })
         );
       })
     ),
@@ -76,9 +83,10 @@ const generatePremiumDetails = ({
             Date: formatDate(shift.getDate()),
             'Heure de début': formatTime(shift.getStartTime().toLocalTime()),
             'Heure de fin': formatTime(shift.getEndLocalTime()),
-            duration: formatDurationAs100(shift.duration),
+            'Durée du Shift': formatDurationAs100(shift.duration),
             'Type de Shift': shift.type,
             'Nature du contrat': contractType,
+            'Id Silae': shift.silaeId || shift.employeeId,
 
             ...formatObjectDurations({
               HN: extraRates?.TotalNormal || Duration.ZERO,
@@ -95,7 +103,7 @@ const generatePremiumDetails = ({
             MAJOFERIEH: formatDurationAs100(extraRates?.HolidaySurchargedH || Duration.ZERO, ''),
             MAJOFERIEP: formatDurationAs100(extraRates?.HolidaySurchargedP || Duration.ZERO, ''),
           };
-          for (let i = 0; i < 4; i++) csvStream.write(csvRow);
+          csvStream.write(csvRow);
         });
         csvStream.end();
         return TE.right({ premiumShifts, timecards, shifts });
@@ -108,22 +116,19 @@ const generatePremiumDetails = ({
       console.error('Error:', error);
       return error;
     })
-  )();
+  );
 
 const { DECEMBER, MAY, MARCH, APRIL } = Month;
-
 const main = async () => {
-  const periods = new BillingPeriodDefinitionService().getBillingPeriods();
+  const periods = new BillingPeriodDefinitionService().getBillingPeriodForMonths(
+    [APRIL, MARCH, MAY],
+    '2025'
+  );
   return pipe(
-    periods.get('2025')?.get(MARCH),
-    O.fromNullable,
-    O.fold(
-      () => {
-        console.error('Period not found');
-        return Promise.reject(new Error('Period not found'));
-      },
-      // Handle Some case - period found
-      async period => {
+    periods,
+    TE.fromEither,
+    TE.chain(
+      TE.traverseSeqArray(period => {
         console.log(`Using period: ${period.start.toString()} to ${period.end.toString()}`);
 
         const dirPath = `exports/premium_details/${period.end.year()}`;
@@ -134,20 +139,20 @@ const main = async () => {
         const csvFile = fs.createWriteStream(
           `exports/premium_details/${period.end.year()}/${period.end
             .month()
-            .toString()}-${period.end.year()}.csv`
+            .toString()
+            .toLowerCase()}-${period.end.year()}.csv`
         );
         const csvStream = format({ headers: [...ShiftHeaders] });
         csvStream.pipe(csvFile);
         csvFile.on('finish', () => {
           console.log('CSV file has been written successfully');
-          process.exit(0);
+          // process.exit(0);
         });
 
-        // Execute the generatePremiumDetails function and await its result
-        return await generatePremiumDetails({ period, csvStream });
-      }
+        return generatePremiumDetails({ period, csvStream });
+      })
     )
-  );
+  )();
 };
 
 main()

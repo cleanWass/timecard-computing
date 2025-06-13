@@ -64,7 +64,9 @@ export const computeTotalAdditionalHours = (timecard: WorkingPeriodTimecard) => 
       TotalNationalHolidayLeaves,
     },
   } = timecard;
-  const totalEffectiveHours = TotalWeekly.plus(TotalInactiveShifts);
+  const totalEffectiveHours = TotalWeekly.plus(TotalInactiveShifts).plus(
+    TotalNationalHolidayLeaves
+  );
   const totalAdditionalHours = totalEffectiveHours
     .minus(weeklyTotalWorkedHours)
     .plus(timecard.contract.extraDuration || Duration.ZERO);
