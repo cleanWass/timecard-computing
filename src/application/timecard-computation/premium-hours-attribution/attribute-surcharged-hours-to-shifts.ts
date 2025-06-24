@@ -14,6 +14,7 @@ const SUNDAY_SURCHARGED_HOURS_RATE = ['SundayContract', 'SundayAdditional'];
 const HOLIDAY_SURCHARGED_HOURS_RATE = ['HolidaySurchargedH', 'HolidaySurchargedP'];
 
 const ADDITIONAL_HOURS_RATE = [
+  'TotalNormal',
   'TenPercentRateComplementary',
   'ElevenPercentRateComplementary',
   'TwentyFivePercentRateComplementary',
