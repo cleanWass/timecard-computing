@@ -87,7 +87,6 @@ app.post('/payroll', async (req, res) => {
       },
       result => {
         if (result) {
-          console.log('result: ', JSON.stringify(result));
           return T.of(res.status(200).json(result));
         } else {
           console.error('Error in TE.fold: Expected Right, but got Left', result);

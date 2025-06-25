@@ -9,7 +9,10 @@ import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
 
 const isShiftDuringLeave = (shift: Shift) => (leave: Leave) =>
-  leave.getInterval().contains(Instant.from(shift.startTime.atZone(ZoneId.of('Europe/Paris'))));
+  leave.date.isEqual(shift.getDate()) &&
+  new LocalTimeSlot(leave.startTime, leave.endTime).overlaps(
+    new LocalTimeSlot(shift.startTime.toLocalTime(), shift.getEndLocalTime())
+  );
 
 export const getCuratedShifts = (leave: Leave, shift: Shift) =>
   pipe(
