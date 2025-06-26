@@ -26,7 +26,7 @@ const periods = {
   june: new LocalDateRange(LocalDate.parse('2024-05-20'), LocalDate.parse('2024-06-16')),
   july: new LocalDateRange(LocalDate.parse('2024-06-17'), LocalDate.parse('2024-07-21')),
   september: new LocalDateRange(LocalDate.parse('2024-08-19'), LocalDate.parse('2024-09-22')),
-  test: new LocalDateRange(LocalDate.parse('2024-02-26'), LocalDate.parse('2024-03-04')),
+  test: new LocalDateRange(LocalDate.parse('2025-06-21'), LocalDate.parse('2025-05-19')),
 };
 
 export type CleanerResponse = {

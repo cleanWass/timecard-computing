@@ -143,15 +143,6 @@ export class Shift implements ValueObject, IShift {
     return this.duration;
   }
 
-  getInterval(): Interval {
-    return Interval.of(
-      Instant.from(LocalDateTime.from(this.startTime).atZone(ZoneId.of('Europe/Paris'))),
-      Instant.from(
-        LocalDateTime.from(this.startTime.plus(this.duration)).atZone(ZoneId.of('Europe/Paris'))
-      )
-    );
-  }
-
   getTimeSlot() {
     return new LocalTimeSlot(this.startTime.toLocalTime(), this.getEndLocalTime());
   }

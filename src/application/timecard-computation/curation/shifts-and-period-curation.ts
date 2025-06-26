@@ -1,4 +1,3 @@
-import { Instant, ZoneId } from '@js-joda/core';
 import { Interval } from '@js-joda/extra';
 import * as E from 'fp-ts/Either';
 import { identity, pipe } from 'fp-ts/function';
@@ -16,31 +15,36 @@ const isShiftDuringLeave = (shift: Shift) => (leave: Leave) =>
 
 export const getCuratedShifts = (leave: Leave, shift: Shift) =>
   pipe(
-    shift.getInterval(),
+    shift.getTimeSlot(),
     E.fromPredicate(
-      s => leave.getInterval().overlaps(s),
+      s => leave.getTimeSlot().overlaps(s),
       () => List([shift])
     ),
     E.map(sh => {
-      if (leave.getInterval().encloses(sh)) return List<Shift>([]);
-      const beforeLeave = Interval.of(
-        sh.start(),
-        leave.getInterval().start().isBefore(sh.start()) ? sh.start() : leave.getInterval().start()
+      if (leave.getTimeSlot().includesInclusive(sh)) return List<Shift>([]);
+      const beforeLeave = new LocalTimeSlot(
+        sh.startTime,
+        leave.getTimeSlot().startTime.isBefore(sh.startTime)
+          ? sh.startTime
+          : leave.getTimeSlot().startTime
       );
 
-      const afterLeave = Interval.of(leave.getInterval().end(), sh.end());
+      const endOfAfterLeave = leave.getTimeSlot().endTime.isAfter(sh.endTime)
+        ? leave.getTimeSlot().endTime
+        : sh.endTime;
+      const afterLeave = new LocalTimeSlot(leave.getTimeSlot().endTime, endOfAfterLeave);
 
       return List([
-        beforeLeave.toDuration().toMillis() > 0 &&
+        beforeLeave.duration().toMillis() > 0 &&
           shift.with({
-            id: `${shift.id}-before Leave ${leave.debug()}`,
-            duration: beforeLeave.toDuration(),
+            id: `${shift.id}-before Leave_${leave.date.toString()}`,
+            duration: beforeLeave.duration(),
           }),
-        afterLeave.toDuration().toMillis() > 0 &&
+        afterLeave.duration().toMillis() > 0 &&
           shift.with({
-            id: `${shift.id}-after Leave ${leave.debug()}`,
+            id: `${shift.id}-after Leave_${leave.date.toString()}`,
             startTime: leave.getEndDateTime(),
-            duration: afterLeave.toDuration(),
+            duration: afterLeave.duration(),
           }),
       ]).filter(identity);
     }),
@@ -82,7 +86,7 @@ export const curateLeaves = (timecard: WorkingPeriodTimecard) => {
 
   const filterOutPaidLeavesCanceledByHolidays = (leave: Leave) =>
     leave.compensation !== 'PAID' ||
-    !holidays.some(holiday => holiday.getInterval().overlaps(leave.getInterval()));
+    !holidays.some(holiday => holiday.getTimeSlot().overlaps(leave.getTimeSlot()));
 
   const leaves = timecard.leaves
     .filterNot(leave => leave.absenceType === 'HOLIDAY')

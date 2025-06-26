@@ -1,7 +1,16 @@
-import { DateTimeFormatter, Duration, Instant, LocalDate, LocalDateTime, LocalTime, ZoneId } from '@js-joda/core';
+import {
+  DateTimeFormatter,
+  Duration,
+  Instant,
+  LocalDate,
+  LocalDateTime,
+  LocalTime,
+  ZoneId,
+} from '@js-joda/core';
 import { Interval } from '@js-joda/extra';
 import { Map, ValueObject } from 'immutable';
 import { TypeProps } from '../../../../~shared/util/types';
+import { LocalTimeSlot } from '../../local-time-slot';
 import { LeaveRetribution, PaidLeaveReason, UnpaidLeaveReason } from './leave-retribution';
 import '@js-joda/timezone';
 
@@ -56,11 +65,8 @@ export class Leave implements ValueObject, ILeave {
     return LocalDateTime.of(this.date, this.endTime);
   }
 
-  getInterval(): Interval {
-    return Interval.of(
-      Instant.from(this.getStartDateTime().atZone(ZoneId.of('Europe/Paris'))),
-      Instant.from(this.getEndDateTime().atZone(ZoneId.of('Europe/Paris')))
-    );
+  getTimeSlot() {
+    return new LocalTimeSlot(this.startTime, this.endTime);
   }
 
   with(params: Partial<Leave>): Leave {

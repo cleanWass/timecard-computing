@@ -81,8 +81,8 @@ export const _attributeSurchargesCoreLogic = (
   const relevantShiftsFromTc = tc.shifts.filter(shift => SHIFT_TYPE_PRIORITY.includes(shift.type));
 
   const shiftsForThisSurchargeType = relevantShiftsFromTc
-    .filter(shift => specificShiftFilter(shift))
-    .map(shift => shiftTransformer(shift));
+    .filter(specificShiftFilter)
+    .map(shiftTransformer);
 
   const sortedShiftsForThisSurchargeType = shiftsForThisSurchargeType.sort((a, b) => {
     const typeAPriority = SHIFT_TYPE_PRIORITY.indexOf(a.type);
