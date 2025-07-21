@@ -1,8 +1,6 @@
 import { DateTimeFormatter, Duration, LocalDate, LocalTime, Month } from '@js-joda/core';
 import { format } from 'fast-csv';
 import { pipe } from 'fp-ts/lib/function';
-import * as O from 'fp-ts/Option';
-import * as E from 'fp-ts/Either';
 import * as TE from 'fp-ts/TaskEither';
 import fs from 'fs';
 import { List } from 'immutable';
@@ -10,6 +8,7 @@ import { formatObjectDurations } from '../application/csv-generation/export-csv'
 import { ShiftHeaders } from '../application/csv-generation/headers';
 import { computeTimecardForEmployee } from '../application/timecard-computation/compute-timecard-for-employee';
 import { AnalyzedShift } from '../domain/models/cost-efficiency/analyzed-shift';
+import { getTranslatedLeaveReason } from '../domain/models/leave-recording/leave/leave-retribution';
 import { LocalDateRange } from '../domain/models/local-date-range';
 import { BillingPeriodDefinitionService } from '../domain/service/billing-period-definition/billing-period-definition-service';
 import { fetchEmployeeDataFromCache } from '../infrastructure/server/timecard-route-service';
@@ -36,7 +35,6 @@ const generatePremiumDetails = ({
           `Il y a  ${clR.length} cleaners actifs pour la période ${period.toFormattedString()}`
         )
     ),
-    // TE.map(cl => [...cl.slice(0, 1)]),
     TE.chainW(
       TE.traverseSeqArray(cleanerData => {
         return pipe(
@@ -48,18 +46,35 @@ const generatePremiumDetails = ({
         );
       })
     ),
-    TE.map(result => ({
-      shifts: result.flatMap(t => t.data.shifts),
-      timecards: result.flatMap(t => t.timecards),
-      premiumShifts: List(
+    TE.map(result => {
+      const shifts = result
+        .flatMap(t => t.timecards)
+        .flatMap(t => t.timecards)
+        .flatMap(t => t.shifts.toArray());
+
+      const leaves = result
+        .flatMap(t => t.timecards)
+        .flatMap(t => t.timecards)
+        .flatMap(t => t.leaves.toArray());
+
+      const timecards = result.flatMap(t => t.timecards);
+
+      const premiumShifts = List(
         result
           .flatMap(t =>
             t.timecards.timecards.map(txc => txc.analyzedShifts || List<AnalyzedShift>()).flat(1)
           )
           .filter(t => t.size > 0)
-      ).flatten(false) as List<AnalyzedShift>,
-    })),
-    TE.chain(({ premiumShifts, timecards, shifts }) => {
+      ).flatten(false) as List<AnalyzedShift>;
+
+      return {
+        shifts,
+        leaves,
+        timecards,
+        premiumShifts,
+      };
+    }),
+    TE.chain(({ premiumShifts, timecards, shifts, leaves }) => {
       console.log('starting CSV generation');
       try {
         shifts.forEach(shift => {
@@ -76,7 +91,7 @@ const generatePremiumDetails = ({
               )?.type || 'Unknown';
           const extraRates = premiumShifts.find(s => s.shift.id === shift.id)?.hoursBreakdown;
 
-          const csvRow = {
+          const csvRow: { [k in (typeof ShiftHeaders)[number]]: string } = {
             ClientId: shift.clientId,
             ClientName: shift.clientName,
             ShiftId: shift.id,
@@ -87,6 +102,7 @@ const generatePremiumDetails = ({
             'Type de Shift': shift.type,
             'Nature du contrat': contractType,
             'Id Silae': shift.silaeId || shift.employeeId,
+            "Motif d'Absence": '',
 
             ...formatObjectDurations({
               HN: extraRates?.TotalNormal || Duration.ZERO,
@@ -105,6 +121,34 @@ const generatePremiumDetails = ({
           };
           csvStream.write(csvRow);
         });
+        leaves.forEach(leave => {
+          const csvRow: { [k in (typeof ShiftHeaders)[number]]: string } = {
+            ClientId: leave.clientId,
+            ClientName: leave.clientName,
+            ShiftId: leave.id,
+            Date: formatDate(leave.date),
+            'Heure de début': formatTime(leave.startTime),
+            'Heure de fin': formatTime(leave.endTime),
+            'Durée du Shift': formatDurationAs100(leave.duration),
+            'Type de Shift': 'Absence',
+            'Nature du contrat': '',
+            'Id Silae': leave.employeeId,
+            "Motif d'Absence": getTranslatedLeaveReason(leave.absenceType) || '',
+            HN: '',
+            HC10: '',
+            HC11: '',
+            HC25: '',
+            HS25: '',
+            HS50: '',
+            HNuit: '',
+            MajoNuit100: '',
+            HDim: '',
+            MajoDim100: '',
+            MAJOFERIEH: '',
+            MAJOFERIEP: '',
+          };
+          csvStream.write(csvRow);
+        });
         csvStream.end();
         return TE.right({ premiumShifts, timecards, shifts });
       } catch (e) {
@@ -118,19 +162,23 @@ const generatePremiumDetails = ({
     })
   );
 
-const { DECEMBER, MAY, MARCH, APRIL } = Month;
+const { DECEMBER, JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE } = Month;
+
 const main = async () => {
-  const periods = new BillingPeriodDefinitionService().getBillingPeriodForMonths(
-    [APRIL, MARCH, MAY],
-    '2025'
-  );
+  const periods2025 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
+    months: [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE],
+    year: '2025',
+  });
+  const periods2024 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
+    months: [DECEMBER],
+    year: '2024',
+  });
   return pipe(
-    periods,
+    periods2025,
     TE.fromEither,
     TE.chain(
       TE.traverseSeqArray(period => {
         console.log(`Using period: ${period.start.toString()} to ${period.end.toString()}`);
-
         const dirPath = `exports/premium_details/${period.end.year()}`;
         if (!fs.existsSync(dirPath)) {
           fs.mkdirSync(dirPath, { recursive: true });

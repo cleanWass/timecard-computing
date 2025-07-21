@@ -71,9 +71,13 @@ export const curateLeaves = (timecard: WorkingPeriodTimecard) => {
   const holidays = timecard.leaves.filter(leave => leave.absenceType === 'HOLIDAY');
   const planning = timecard.weeklyPlanning;
 
-  const holidayLeavesFromPlanning = holidays.flatMap(({ date }) =>
+  const holidayLeavesFromPlanning = holidays.flatMap(({ date, id, clientId, clientName }) =>
     planning.get(date.dayOfWeek(), Set<LocalTimeSlot>()).map(slot =>
       Leave.build({
+        id: `${id}-${date.toString()}-${slot.startTime.toString()}-${slot.endTime.toString()}`,
+        employeeId: timecard.employee.silaeId || timecard.employee.id,
+        clientId,
+        clientName,
         startTime: slot.startTime,
         endTime: slot.endTime,
         date,

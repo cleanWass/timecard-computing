@@ -21,11 +21,14 @@ import { prepareEnv } from './prepare-env';
 export const formatObjectDurations = (rawObject: {
   [key in (typeof WorkedHoursHeaders)[number]]: Duration;
 }) =>
-  keys(rawObject).reduce((res, code) => {
-    const value = Math.round(((rawObject[code] || Duration.ZERO).toMinutes() / 15) * 15);
-    const durationAs100 = formatDurationAs100(Duration.ofMinutes(value), '');
-    return { ...res, [code]: durationAs100 === '0' ? '' : durationAs100 };
-  }, {});
+  keys(rawObject).reduce(
+    (res, code) => {
+      const value = Math.round(((rawObject[code] || Duration.ZERO).toMinutes() / 15) * 15);
+      const durationAs100 = formatDurationAs100(Duration.ofMinutes(value), '');
+      return { ...res, [code]: durationAs100 === '0' ? '' : durationAs100 };
+    },
+    {} as { [k in (typeof WorkedHoursHeaders)[number]]: string }
+  );
 
 export type TimecardComputationResult = ExtractEitherRightType<
   ReturnType<typeof computeTimecardForEmployee>

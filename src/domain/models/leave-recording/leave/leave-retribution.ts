@@ -5,10 +5,10 @@ export const LEAVE_REASON = [
   'DISCIPLINARY_LAID_OFF',
   'LEAVE_ABSENCE_PAID',
   'MATERNITY_LEAVE',
-  'BIRTH_LEAVE',
   'PARENTAL_LEAVE',
   'PATERNITY_LEAVE',
   'SABBATICAL_LEAVE',
+  'BIRTH_LEAVE',
   'UNAUTHORIZED_LEAVE',
   'UNAUTHORIZED_LEAVE_UNPAID',
   'UNPAYED_LEAVE',
@@ -36,7 +36,14 @@ export type PaidLeaveReason =
   | 'TRAINING_LEAVE';
 
 export const isPaidLeaveReason = (reason: string): reason is PaidLeaveReason =>
-  ['CLOSED_SITE', 'COMMUTE_INJURY', 'FAMILY_LEAVE', 'PAYED_LEAVE', 'SICK_CHILD', 'TRAINING_LEAVE'].includes(reason);
+  [
+    'CLOSED_SITE',
+    'COMMUTE_INJURY',
+    'FAMILY_LEAVE',
+    'PAYED_LEAVE',
+    'SICK_CHILD',
+    'TRAINING_LEAVE',
+  ].includes(reason);
 
 export type UnpaidLeaveReason =
   | 'ILLNESS'
@@ -71,3 +78,27 @@ export const isUnpaidLeaveReason = (reason: string): reason is UnpaidLeaveReason
     'WORK_ILLNESS',
     'WORK_INJURY',
   ].includes(reason);
+
+export const getTranslatedLeaveReason = (reason: (typeof LEAVE_REASON)[number]) =>
+  [
+    'Jour férié',
+    'Maladie',
+    'Mise à pied conservatoire',
+    'Mise à pied disciplinaire',
+    'Congés Payés',
+    'Congé Maternité',
+    'Congé Parental',
+    'Congé Paternité',
+    'Congé sabbatique',
+    'Absence non autorisé',
+    'Absence non autorisé non payé',
+    'Absence non payé',
+    'Maladie Professionnelle',
+    'Accident de travail',
+    'Site fermé',
+    'Accident de trajet',
+    'Absence familiale',
+    'Absence payé',
+    'Enfant malade',
+    'Formation',
+  ][LEAVE_REASON.indexOf(reason)];

@@ -79,7 +79,13 @@ export class BillingPeriodDefinitionService {
     );
   }
 
-  getBillingPeriodForMonths(months: Month[], year: GetImmutableMapKeyType<typeof BILLING_PERIODS>) {
+  getBillingPeriodForMonths({
+    months,
+    year,
+  }: {
+    months: Month[];
+    year: GetImmutableMapKeyType<typeof BILLING_PERIODS>;
+  }) {
     return pipe(
       E.tryCatch(
         () => BILLING_PERIODS.get(year),

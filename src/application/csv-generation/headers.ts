@@ -32,6 +32,7 @@ export const ShiftHeaders = [
   'Durée du Shift',
   'Id Silae',
   'Type de Shift',
+  "Motif d'Absence",
   'Nature du contrat',
   ...WorkedHoursHeaders,
   ...HolidayPremiumRateHeaders,

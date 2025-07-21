@@ -1,4 +1,4 @@
-import { LocalDate } from '@js-joda/core';
+import { LocalDate, Month } from '@js-joda/core';
 import axios from 'axios';
 import * as E from 'fp-ts/Either';
 
@@ -15,6 +15,7 @@ import { prepareEnv } from './application/csv-generation/prepare-env';
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
 import { WorkingPeriodTimecard } from './domain/models/time-card-computation/timecard/working-period-timecard';
+import { BillingPeriodDefinitionService } from './domain/service/billing-period-definition/billing-period-definition-service';
 import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
 
 const periods = {
@@ -161,18 +162,24 @@ export const generatePayrollExports = ({
   );
 };
 
+const { DECEMBER, MAY, MARCH, APRIL } = Month;
+
 async function main() {
   try {
     const debug = process.argv.some(arg => ['--debug', '-d'].includes(arg));
+    const month = pipe(
+      new BillingPeriodDefinitionService().getBillingPeriodForMonth(MAY, '2025'),
+      E.getOrElse(() => new LocalDateRange(LocalDate.of(2025, 5, 1), LocalDate.of(2025, 5, 31)))
+    );
     const env = prepareEnv({
-      period: periods.test,
+      period: month,
       debug,
       displayLog: true,
       persistence: 'logs',
     });
     if (debug) env.log.logger('start of script');
 
-    const t = await generatePayrollExports({ debug, period: periods.test, env })();
+    const t = await generatePayrollExports({ debug, period: month, env })();
     for (const streamName in env.cvsStream) {
       env.cvsStream[streamName].end();
     }
@@ -181,5 +188,9 @@ async function main() {
     console.error(e);
   }
 }
-
-// main().catch(e => console.error(e));
+main()
+  .then(() => console.log('Job completed successfully'))
+  .catch(e => console.error('Unhandled error:', e))
+  .finally(() => {
+    console.log('Exiting process...');
+  });

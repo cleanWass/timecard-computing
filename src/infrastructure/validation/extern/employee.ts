@@ -85,16 +85,20 @@ export const employeeDataValidator = zod
           precedenceDate: pipe(shift.precedenceDate, O.fromNullable, O.map(LocalDate.parse)),
         })
       ),
-      leaves: (raw.leaves || []).map(leave =>
-        Leave.build({
+      leaves: (raw.leaves || []).map(leave => {
+        return Leave.build({
+          id: leave.id,
+          employeeId: leave.silaeId,
+          clientId: leave.clientId || 'no client id',
+          clientName: leave.clientName || 'no client name',
           startTime: LocalTime.parse(leave.startTime),
           endTime: LocalTime.parse(leave.endTime),
           date: LocalDate.parse(leave.date),
           duration: Duration.parse(leave.duration),
           compensation: isPaidLeaveReason(leave.absenceType) ? 'PAID' : 'UNPAID',
           absenceType: leave.absenceType,
-        })
-      ),
+        });
+      }),
       contracts: contractPlanningsGroupedByContractId.keySeq().map(contractId => {
         // @ts-ignore
         const { contract, planning } = raw.plannings.find(

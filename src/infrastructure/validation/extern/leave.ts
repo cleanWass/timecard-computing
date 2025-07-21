@@ -4,6 +4,10 @@ import { LEAVE_REASON } from '../../../domain/models/leave-recording/leave/leave
 import { closedPeriodValidator, dayValidator, periodValidator } from './temporals';
 
 export const leaveValidator = zod.object({
+  id: zod.string().min(1),
+  silaeId: zod.string().min(1),
+  clientId: zod.string(),
+  clientName: zod.string(),
   date: zod.string().min(1),
   startTime: zod.string().min(1),
   endTime: zod.string().min(1),
