@@ -179,16 +179,11 @@ export class Shift implements ValueObject, IShift {
   }
 
   isNightShift() {
-    return (
-      this.startTime.toLocalTime().compareTo(EmploymentContract.nightShiftTimeSlots[1].startTime) >=
-      0
-    );
+    return !!this.getTimeSlot().commonRange(EmploymentContract.nightShiftTimeSlots[1]);
   }
 
   isMorningShift() {
-    return (
-      this.startTime.toLocalTime().compareTo(EmploymentContract.nightShiftTimeSlots[0].endTime) < 0
-    );
+    return !!this.getTimeSlot().commonRange(EmploymentContract.nightShiftTimeSlots[0]);
   }
 
   debug(): string {

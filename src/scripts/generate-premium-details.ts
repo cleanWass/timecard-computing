@@ -162,7 +162,20 @@ const generatePremiumDetails = ({
     })
   );
 
-const { DECEMBER, JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE } = Month;
+const {
+  JANUARY,
+  FEBRUARY,
+  MARCH,
+  APRIL,
+  MAY,
+  JUNE,
+  JULY,
+  AUGUST,
+  SEPTEMBER,
+  OCTOBER,
+  NOVEMBER,
+  DECEMBER,
+} = Month;
 
 const main = async () => {
   const periods2025 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
@@ -170,11 +183,24 @@ const main = async () => {
     year: '2025',
   });
   const periods2024 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
-    months: [DECEMBER],
+    months: [
+      JANUARY,
+      FEBRUARY,
+      MARCH,
+      APRIL,
+      MAY,
+      JUNE,
+      JULY,
+      AUGUST,
+      SEPTEMBER,
+      OCTOBER,
+      NOVEMBER,
+      DECEMBER,
+    ],
     year: '2024',
   });
   return pipe(
-    periods2025,
+    periods2024,
     TE.fromEither,
     TE.chain(
       TE.traverseSeqArray(period => {
