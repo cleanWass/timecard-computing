@@ -8,15 +8,6 @@ import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriod } from '../../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../../~shared/error/TimecardComputationError';
 
-export const throwIfNoContract = <T>(list: List<T>) =>
-  list.isEmpty()
-    ? E.left(new TimecardComputationError('No contract matches this period 0'))
-    : E.right(list);
-
-export const filterContractsForPeriod =
-  (period: LocalDateRange) => (contracts: List<EmploymentContract>) =>
-    contracts.filter(contract => contract.period(period.end).overlaps(period));
-
 export const computeWorkingPeriods =
   (period: LocalDateRange) => (contracts: List<EmploymentContract>) =>
     pipe(
