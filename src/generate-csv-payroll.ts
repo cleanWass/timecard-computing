@@ -172,8 +172,8 @@ async function main() {
   try {
     const debug = process.argv.some(arg => ['--debug', '-d'].includes(arg));
     const periods2025 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
-      // months: [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE],
-      months: [MAY],
+      months: [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE],
+      // months: [MAY],
       year: '2025',
     });
     await pipe(

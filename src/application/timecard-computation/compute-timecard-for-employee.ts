@@ -189,13 +189,6 @@ export const mergeContractsIfSameWorkingTime = ({
             .reduce((acc, currentContract, index) => {
               const lastRegisteredContract = acc.last();
               if (index === 0 || !lastRegisteredContract) return acc.push(currentContract);
-              if (silaeId === '00914')
-                console.log(
-                  `00914 shouldBeMerged : ${shouldBeMerged(
-                    currentContract,
-                    lastRegisteredContract
-                  )} ${currentContract.debug()}${lastRegisteredContract.debug()}`
-                );
               if (shouldBeMerged(currentContract, lastRegisteredContract)) {
                 const mergedWeeklyPlannings = mergeWeeklyPlanningsBasedOnDates({
                   firstContract: lastRegisteredContract,
