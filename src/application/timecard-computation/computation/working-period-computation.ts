@@ -39,7 +39,8 @@ export const computeWorkingPeriods =
             ),
           List<WorkingPeriod>()
         )
-      )
+      ),
+      E.map(wps => wps.sort((a, b) => a.period.start.compareTo(b.period.start)))
     );
 
 export const splitPeriodIntoWorkingPeriods = (
