@@ -9,6 +9,7 @@ import { List } from 'immutable';
 import {
   formatCsvDetails,
   formatCsvSilaeExport,
+  formatCsvTotal,
   formatCsvWeekly,
 } from './application/csv-generation/export-csv';
 import { prepareEnv } from './application/csv-generation/prepare-env';
@@ -63,7 +64,7 @@ export const generatePayrollExports = ({
   debug = false,
   displayLog = true,
   env: {
-    cvsStream: { csvStreamDebug, csvStreamSilae, csvStreamWeekly },
+    csvStream: { csvStreamDebug, csvStreamSilae, csvStreamWeekly, csvStreamCompiled },
     log: { total, failed, successful, logger },
   },
 }: {
@@ -77,6 +78,7 @@ export const generatePayrollExports = ({
   let silaeBuffer: ReturnType<typeof formatCsvSilaeExport> = [];
   let debugBuffer: ReturnType<typeof formatCsvDetails> = [];
   let weeklyBuffer: ReturnType<typeof formatCsvWeekly> = [];
+  let totalBuffer: ReturnType<typeof formatCsvTotal> = [];
 
   return pipe(
     TE.tryCatch(
@@ -116,6 +118,7 @@ export const generatePayrollExports = ({
                   silaeBuffer = silaeBuffer.concat(formatCsvSilaeExport(results, logger));
                   debugBuffer = debugBuffer.concat(formatCsvDetails(results));
                   weeklyBuffer = weeklyBuffer.concat(formatCsvWeekly(results));
+                  totalBuffer = totalBuffer.concat(formatCsvTotal(results));
 
                   successful++;
                   if (debug)
@@ -153,7 +156,8 @@ export const generatePayrollExports = ({
           values => {
             silaeBuffer.forEach(v => csvStreamSilae.write(v));
             debugBuffer.forEach(v => csvStreamDebug.write(v));
-            debugBuffer.forEach(v => csvStreamWeekly.write(v));
+            weeklyBuffer.forEach(v => csvStreamWeekly.write(v));
+            totalBuffer.forEach(v => csvStreamCompiled.write(v));
             return TE.of(values);
           }
         )
@@ -162,28 +166,56 @@ export const generatePayrollExports = ({
   );
 };
 
-const { DECEMBER, MAY, MARCH, APRIL } = Month;
+const { DECEMBER, JANUARY, FEBRUARY, MAY, MARCH, APRIL, JUNE } = Month;
 
 async function main() {
   try {
     const debug = process.argv.some(arg => ['--debug', '-d'].includes(arg));
-    const month = pipe(
-      new BillingPeriodDefinitionService().getBillingPeriodForMonth(MAY, '2025'),
-      E.getOrElse(() => new LocalDateRange(LocalDate.of(2025, 5, 1), LocalDate.of(2025, 5, 31)))
-    );
-    const env = prepareEnv({
-      period: month,
-      debug,
-      displayLog: true,
-      persistence: 'logs',
+    const periods2025 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
+      // months: [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE],
+      months: [MAY],
+      year: '2025',
     });
-    if (debug) env.log.logger('start of script');
+    await pipe(
+      periods2025,
+      TE.fromEither,
+      TE.chain(
+        TE.traverseSeqArray(period => {
+          const env = prepareEnv({
+            period,
+            debug,
+            displayLog: true,
+            persistence: 'logs',
+          });
+          if (debug) env.log.logger('start of script');
 
-    const t = await generatePayrollExports({ debug, period: month, env })();
-    for (const streamName in env.cvsStream) {
-      env.cvsStream[streamName].end();
-    }
-    if (debug) env.log.logger('end of script');
+          return pipe(
+            generatePayrollExports({ debug, period, env }),
+            TE.chain(() => {
+              // End all streams
+              for (const streamName in env.csvStream) {
+                env.csvStream[streamName].end();
+              }
+
+              // Wait for all streams to finish writing before proceeding to the next period
+              return TE.tryCatch(
+                async () => {
+                  if (debug) env.log.logger('waiting for streams to finish...');
+                  await env.waitForStreamsToFinish();
+                  if (debug) env.log.logger('all streams finished');
+                  return true;
+                },
+                error => new Error(`Error waiting for streams to finish: ${error}`)
+              );
+            }),
+            TE.tap(() => {
+              if (debug) env.log.logger('end of script');
+              return TE.right(undefined);
+            })
+          );
+        })
+      )
+    )();
   } catch (e) {
     console.error(e);
   }

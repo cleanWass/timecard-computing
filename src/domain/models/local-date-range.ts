@@ -1,4 +1,11 @@
-import { ChronoUnit, DateTimeFormatter, DayOfWeek, Duration, LocalDate, TemporalAdjusters } from '@js-joda/core';
+import {
+  ChronoUnit,
+  DateTimeFormatter,
+  DayOfWeek,
+  Duration,
+  LocalDate,
+  TemporalAdjusters,
+} from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { List, Map, ValueObject } from 'immutable';
 import { IllegalArgumentError } from '../~shared/error/illegal-argument-error';
@@ -80,13 +87,11 @@ export class LocalDateRange implements ValueObject {
   }
 
   divideIntoLocalDateRange(chronoUnit: ChronoUnit) {
-    const numberOfChronoUnits = Math.ceil(ChronoUnit.DAYS.between(
-      this.start.atStartOfDay(),
-      this.end.atStartOfDay().minusDays(1)
-    ) / chronoUnit.duration().toDays());
+    const numberOfChronoUnits = Math.ceil(
+      ChronoUnit.DAYS.between(this.start.atStartOfDay(), this.end.atStartOfDay().minusDays(1)) /
+        chronoUnit.duration().toDays()
+    );
 
-    console.log('numberOfChronoUnits', numberOfChronoUnits);
-    console.log('compare', Math.max(chronoUnit.compareTo(ChronoUnit.DAYS), 1));
     return List(Array.from(new Array(numberOfChronoUnits))).reduce((acc, curr, currentIndex) => {
       return acc.push(
         new LocalDateRange(
@@ -101,27 +106,42 @@ export class LocalDateRange implements ValueObject {
   }
 
   divideIntoCalendarWeeks() {
-    const numberOfWeeks = ChronoUnit.WEEKS.between(this.start.atStartOfDay(), this.end.atStartOfDay());
+    const numberOfWeeks = ChronoUnit.WEEKS.between(
+      this.start.atStartOfDay(),
+      this.end.atStartOfDay()
+    );
 
     let weeks = List<LocalDateRange>();
-    const firstMonday = this.start.with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY))
+    const firstMonday = this.start.with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY));
     if (this.start.dayOfWeek() !== DayOfWeek.MONDAY) {
       weeks = weeks.push(new LocalDateRange(this.start, firstMonday));
     }
-    console.log('weeks ->', weeks.map(range => range.toFormattedString()).toArray().join(' | '));
-    return weeks.concat(new LocalDateRange(firstMonday, this.end).divideIntoLocalDateRange(ChronoUnit.WEEKS));
+    return weeks.concat(
+      new LocalDateRange(firstMonday, this.end).divideIntoLocalDateRange(ChronoUnit.WEEKS)
+    );
   }
 
   divideIntoCalendarMonths() {
-    const numberOfMonths = ChronoUnit.MONTHS.between(this.start.atStartOfDay(), this.end.atStartOfDay());
+    const numberOfMonths = ChronoUnit.MONTHS.between(
+      this.start.atStartOfDay(),
+      this.end.atStartOfDay()
+    );
 
     let months = List<LocalDateRange>();
-    const firstDayOfMonth = this.start.with(TemporalAdjusters.firstDayOfMonth())
+    const firstDayOfMonth = this.start.with(TemporalAdjusters.firstDayOfMonth());
     if (this.start.dayOfMonth() !== 1) {
       months = months.push(new LocalDateRange(this.start, firstDayOfMonth));
     }
-    console.log('months ->', months.map(range => range.toFormattedString()).toArray().join(' | '));
-    return months.concat(new LocalDateRange(firstDayOfMonth, this.end).divideIntoLocalDateRange(ChronoUnit.MONTHS));
+    console.log(
+      'months ->',
+      months
+        .map(range => range.toFormattedString())
+        .toArray()
+        .join(' | ')
+    );
+    return months.concat(
+      new LocalDateRange(firstDayOfMonth, this.end).divideIntoLocalDateRange(ChronoUnit.MONTHS)
+    );
   }
 
   commonRange(rangeToTest: LocalDateRange) {

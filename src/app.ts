@@ -124,8 +124,8 @@ app.post('/download-export', async (req, res) => {
         result => T.of(result)
       )
     )();
-    for (const streamName in env.cvsStream) {
-      env.cvsStream[streamName].end();
+    for (const streamName in env.csvStream) {
+      env.csvStream[streamName].end();
     }
     if (!error) {
       const filePath = path.join(process.cwd(), `/exports/rendu/${type}.csv`);

@@ -47,7 +47,7 @@ export const generateCsvFromUncachedDataForPeriod = ({
   debug = false,
   displayLog = true,
   env: {
-    cvsStream: { csvStreamDebug, csvStreamSilae, csvStreamWeekly, csvStreamCompiled },
+    csvStream: { csvStreamDebug, csvStreamSilae, csvStreamWeekly, csvStreamCompiled },
     log: { total, failed, successful, logger },
   },
 }: {
@@ -185,8 +185,8 @@ async function main() {
 
       const t = await generateCsvFromUncachedDataForPeriod({ debug, period, env })();
 
-      for (const streamName in env.cvsStream) {
-        env.cvsStream[streamName].end();
+      for (const streamName in env.csvStream) {
+        env.csvStream[streamName].end();
       }
       if (debug) env.log.logger('end of script');
     }

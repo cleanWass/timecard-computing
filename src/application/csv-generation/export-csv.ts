@@ -184,20 +184,9 @@ export const formatCsvSilaeExport = (
 ) => {
   const listTcs = List(row.timecards);
   const contracts = row.contracts.sortBy(contract => contract.startDate.toString());
-  const test = contracts.reduce((groupedContracts, contract, index, te) => {
-    logger('---------------------------');
-    logger(
-      'groupedContracts : ' +
-        JSON.stringify(
-          groupedContracts.map(cs => cs.map(c => c.initialId).join(', ')),
-          null,
-          2
-        )
-    );
-    logger('contract : ' + contract.type + ' ' + contract.subType + ' ' + contract.initialId);
+  const groupedContractsByInitialId = contracts.reduce((groupedContracts, contract, index, te) => {
     // cas ou map vide
     if (groupedContracts.size === 0) {
-      logger('cas ou map vide');
       return groupedContracts.set(Set([contract.initialId]), List([contract]));
     }
 
@@ -219,7 +208,6 @@ export const formatCsvSilaeExport = (
       contract.type === 'CDI' &&
       isContractContiguousWithPreviousContract
     ) {
-      logger('cas complement heure + CDI + continu');
       return groupedContracts
         .delete(lastEntryKey)
         .set(Set(lastEntryKey.add(contract.initialId)), previousContractsList.concat(contract));
@@ -228,13 +216,11 @@ export const formatCsvSilaeExport = (
     // cas ou un contrat avec le meme initialId est deja present
     const findKey = groupedContracts.findKey((_, initialIds) => initialIds.has(contract.initialId));
     if (findKey) {
-      logger('cas ou un contrat avec le meme initialId est deja present');
       return groupedContracts.update(findKey, contracts => contracts?.push(contract));
     }
 
     // cas ou c'est un complément d'heure
     if (contract.subType === 'complement_heure') {
-      logger('cas ou c est un complement d heure');
       return groupedContracts
         .delete(lastEntryKey || Set(['']))
         .set(
@@ -248,7 +234,6 @@ export const formatCsvSilaeExport = (
       lastContractAdded.weeklyTotalWorkedHours.equals(contract.weeklyTotalWorkedHours) &&
       isContractContiguousWithPreviousContract
     ) {
-      logger('cas ou c est un CDI et que les heures sont les memes');
       return groupedContracts
         .delete(lastEntryKey || Set(['']))
         .set(
@@ -257,11 +242,10 @@ export const formatCsvSilaeExport = (
         );
     }
 
-    logger('cas default');
     return groupedContracts.set(Set([contract.initialId]), List([contract]));
   }, OrderedMap<Set<string>, List<EmploymentContract>>());
 
-  const res = test
+  const res = groupedContractsByInitialId
     .keySeq()
     .toList()
     .map(initialIds => listTcs.filter(tc => initialIds.has(tc.contract.initialId)));
@@ -269,27 +253,6 @@ export const formatCsvSilaeExport = (
   const groupedTc = listTcs
     .groupBy(tc => tc.contract.initialId)
     .map(timecards => timecards.sortBy(tc => tc.workingPeriod.period.start.toString()));
-
-  logger(
-    'result  -->  ' +
-      JSON.stringify(
-        res
-          .map((tcs, contract) =>
-            getCsvOutput(row.employee, row.period, tcs, tcs.first()?.contract, true)
-          )
-          .valueSeq(),
-        null,
-        2
-      )
-  );
-  logger('=======RESULT========');
-  logger(
-    JSON.stringify(
-      res.toArray().map(tcs => tcs.map(tc => tc.contract.initialId).join(', ')),
-      null,
-      2
-    )
-  );
   return res
     .map(tcs => getCsvOutput(row.employee, row.period, tcs, tcs.first()?.contract, true))
     .valueSeq()

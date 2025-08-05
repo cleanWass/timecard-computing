@@ -27,7 +27,7 @@ const getPeriodAsDateRanges = (months: typeof BILLING_PERIODS_2025 | typeof BILL
     period =>
       new LocalDateRange(
         LocalDate.parse(period[0], DateTimeFormatter.ofPattern('dd/MM/yyyy')),
-        LocalDate.parse(period[1], DateTimeFormatter.ofPattern('dd/MM/yyyy'))
+        LocalDate.parse(period[1], DateTimeFormatter.ofPattern('dd/MM/yyyy')).plusDays(1)
       )
   );
 

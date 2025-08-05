@@ -72,7 +72,7 @@ app.post('/download-export', async (req, res) => {
         generatePayrollExports({ period, env }),
         TE.chainW(() => {
           // Étape 3 : Fin des streams et préparation de l'upload
-          Object.values(env.cvsStream).forEach((stream: any) => stream.end());
+          Object.values(env.csvStream).forEach((stream: any) => stream.end());
           const filePath = path.join(process.cwd(), `/exports/rendu/${type}.csv`);
           console.log('Uploading file to S3:', filePath);
           return uploadToS3(filePath, `exports/${type}.csv`); // Étape 4 : Envoi sur S3

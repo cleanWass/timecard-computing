@@ -149,7 +149,14 @@ ${period.toFormattedString()}
 ${planning
   .map(
     (slots, day) =>
-      `\t\t${day} -> ${slots.isEmpty() ? ' // ' : slots.map(s => s.debug()).join(' | ')}`
+      `\t\t${day} -> ${
+        slots.isEmpty()
+          ? ' // '
+          : slots
+              .sortBy(s => s.startTime.toString())
+              .map(s => s.debug())
+              .join(' | ')
+      }`
   )
   .join('\n')}`
               )

@@ -228,10 +228,10 @@ const main = async () => {
     )
   )();
 };
-
-main()
-  .then(() => console.log('Job completed successfully'))
-  .catch(e => console.error('Unhandled error:', e))
-  .finally(() => {
-    console.log('Exiting process...');
-  });
+//
+// main()
+//   .then(() => console.log('Job completed successfully'))
+//   .catch(e => console.error('Unhandled error:', e))
+//   .finally(() => {
+//     console.log('Exiting process...');
+//   });
