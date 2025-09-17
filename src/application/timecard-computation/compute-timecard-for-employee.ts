@@ -161,7 +161,6 @@ const mergeWeeklyPlanningsBasedOnDates = ({
 };
 
 export const mergeContractsIfSameWorkingTime = ({
-  silaeId,
   period,
   contracts,
 }: {

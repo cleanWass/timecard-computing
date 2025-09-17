@@ -62,10 +62,11 @@ const BILLING_PERIODS_2025 = Map([
 ]);
 
 const BILLING_PERIODS = Map({ '2025': BILLING_PERIODS_2025, '2024': BILLING_PERIODS_2024 }).map(
-  (months, year) => getPeriodAsDateRanges(months)
+  months => getPeriodAsDateRanges(months)
 );
 
-const BILLING_PERIODS_2025_AS_LOCAL_DATE_RANGES = getPeriodAsDateRanges(BILLING_PERIODS_2025);
+export const BILLING_PERIODS_2025_AS_LOCAL_DATE_RANGES =
+  getPeriodAsDateRanges(BILLING_PERIODS_2025);
 
 export class BillingPeriodDefinitionService {
   getBillingPeriods() {

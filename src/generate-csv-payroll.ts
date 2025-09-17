@@ -19,18 +19,6 @@ import { WorkingPeriodTimecard } from './domain/models/time-card-computation/tim
 import { BillingPeriodDefinitionService } from './domain/service/billing-period-definition/billing-period-definition-service';
 import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
 
-const periods = {
-  january: new LocalDateRange(LocalDate.parse('2023-12-18'), LocalDate.parse('2024-01-22')),
-  february: new LocalDateRange(LocalDate.parse('2024-01-22'), LocalDate.parse('2024-02-18')),
-  march: new LocalDateRange(LocalDate.parse('2024-02-19'), LocalDate.parse('2024-03-17')),
-  april: new LocalDateRange(LocalDate.parse('2024-03-18'), LocalDate.parse('2024-04-22')),
-  may: new LocalDateRange(LocalDate.parse('2024-04-22'), LocalDate.parse('2024-05-20')),
-  june: new LocalDateRange(LocalDate.parse('2024-05-20'), LocalDate.parse('2024-06-16')),
-  july: new LocalDateRange(LocalDate.parse('2024-06-17'), LocalDate.parse('2024-07-21')),
-  september: new LocalDateRange(LocalDate.parse('2024-08-19'), LocalDate.parse('2024-09-22')),
-  test: new LocalDateRange(LocalDate.parse('2025-06-21'), LocalDate.parse('2025-05-19')),
-};
-
 export type CleanerResponse = {
   cleaner: unknown & { firstName: string; lastName: string; silaeId: string };
   shifts: unknown[];
