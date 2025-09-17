@@ -169,7 +169,7 @@ const {
   JUNE,
 } = Month;
 
-async function main() {
+export async function main() {
   try {
     const debug = process.argv.some(arg => ['--debug', '-d'].includes(arg));
     const periods2025 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
@@ -177,7 +177,7 @@ async function main() {
       // months: [MAY],
       year: '2025',
     });
-    await pipe(
+    return await pipe(
       periods2025,
       TE.fromEither,
       TE.chain(
@@ -222,9 +222,3 @@ async function main() {
   }
 }
 
-main()
-  .then(() => console.log('Job completed successfully'))
-  .catch(e => console.error('Unhandled error:', e))
-  .finally(() => {
-    console.log('Exiting process...');
-  });
