@@ -173,22 +173,9 @@ async function main() {
   try {
     const debug = process.argv.some(arg => ['--debug', '-d'].includes(arg));
     const periods2025 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
-      months: [
-        SEPTEMBER,
-        AUGUST,
-        JULY,
-        OCTOBER,
-        NOVEMBER,
-        DECEMBER,
-        JANUARY,
-        FEBRUARY,
-        MAY,
-        MARCH,
-        APRIL,
-        JUNE,
-      ],
+      months: [AUGUST, JULY, JANUARY, FEBRUARY, MAY, MARCH, APRIL, JUNE],
       // months: [MAY],
-      year: '2024',
+      year: '2025',
     });
     await pipe(
       periods2025,
@@ -234,6 +221,7 @@ async function main() {
     console.error(e);
   }
 }
+
 main()
   .then(() => console.log('Job completed successfully'))
   .catch(e => console.error('Unhandled error:', e))

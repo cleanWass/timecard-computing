@@ -3,10 +3,11 @@ import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import { List, Map, Set } from 'immutable';
-import { mergeContractsIfSameWorkingTime } from './src/application/timecard-computation/compute-timecard-for-employee';
-import { EmploymentContract } from './src/domain/models/employment-contract-management/employment-contract/employment-contract';
-import { LocalDateRange } from './src/domain/models/local-date-range';
-import { LocalTimeSlot } from './src/domain/models/local-time-slot';
+
+import { mergeContractsIfSameWorkingTime } from '../../src/application/timecard-computation/curation/merge-contracts-if-same-working-time';
+import { EmploymentContract } from '../../src/domain/models/employment-contract-management/employment-contract/employment-contract';
+import { LocalDateRange } from '../../src/domain/models/local-date-range';
+import { LocalTimeSlot } from '../../src/domain/models/local-time-slot';
 
 const morningSlot = new LocalTimeSlot(LocalTime.of(6, 0), LocalTime.of(9, 0));
 const morningToNoonSlot = new LocalTimeSlot(LocalTime.of(6, 0), LocalTime.of(12, 0));

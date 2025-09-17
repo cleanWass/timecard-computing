@@ -1,15 +1,11 @@
-import { DayOfWeek, LocalDate } from '@js-joda/core';
+import { DayOfWeek } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
-import * as O from 'fp-ts/Option';
 import { pipe } from 'fp-ts/function';
 import { List, Map, Set } from 'immutable';
 import '@js-joda/timezone';
 
 import { Employee } from '../../domain/models/employee-registration/employee/employee';
-import {
-  EmploymentContract,
-  WeeklyPlanning,
-} from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
+import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../domain/models/leave-recording/leave/leave';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { LocalTimeSlot } from '../../domain/models/local-time-slot';
@@ -21,27 +17,28 @@ import { TimecardComputationError } from '../../~shared/error/TimecardComputatio
 import {
   computeExtraHoursByRate,
   computeTotalAdditionalHours,
-} from './computation/additionnal-hours-computation';
+} from './computation/compute-additional-hours';
 import {
   computeLeavesHours,
   computeTotalNormalHoursAvailable,
   computeWorkedHours,
-} from './computation/base-hours-computation';
+} from './computation/compute-base-hours';
 import { inferTotalIntercontractAndTotalContract } from './computation/infer-total-intercontract-and-total-contract';
-import { computeMealTickets } from './computation/meal-tickets-computation';
-import { computeSurchargedHours } from './computation/surcharged-hours-computation';
+import { computeMealTickets } from './computation/compute-meal-tickets';
+import { computeSurchargedHours } from './computation/compute-surcharged-hours';
 import {
   groupLeavesByWorkingPeriods,
   groupShiftsByWorkingPeriods,
   splitPeriodIntoWorkingPeriods,
-} from './computation/working-period-computation';
+} from './computation/compute-working-period';
 import {
   curateLeaves,
   filterBenchingShifts,
   filterShifts,
-} from './curation/shifts-and-period-curation';
-import { generateInactiveShiftsIfPartialWeek } from './generation/inactive-shifts-generation';
-import { generateWeeklyTimecardRecap } from './generation/weekly-timecard-recap-generation';
+} from './curation/curate-shifts-and-period';
+import { generateInactiveShiftsIfPartialWeek } from './generation/generate-inactive-shifts';
+import { generateWeeklyTimecardRecap } from './generation/generate-weekly-timecard-recap';
+import { mergeContractsIfSameWorkingTime } from './curation/merge-contracts-if-same-working-time';
 import { attributeSurchargedHoursToShifts } from './premium-hours-attribution/attribute-surcharged-hours-to-shifts';
 
 const findContract = (contracts: List<EmploymentContract>) => (workingPeriod: WorkingPeriod) =>
@@ -107,111 +104,6 @@ export const computeWorkingPeriodTimecard: (
     attributeSurchargedHoursToShifts
     // computeRentabilityForEmployee
   );
-};
-
-const shouldBeMerged = (firstContract: EmploymentContract, secondContract: EmploymentContract) =>
-  firstContract.weeklyTotalWorkedHours.equals(secondContract.weeklyTotalWorkedHours) &&
-  firstContract.type === 'CDI' &&
-  secondContract.type === 'CDI' &&
-  firstContract.subType === secondContract.subType &&
-  firstContract.subType !== 'complement_heure' &&
-  secondContract.subType !== 'complement_heure';
-
-const mergeWeeklyPlanningsBasedOnDates = ({
-  firstContract,
-  secondContract,
-}: {
-  firstContract: EmploymentContract;
-  secondContract: EmploymentContract;
-}): Map<LocalDateRange, WeeklyPlanning> => {
-  let mergedWeeklyPlannings = Map<LocalDateRange, WeeklyPlanning>();
-
-  const startDate = firstContract.startDate;
-  const endDate = secondContract.endDate;
-  const mergedPeriod = new LocalDateRange(startDate, O.getOrElse(() => LocalDate.MAX)(endDate));
-
-  const mergedWeeklyPlanning = Map<DayOfWeek, Set<LocalTimeSlot>>().withMutations(
-    weeklyPlanning => {
-      DayOfWeek.values().forEach(dayOfWeek => {
-        const firstContractPlanning = firstContract.weeklyPlannings
-          .valueSeq()
-          .flatMap(planning => planning.get(dayOfWeek, Set<LocalTimeSlot>()))
-          .toSet();
-
-        const secondContractPlanning = secondContract.weeklyPlannings
-          .valueSeq()
-          .flatMap(planning => planning.get(dayOfWeek, Set<LocalTimeSlot>()))
-          .toSet();
-
-        const firstContractEndDate = O.getOrElse(() => LocalDate.MAX)(firstContract.endDate);
-
-        const dayPlanning =
-          dayOfWeek.value() < firstContractEndDate.dayOfWeek().value()
-            ? firstContractPlanning
-            : secondContractPlanning;
-
-        weeklyPlanning.set(dayOfWeek, dayPlanning);
-      });
-    }
-  );
-
-  mergedWeeklyPlannings = mergedWeeklyPlannings.set(mergedPeriod, mergedWeeklyPlanning);
-
-  return mergedWeeklyPlannings;
-};
-
-export const mergeContractsIfSameWorkingTime = ({
-  period,
-  contracts,
-}: {
-  silaeId: string;
-  period: LocalDateRange;
-  contracts: List<EmploymentContract>;
-}) => {
-  const calendarWeeks = period.divideIntoCalendarWeeks();
-
-  const groupedContracts = calendarWeeks.reduce(
-    (res, week) =>
-      res.set(
-        week,
-        contracts.filter(c => week.overlaps(c.period(week.end)))
-      ),
-    Map<LocalDateRange, List<EmploymentContract>>()
-  );
-  const groupedContractsWithSameWorkingTime = groupedContracts.reduce((acc, ctrs, week) => {
-    return acc.set(
-      week,
-      ctrs.size <= 1
-        ? ctrs
-        : ctrs
-            .sort((a, b) => a.startDate.compareTo(b.startDate))
-            .reduce((acc, currentContract, index) => {
-              const lastRegisteredContract = acc.last();
-              if (index === 0 || !lastRegisteredContract) return acc.push(currentContract);
-              if (shouldBeMerged(currentContract, lastRegisteredContract)) {
-                const mergedWeeklyPlannings = mergeWeeklyPlanningsBasedOnDates({
-                  firstContract: lastRegisteredContract,
-                  secondContract: currentContract,
-                });
-
-                return acc.pop().push(
-                  lastRegisteredContract.with({
-                    endDate: currentContract.endDate,
-                    weeklyPlannings: mergedWeeklyPlannings,
-                  })
-                );
-              }
-              return acc.push(currentContract);
-            }, List<EmploymentContract>())
-    );
-  }, Map<LocalDateRange, List<EmploymentContract>>());
-
-  const mergedContracts = groupedContractsWithSameWorkingTime
-    .reduce((list, contracts) => list.concat(contracts), List<EmploymentContract>())
-    .toSet()
-    .toList();
-
-  return E.right(mergedContracts);
 };
 
 export const computeTimecardForEmployee = (period: LocalDateRange) => {

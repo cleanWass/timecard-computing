@@ -5,8 +5,8 @@ import { execSync } from 'child_process';
 import * as chalk from 'chalk';
 
 // Define the base directories
-const BASE_DIR_2025 = 'exports/2024';
-const BASE_DIR_2025_NEW = 'exports/2024_NEW';
+const BASE_DIR_2025 = 'exports/2025';
+const BASE_DIR_2025_NEW = 'exports/2025_NEW';
 
 /**
  * Find the most recent CSV file for a given month and format

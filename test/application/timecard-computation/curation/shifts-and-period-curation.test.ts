@@ -5,7 +5,7 @@ import {
   filterBenchingShifts,
   filterShifts,
   curateLeaves,
-} from '../../../../src/application/timecard-computation/curation/shifts-and-period-curation';
+} from '../../../../src/application/timecard-computation/curation/curate-shifts-and-period';
 import { Leave } from '../../../../src/domain/models/leave-recording/leave/leave';
 import { LocalTimeSlot } from '../../../../src/domain/models/local-time-slot';
 import { Shift } from '../../../../src/domain/models/mission-delivery/shift/shift';

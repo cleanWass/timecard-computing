@@ -217,6 +217,7 @@ const displayDiffResults = (
   options: {
     showSummaryOnly?: boolean;
     outputFormat?: 'console' | 'html';
+    onlyDiffs?: boolean;
   } = {}
 ): void => {
   const file1Name = path.basename(file1Path);
@@ -242,28 +243,30 @@ const displayDiffResults = (
   console.log(`File 1: ${chalk.default.yellow(file1Type)}`);
   console.log(`File 2: ${chalk.default.yellow(file2Type)}`);
 
-  // Summary statistics
-  console.log(chalk.default.bold('\nSummary:'));
-  console.log(
-    `Total rows in File 1: ${chalk.default.yellow(
-      result.file1Only.length + result.differences.length
-    )}`
-  );
-  console.log(
-    `Total rows in File 2: ${chalk.default.yellow(
-      result.file2Only.length + result.differences.length
-    )}`
-  );
-  console.log(`Rows only in File 1: ${chalk.default.red(result.file1Only.length)}`);
-  console.log(`Rows only in File 2: ${chalk.default.green(result.file2Only.length)}`);
-  console.log(`Rows with differences: ${chalk.default.yellow(result.differences.length)}`);
+  if (!options.onlyDiffs) {
+    // Summary statistics
+    console.log(chalk.default.bold('\nSummary:'));
+    console.log(
+      `Total rows in File 1: ${chalk.default.yellow(
+        result.file1Only.length + result.differences.length
+      )}`
+    );
+    console.log(
+      `Total rows in File 2: ${chalk.default.yellow(
+        result.file2Only.length + result.differences.length
+      )}`
+    );
+    console.log(`Rows only in File 1: ${chalk.default.red(result.file1Only.length)}`);
+    console.log(`Rows only in File 2: ${chalk.default.green(result.file2Only.length)}`);
+    console.log(`Rows with differences: ${chalk.default.yellow(result.differences.length)}`);
+  }
 
   if (options.showSummaryOnly) {
     return;
   }
 
   // Display rows only in file 1
-  if (result.file1Only.length > 0) {
+  if (!options.onlyDiffs && result.file1Only.length > 0) {
     console.log(chalk.default.bold(`\nRows only in ${file1Type} (${result.file1Only.length}):`));
 
     result.file1Only.forEach((row, index) => {
@@ -286,7 +289,7 @@ const displayDiffResults = (
   }
 
   // Display rows only in file 2
-  if (result.file2Only.length > 0) {
+  if (!options.onlyDiffs && result.file2Only.length > 0) {
     console.log(chalk.default.bold(`\nRows only in ${file2Type} (${result.file2Only.length}):`));
 
     result.file2Only.forEach((row, index) => {
@@ -358,6 +361,7 @@ const compareCSVFiles = (
     ignoreColumns?: string[];
     showSummaryOnly?: boolean;
     outputFormat?: 'console' | 'html';
+    onlyDiffs?: boolean;
   }
 ): TE.TaskEither<Error, void> => {
   return pipe(
@@ -370,6 +374,7 @@ const compareCSVFiles = (
       displayDiffResults(result, file1Path, file2Path, {
         showSummaryOnly: options.showSummaryOnly,
         outputFormat: options.outputFormat,
+        onlyDiffs: options.onlyDiffs,
       });
 
       return undefined;
@@ -400,6 +405,7 @@ program
   )
   .option('-s, --summary-only', 'Show only summary statistics', false)
   .option('-f, --format <format>', 'Output format (console or html)', 'console')
+  .option('--only-diffs', 'Display only differing rows (skip summary and unique rows)', true)
   .parse(process.argv);
 
 const options = program.opts();

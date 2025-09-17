@@ -4,7 +4,7 @@ import { pipe } from 'fp-ts/function';
 
 import { List } from 'immutable';
 import * as O from 'fp-ts/Option';
-import { getCuratedShifts } from '../../../src/application/timecard-computation/curation/shifts-and-period-curation';
+import { getCuratedShifts } from '../../../src/application/timecard-computation/curation/curate-shifts-and-period';
 import { Leave } from '../../../src/domain/models/leave-recording/leave/leave';
 import { LocalDateRange } from '../../../src/domain/models/local-date-range';
 import { LeavePeriod } from '../../../src/domain/models/leave-recording/leave/leave-period';

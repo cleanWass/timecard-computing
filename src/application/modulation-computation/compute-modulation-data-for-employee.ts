@@ -21,7 +21,7 @@ import { WorkedHoursRecap } from '../../domain/models/cost-efficiency/worked-hou
 import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
 import { sequenceList } from '../../~shared/util/sequence-list';
-import { computeWorkingPeriods } from '../timecard-computation/computation/working-period-computation';
+import { computeWorkingPeriods } from '../timecard-computation/computation/compute-working-period';
 import {
   computeModulationLeavesHours,
   computeModulationWorkedHours,
