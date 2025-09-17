@@ -1,17 +1,13 @@
-import { pipe } from 'fp-ts/function';
-import * as TE from 'fp-ts/TaskEither';
-import * as E from 'fp-ts/Either';
-import * as A from 'fp-ts/Array';
-import * as O from 'fp-ts/Option';
-import { List, Map } from 'immutable';
-import fs from 'fs';
-import path from 'path';
-import { parse } from 'fast-csv';
-
 // Standard imports
 import * as chalk from 'chalk';
 import * as Table from 'cli-table3';
 import { Command } from 'commander';
+import { parse } from 'fast-csv';
+import { pipe } from 'fp-ts/function';
+import * as TE from 'fp-ts/TaskEither';
+import fs from 'fs';
+import { List, Map } from 'immutable';
+import path from 'path';
 
 interface CsvRow {
   [key: string]: string;
@@ -54,12 +50,14 @@ const parseCSV = (filePath: string): TE.TaskEither<Error, CsvRow[]> => {
 
 /**
  * Group rows by a key column (or combination of columns)
+ * Returns a map of keys to arrays of rows
  */
-const groupRowsByKey = (rows: CsvRow[], keyColumns: string[]): Map<string, CsvRow> => {
+const groupRowsByKey = (rows: CsvRow[], keyColumns: string[]): Map<string, CsvRow[]> => {
   return List(rows).reduce((acc, row) => {
     const key = keyColumns.map(col => row[col] || '').join('|');
-    return acc.set(key, row);
-  }, Map<string, CsvRow>());
+    const existingRows = acc.get(key) || [];
+    return acc.set(key, [...existingRows, row]);
+  }, Map<string, CsvRow[]>());
 };
 
 /**
@@ -71,8 +69,19 @@ const compareCSVs = (
   keyColumns: string[],
   ignoreColumns: string[] = []
 ): DiffResult => {
-  const file1Map = groupRowsByKey(file1Rows, keyColumns);
-  const file2Map = groupRowsByKey(file2Rows, keyColumns);
+  // If no key columns are specified, use all columns for comparison
+  // but still use "Silae Id" as the display key if it exists
+  const comparisonKeyColumns =
+    keyColumns.length > 0
+      ? keyColumns
+      : file1Rows.length > 0 && file1Rows[0]['Silae Id'] !== undefined
+      ? ['Silae Id']
+      : file1Rows.length > 0
+      ? [Object.keys(file1Rows[0])[0]]
+      : [];
+
+  const file1Map = groupRowsByKey(file1Rows, comparisonKeyColumns);
+  const file2Map = groupRowsByKey(file2Rows, comparisonKeyColumns);
 
   const allKeys = new Set([...file1Map.keys(), ...file2Map.keys()]);
 
@@ -81,46 +90,126 @@ const compareCSVs = (
   const differences: DiffResult['differences'] = [];
 
   allKeys.forEach(key => {
-    const row1 = file1Map.get(key);
-    const row2 = file2Map.get(key);
+    const rows1 = file1Map.get(key) || [];
+    const rows2 = file2Map.get(key) || [];
 
-    if (!row1) {
-      file2Only.push(row2!);
-    } else if (!row2) {
-      file1Only.push(row1);
+    if (rows1.length === 0) {
+      // All rows with this key are only in file 2
+      rows2.forEach(row2 => file2Only.push(row2));
+    } else if (rows2.length === 0) {
+      // All rows with this key are only in file 1
+      rows1.forEach(row1 => file1Only.push(row1));
     } else {
-      // Both files have this row, check for differences
-      const diffColumns: Array<{ column: string; value1: string; value2: string }> = [];
+      // Both files have rows with this key
 
-      // Get all columns from both rows
-      const allColumns = new Set([...Object.keys(row1), ...Object.keys(row2)]);
+      // First, check if the number of rows is different
+      if (rows1.length !== rows2.length) {
+        // Different number of rows for this key - this is a difference
+        // Add a special difference entry for this
+        const row1 = rows1[0]; // Use the first row for display
+        const row2 = rows2[0]; // Use the first row for display
 
-      allColumns.forEach(column => {
-        // Skip key columns and ignored columns
-        if (keyColumns.includes(column) || ignoreColumns.includes(column)) {
-          return;
+        differences.push({
+          key,
+          row1,
+          row2,
+          diffColumns: [
+            {
+              column: 'Number of entries',
+              value1: rows1.length.toString(),
+              value2: rows2.length.toString(),
+            },
+          ],
+        });
+      }
+
+      // Then compare each row in file1 with each row in file2
+      // This is a simple approach that might not be perfect for all cases
+      // but should catch most differences
+      for (let i = 0; i < Math.min(rows1.length, rows2.length); i++) {
+        const row1 = rows1[i];
+        const row2 = rows2[i];
+
+        // Get all columns from both rows
+        const allColumns = new Set([...Object.keys(row1), ...Object.keys(row2)]);
+        const diffColumns: Array<{ column: string; value1: string; value2: string }> = [];
+
+        allColumns.forEach(column => {
+          // Skip key columns and ignored columns only if key columns were explicitly specified
+          if (
+            (keyColumns.length > 0 && keyColumns.includes(column)) ||
+            ignoreColumns.includes(column)
+          ) {
+            return;
+          }
+
+          const value1 = row1[column] || '';
+          const value2 = row2[column] || '';
+
+          if (value1 !== value2) {
+            diffColumns.push({ column, value1, value2 });
+          }
+        });
+
+        if (diffColumns.length > 0) {
+          differences.push({ key, row1, row2, diffColumns });
         }
+      }
 
-        const value1 = row1[column] || '';
-        const value2 = row2[column] || '';
-
-        if (value1 !== value2) {
-          diffColumns.push({ column, value1, value2 });
+      // If there are more rows in file1 than file2, add the extras to file1Only
+      if (rows1.length > rows2.length) {
+        for (let i = rows2.length; i < rows1.length; i++) {
+          file1Only.push(rows1[i]);
         }
-      });
+      }
 
-      if (diffColumns.length > 0) {
-        differences.push({ key, row1, row2, diffColumns });
+      // If there are more rows in file2 than file1, add the extras to file2Only
+      if (rows2.length > rows1.length) {
+        for (let i = rows1.length; i < rows2.length; i++) {
+          file2Only.push(rows2[i]);
+        }
       }
     }
   });
 
-  return { key: keyColumns.join('+'), file1Only, file2Only, differences };
+  // Always use "Silae Id" as the display key if it exists
+  const displayKey =
+    file1Rows.length > 0 && file1Rows[0]['Silae Id'] !== undefined
+      ? 'Silae Id'
+      : comparisonKeyColumns.join('+');
+
+  return { key: displayKey, file1Only, file2Only, differences };
 };
 
 /**
  * Format and display the diff results in a visually appealing way
  */
+/**
+ * Extract month and year from file path
+ */
+const extractMonthAndYear = (filePath: string): { month: string; year: string } => {
+  // Expected path format: exports/2025/april/05.08/14:32/april-14:32_full.csv
+  // or: exports/2025_NEW/april/05.08/14:29/april-14:29_full.csv
+  const parts = filePath.split('/');
+
+  // Find the year part (should contain 4 digits)
+  const yearPart = parts.find(part => /\d{4}/.test(part));
+  const year = yearPart ? yearPart.match(/\d{4}/)?.[0] || '' : '';
+
+  // Month should be the part after the year
+  const yearIndex = parts.findIndex(part => part === yearPart);
+  const month = yearIndex >= 0 && yearIndex + 1 < parts.length ? parts[yearIndex + 1] : '';
+
+  return { month, year };
+};
+
+/**
+ * Determine if a file is "New" or "Old" based on its path
+ */
+const getFileType = (filePath: string): string => {
+  return filePath.includes('_NEW') ? 'New' : 'Old';
+};
+
 const displayDiffResults = (
   result: DiffResult,
   file1Path: string,
@@ -133,10 +222,25 @@ const displayDiffResults = (
   const file1Name = path.basename(file1Path);
   const file2Name = path.basename(file2Path);
 
+  // Extract month and year from file paths
+  const file1Info = extractMonthAndYear(file1Path);
+  const file2Info = extractMonthAndYear(file2Path);
+
+  // Use the month and year from the first file (they should be the same)
+  const month = file1Info.month || file2Info.month || 'Unknown';
+  const year = file1Info.year || file2Info.year || 'Unknown';
+
+  // Determine file types
+  const file1Type = getFileType(file1Path);
+  const file2Type = getFileType(file2Path);
+
   console.log(chalk.default.bold('\n=== CSV Comparison Results ==='));
+  console.log(
+    chalk.default.cyan(`Month: ${month.charAt(0).toUpperCase() + month.slice(1)}, Year: ${year}`)
+  );
   console.log(`Comparing files using key: ${chalk.default.cyan(result.key)}`);
-  console.log(`File 1: ${chalk.default.yellow(file1Path)}`);
-  console.log(`File 2: ${chalk.default.yellow(file2Path)}`);
+  console.log(`File 1: ${chalk.default.yellow(file1Type)}`);
+  console.log(`File 2: ${chalk.default.yellow(file2Type)}`);
 
   // Summary statistics
   console.log(chalk.default.bold('\nSummary:'));
@@ -160,40 +264,48 @@ const displayDiffResults = (
 
   // Display rows only in file 1
   if (result.file1Only.length > 0) {
-    console.log(chalk.default.bold(`\nRows only in ${file1Name} (${result.file1Only.length}):`));
-    const table = new Table.default({
-      head: ['Key', 'Data'],
-      style: { head: ['cyan'] },
-    });
+    console.log(chalk.default.bold(`\nRows only in ${file1Type} (${result.file1Only.length}):`));
 
-    result.file1Only.forEach(row => {
-      const key = result.key
-        .split('+')
-        .map(k => row[k])
-        .join('|');
-      table.push([key, JSON.stringify(row)]);
-    });
+    result.file1Only.forEach((row, index) => {
+      // Use Silae Id if available, otherwise use the first column
+      const displayId = row['Silae Id'] || Object.values(row)[0] || 'N/A';
+      console.log(chalk.default.bold(`\nRow #${index + 1} - Silae Id: ${displayId}`));
 
-    console.log(table.toString());
+      const table = new Table.default({
+        head: ['Column', 'Value'],
+        style: { head: ['cyan'] },
+      });
+
+      // Add each column and its value to the table
+      Object.entries(row).forEach(([column, value]) => {
+        table.push([column, value]);
+      });
+
+      console.log(table.toString());
+    });
   }
 
   // Display rows only in file 2
   if (result.file2Only.length > 0) {
-    console.log(chalk.default.bold(`\nRows only in ${file2Name} (${result.file2Only.length}):`));
-    const table = new Table.default({
-      head: ['Key', 'Data'],
-      style: { head: ['cyan'] },
-    });
+    console.log(chalk.default.bold(`\nRows only in ${file2Type} (${result.file2Only.length}):`));
 
-    result.file2Only.forEach(row => {
-      const key = result.key
-        .split('+')
-        .map(k => row[k])
-        .join('|');
-      table.push([key, JSON.stringify(row)]);
-    });
+    result.file2Only.forEach((row, index) => {
+      // Use Silae Id if available, otherwise use the first column
+      const displayId = row['Silae Id'] || Object.values(row)[0] || 'N/A';
+      console.log(chalk.default.bold(`\nRow #${index + 1} - Silae Id: ${displayId}`));
 
-    console.log(table.toString());
+      const table = new Table.default({
+        head: ['Column', 'Value'],
+        style: { head: ['cyan'] },
+      });
+
+      // Add each column and its value to the table
+      Object.entries(row).forEach(([column, value]) => {
+        table.push([column, value]);
+      });
+
+      console.log(table.toString());
+    });
   }
 
   // Display differences
@@ -201,10 +313,12 @@ const displayDiffResults = (
     console.log(chalk.default.bold(`\nRows with differences (${result.differences.length}):`));
 
     result.differences.forEach((diff, index) => {
-      console.log(chalk.default.bold(`\nDifference #${index + 1} - Key: ${diff.key}`));
+      // Use Silae Id if available, otherwise use the original key
+      const displayId = diff.row1['Silae Id'] || diff.key;
+      console.log(chalk.default.bold(`\nDifference #${index + 1} - Silae Id: ${displayId}`));
 
       const table = new Table.default({
-        head: ['Column', `${file1Name} Value`, `${file2Name} Value`],
+        head: ['Column', `${file1Type} Value`, `${file2Type} Value`],
         style: { head: ['cyan'] },
       });
 
@@ -215,14 +329,22 @@ const displayDiffResults = (
       console.log(table.toString());
     });
   }
-  console.log(
-    chalk.default.yellow(
-      `Key with differences: ${result.differences
-        .sort((a, b) => a.key.localeCompare(b.key))
-        .map(d => d.key)
-        .join(', ')}`
-    )
-  );
+
+  // Display only Silae Ids with differences
+  if (result.differences.length > 0) {
+    console.log(
+      chalk.default.yellow(
+        `Silae Ids with differences: ${result.differences
+          .sort((a, b) => {
+            const idA = a.row1['Silae Id'] || a.key;
+            const idB = b.row1['Silae Id'] || b.key;
+            return idA.localeCompare(idB);
+          })
+          .map(d => d.row1['Silae Id'] || d.key)
+          .join(', ')}`
+      )
+    );
+  }
 };
 
 /**
@@ -266,9 +388,9 @@ program
   .version('1.0.0')
   .requiredOption('-1, --file1 <path>', 'Path to first CSV file')
   .requiredOption('-2, --file2 <path>', 'Path to second CSV file')
-  .requiredOption(
+  .option(
     '-k, --key-columns <columns>',
-    'Comma-separated list of columns to use as keys',
+    'Comma-separated list of columns to use as keys (if not specified, all columns will be compared)',
     val => val.split(',')
   )
   .option(
@@ -287,7 +409,7 @@ const main = async () => {
   try {
     await pipe(
       compareCSVFiles(options.file1, options.file2, {
-        keyColumns: options.keyColumns,
+        keyColumns: options.keyColumns || [],
         ignoreColumns: options.ignoreColumns || [],
         showSummaryOnly: options.summaryOnly,
         outputFormat: options.format as 'console' | 'html',

@@ -239,14 +239,10 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
       });
     }
 
-    const testChangesOnContracts = true;
-
     return pipe(
       E.Do,
       E.bind('mergedContracts', () =>
-        testChangesOnContracts
-          ? mergeContractsIfSameWorkingTime({ silaeId: employee.silaeId, contracts, period })
-          : E.right(contracts)
+        mergeContractsIfSameWorkingTime({ silaeId: employee.silaeId, contracts, period })
       ),
       E.bind('workingPeriods', ({ mergedContracts }) =>
         splitPeriodIntoWorkingPeriods(mergedContracts, period)

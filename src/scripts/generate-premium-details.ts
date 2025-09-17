@@ -179,7 +179,7 @@ const {
 
 const main = async () => {
   const periods2025 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
-    months: [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE],
+    months: [JULY, AUGUST],
     year: '2025',
   });
   const periods2024 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
@@ -200,7 +200,7 @@ const main = async () => {
     year: '2024',
   });
   return pipe(
-    periods2024,
+    periods2025,
     TE.fromEither,
     TE.chain(
       TE.traverseSeqArray(period => {
@@ -228,10 +228,3 @@ const main = async () => {
     )
   )();
 };
-//
-// main()
-//   .then(() => console.log('Job completed successfully'))
-//   .catch(e => console.error('Unhandled error:', e))
-//   .finally(() => {
-//     console.log('Exiting process...');
-//   });

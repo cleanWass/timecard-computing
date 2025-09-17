@@ -166,15 +166,41 @@ export const generatePayrollExports = ({
   );
 };
 
-const { DECEMBER, JANUARY, FEBRUARY, MAY, MARCH, APRIL, JUNE } = Month;
+const {
+  SEPTEMBER,
+  AUGUST,
+  JULY,
+  OCTOBER,
+  NOVEMBER,
+  DECEMBER,
+  JANUARY,
+  FEBRUARY,
+  MAY,
+  MARCH,
+  APRIL,
+  JUNE,
+} = Month;
 
 async function main() {
   try {
     const debug = process.argv.some(arg => ['--debug', '-d'].includes(arg));
     const periods2025 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
-      months: [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE],
+      months: [
+        SEPTEMBER,
+        AUGUST,
+        JULY,
+        OCTOBER,
+        NOVEMBER,
+        DECEMBER,
+        JANUARY,
+        FEBRUARY,
+        MAY,
+        MARCH,
+        APRIL,
+        JUNE,
+      ],
       // months: [MAY],
-      year: '2025',
+      year: '2024',
     });
     await pipe(
       periods2025,
