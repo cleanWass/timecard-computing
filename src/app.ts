@@ -103,6 +103,7 @@ app.post('/download-export', async (req, res) => {
     const startDate = LocalDate.parse(req.body.startDate);
     const endDate = LocalDate.parse(req.body.endDate);
     const type = req.body.type;
+    const fileLabel = req.body.fileLabel;
 
     const period = new LocalDateRange(startDate, endDate);
     const env = prepareEnv({
@@ -134,7 +135,7 @@ app.post('/download-export', async (req, res) => {
       const fileStream = fs.createReadStream(filePath);
       const uploadParams = {
         Bucket: process.env.AWS_S3_BUCKET_NAME || 'payrollexports',
-        Key: `exports/${type}.csv`,
+        Key: `exports/${fileLabel}.csv`,
         Body: fileStream,
         ContentType: 'text/csv',
       };
