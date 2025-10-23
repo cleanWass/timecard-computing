@@ -133,6 +133,7 @@ app.post('/download-export', async (req, res) => {
       console.log('Uploading file to S3:', filePath);
 
       const fileStream = fs.createReadStream(filePath);
+      console.log('fileLabel');
       const uploadParams = {
         Bucket: process.env.AWS_S3_BUCKET_NAME || 'payrollexports',
         Key: `exports/${fileLabel}.csv`,
