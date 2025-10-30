@@ -8,6 +8,7 @@ import {
 } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { List, Map, ValueObject } from 'immutable';
+import { formatLocalDate } from '../../~shared/util/joda-helper';
 import { IllegalArgumentError } from '../~shared/error/illegal-argument-error';
 
 export class LocalDateRange implements ValueObject {
@@ -37,11 +38,17 @@ export class LocalDateRange implements ValueObject {
     return this.valueObject.hashCode();
   }
 
-  toFormattedString(exclusiveEndDate = true) {
+  toFormattedString(
+    { exclusiveEndDate, pattern }: { exclusiveEndDate?: boolean; pattern?: string } = {
+      exclusiveEndDate: false,
+      pattern: 'dd/MM/yy',
+    }
+  ) {
     const endDate = exclusiveEndDate ? this.end : this.end.minusDays(1);
-    return `${this.start.format(DateTimeFormatter.ofPattern('dd/MM/yy'))} -> ${endDate.format(
-      DateTimeFormatter.ofPattern('dd/MM/yy')
-    )}`;
+    return `${formatLocalDate({ date: this.start, pattern })} -> ${formatLocalDate({
+      date: endDate,
+      pattern,
+    })}`;
   }
 
   contains(date: LocalDate): boolean {

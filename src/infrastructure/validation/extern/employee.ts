@@ -42,6 +42,8 @@ export const employeeValidator = zod.object({
     .optional(),
 });
 
+const dayShortcuts = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
 export const employeeDataValidator = zod
   .object({
     cleaner: employeeValidator.transform(cleaner =>
@@ -140,6 +142,18 @@ export const employeeDataValidator = zod
                 weeklyPlanning
               );
             }, Map<LocalDateRange, WeeklyPlanning>()),
+          contractualPlanning: contract?.metadata
+            ? dayShortcuts.reduce((acc, day, index) => {
+                const slots = contract.metadata.contractualPlanning[day]?.map(
+                  (slot: { start: string; end: string }) => {
+                    let startTime = LocalTime.parse(slot.start);
+                    let endTime = LocalTime.parse(slot.end);
+                    return new LocalTimeSlot(startTime, endTime);
+                  }
+                );
+                return acc.set(DayOfWeek.values()[index], Set<LocalTimeSlot>(slots));
+              }, Map<DayOfWeek, Set<LocalTimeSlot>>())
+            : Map<DayOfWeek, Set<LocalTimeSlot>>(),
         });
       }),
     };

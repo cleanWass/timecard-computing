@@ -34,7 +34,8 @@ export class EmploymentContract implements ValueObject {
       params.weeklyNightShiftHours ?? this.nightShiftTimeSlots,
       params.type,
       params.subType,
-      params.extraDuration ?? undefined
+      params.extraDuration ?? undefined,
+      params.contractualPlanning ?? undefined
     );
   }
 
@@ -53,7 +54,8 @@ export class EmploymentContract implements ValueObject {
     public readonly weeklyNightShiftHours: [LocalTimeSlot, LocalTimeSlot],
     public readonly type: ContractType,
     public readonly subType?: ContractSubType,
-    public readonly extraDuration?: Duration
+    public readonly extraDuration?: Duration,
+    public readonly contractualPlanning?: WeeklyPlanning
   ) {
     this._vo = Map<
       string,
@@ -78,7 +80,8 @@ export class EmploymentContract implements ValueObject {
       .set('type', this.type)
       .set('subType', this.subType || '')
       .set('weeklyNightShiftHours', this.weeklyNightShiftHours?.toString() || '')
-      .set('extraDuration', this.extraDuration?.toString());
+      .set('extraDuration', this.extraDuration?.toString())
+      .set('contractualPlanning', this.contractualPlanning);
   }
 
   equals(other: unknown): boolean {
@@ -125,6 +128,7 @@ export class EmploymentContract implements ValueObject {
       type: this.type,
       subType: this.subType,
       extraDuration: this.extraDuration,
+      contractualPlanning: this.contractualPlanning,
       ...params,
     });
   }
@@ -138,7 +142,24 @@ export class EmploymentContract implements ValueObject {
       type: ${this.type}
       subType: ${this.subType}
       extraDuration: ${this.extraDuration}
-      period: ${this.period(LocalDate.now()).toFormattedString()} 
+      period: ${this.period(LocalDate.now()).toFormattedString()}
+      ${
+        this.contractualPlanning
+          ? `contractualPlanning : ${this.contractualPlanning
+              .map(
+                (slots, day) =>
+                  `\t\t${day} -> ${
+                    slots?.isEmpty()
+                      ? ' // '
+                      : slots
+                          .sortBy(s => s.startTime.toString())
+                          .map(s => s.debug())
+                          .join(' | ')
+                  }`
+              )
+              .join('\n')}`
+          : ''
+      }
       ${
         showPlannings
           ? `planning: ${this.weeklyPlannings

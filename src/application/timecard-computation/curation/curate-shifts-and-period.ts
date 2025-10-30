@@ -2,6 +2,7 @@ import { Interval } from '@js-joda/extra';
 import * as E from 'fp-ts/Either';
 import { identity, pipe } from 'fp-ts/function';
 import { List, Set } from 'immutable';
+import { Bench } from '../../../domain/models/leave-recording/bench-recording/bench';
 import { Leave } from '../../../domain/models/leave-recording/leave/leave';
 import { LocalTimeSlot } from '../../../domain/models/local-time-slot';
 import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
@@ -51,12 +52,25 @@ export const getCuratedShifts = (leave: Leave, shift: Shift) =>
     E.getOrElse(() => List([shift]))
   );
 
-export const filterBenchingShifts = (timecard: WorkingPeriodTimecard) =>
-  timecard.with({
-    shifts: timecard.shifts.filter(
-      shift => shift.clientId !== '0010Y00000Ijn8cQAB' || shift.type !== 'Intercontrat'
-    ),
+export const filterBenchingShifts = (timecard: WorkingPeriodTimecard) => {
+  const shifts = timecard.shifts.filterNot(Bench.isBench);
+  const benches = timecard.benches.concat(
+    timecard.shifts.filter(Bench.isBench).map(sh =>
+      Bench.build({
+        id: sh.id,
+        employeeId: sh.employeeId,
+        date: sh.getDate(),
+        timeslot: sh.getTimeSlot(),
+        client: { name: sh.clientName, id: sh.clientId },
+      })
+    )
+  );
+
+  return timecard.with({
+    shifts,
+    benches,
   });
+};
 
 export const filterShifts = (timecard: WorkingPeriodTimecard) => {
   const shifts = timecard.shifts.flatMap(shift => {

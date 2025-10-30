@@ -1,25 +1,30 @@
-import { DateTimeFormatter, DayOfWeek, Duration, LocalDate } from '@js-joda/core';
+import { DayOfWeek, Duration, LocalDate, LocalDateTime } from '@js-joda/core';
 import { List, Map, Set, ValueObject } from 'immutable';
-import { formatDuration, formatDurationAs100 } from '../../../../~shared/util/joda-helper';
-import { keys, TypeProps } from '../../../../~shared/util/types';
-import { Employee } from '../../employee-registration/employee/employee';
 import {
-  EmploymentContract,
-  WeeklyPlanning,
-} from '../../employment-contract-management/employment-contract/employment-contract';
-import { Leave } from '../../leave-recording/leave/leave';
-import { LocalDateRange } from '../../local-date-range';
-import { LocalTimeSlot } from '../../local-time-slot';
-import { InactiveShift } from '../../mission-delivery/shift/inactive-shift';
-import { Shift } from '../../mission-delivery/shift/shift';
-import { WorkingPeriod } from '../working-period/working-period';
+  formatDuration,
+  formatDurationAs100,
+  formatLocalDate,
+} from '../../../../~shared/util/joda-helper';
+import { keys, TypeProps } from '../../../../~shared/util/types';
+import { AnalyzedShift } from '../../cost-efficiency/analyzed-shift';
 import {
   HoursTypeCodes,
   WorkedHoursRate,
   WorkedHoursRecap,
   WorkedHoursRecapType,
 } from '../../cost-efficiency/worked-hours-rate';
-import { AnalyzedShift } from '../../cost-efficiency/analyzed-shift';
+import { Employee } from '../../employee-registration/employee/employee';
+import {
+  EmploymentContract,
+  WeeklyPlanning,
+} from '../../employment-contract-management/employment-contract/employment-contract';
+import { Bench } from '../../leave-recording/bench-recording/bench';
+import { Leave } from '../../leave-recording/leave/leave';
+import { LocalDateRange } from '../../local-date-range';
+import { LocalTimeSlot } from '../../local-time-slot';
+import { InactiveShift } from '../../mission-delivery/shift/inactive-shift';
+import { Shift } from '../../mission-delivery/shift/shift';
+import { WorkingPeriod } from '../working-period/working-period';
 
 type WorkingPeriodTimecardId = string;
 
@@ -32,6 +37,7 @@ export interface IWorkingPeriodTimecard {
   weeklyPlanning: WeeklyPlanning;
   shifts: List<Shift>;
   leaves: List<Leave>;
+  benches: Set<Bench>;
   inactiveShifts: List<InactiveShift>;
   mealTickets: number;
   rentability: number;
@@ -52,6 +58,7 @@ export class WorkingPeriodTimecard implements ValueObject {
     public readonly shifts: List<Shift>,
     public readonly leaves: List<Leave>,
     public readonly inactiveShifts: List<InactiveShift>,
+    public readonly benches: Set<Bench>,
     public readonly mealTickets: number,
     public readonly rentability: number,
     public readonly analyzedShifts?: List<AnalyzedShift>
@@ -65,6 +72,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       .set('shifts', this.shifts)
       .set('leaves', this.leaves)
       .set('inactiveShifts', this.inactiveShifts)
+      .set('benches', this.benches)
       .set('mealTickets', this.mealTickets)
       .set('rentability', this.rentability)
       .set('weeklyPlanning', this.weeklyPlanning)
@@ -78,6 +86,7 @@ export class WorkingPeriodTimecard implements ValueObject {
     weeklyPlanning: WeeklyPlanning;
 
     shifts: List<Shift>;
+    benches?: Set<Bench>;
     inactiveShifts?: List<InactiveShift>;
 
     leaves: List<Leave>;
@@ -87,7 +96,10 @@ export class WorkingPeriodTimecard implements ValueObject {
     rentability?: number;
   }) {
     return new WorkingPeriodTimecard(
-      `${WorkingPeriodTimecard.count++}`,
+      `${params.employee.silaeId}|${formatLocalDate({
+        date: params.workingPeriod.period.start,
+        pattern: 'dd-MM-yy',
+      })}|${formatLocalDate({ date: params.workingPeriod.period.end, pattern: 'dd-MM-yy' })}`,
       params.employee,
       params.contract,
       params.workingPeriod,
@@ -96,6 +108,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.shifts,
       params.leaves ?? List<Leave>(),
       List<InactiveShift>(),
+      params.benches ?? Set<Bench>(),
       params.mealTickets ?? 0,
       params.rentability ?? 0
     );
@@ -172,6 +185,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.shifts ?? this.shifts,
       params.leaves ?? this.leaves,
       params.inactiveShifts ?? this.inactiveShifts,
+      params.benches ?? this.benches,
       params.mealTickets ?? this.mealTickets,
       params.rentability ?? this.rentability,
       params.analyzedShifts ?? this.analyzedShifts
@@ -218,6 +232,13 @@ export class WorkingPeriodTimecard implements ValueObject {
         Shifts: ${this.shifts
           .sortBy(
             s => s.startTime,
+            (a, b) => a.compareTo(b)
+          )
+          .map(s => s.debug())
+          .join(' | ')}
+        Benches: ${this.benches
+          .sortBy(
+            s => LocalDateTime.of(s.date, s.timeslot.startTime),
             (a, b) => a.compareTo(b)
           )
           .map(s => s.debug())

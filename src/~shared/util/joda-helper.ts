@@ -1,4 +1,10 @@
-import { DayOfWeek, Duration, LocalDate, TemporalAdjusters } from '@js-joda/core';
+import {
+  DateTimeFormatter,
+  DayOfWeek,
+  Duration,
+  LocalDate,
+  TemporalAdjusters,
+} from '@js-joda/core';
 import { List } from 'immutable';
 
 export const getFirstDayOfWeek = (date: LocalDate) =>
@@ -24,3 +30,6 @@ type WithDuration<T> = T & { duration: Duration };
 
 export const getTotalDuration = <T>(entities: List<WithDuration<T>>) =>
   entities.reduce((acc, entity) => acc.plus(entity.duration), Duration.ZERO);
+
+export const formatLocalDate = ({ date, pattern }: { date: LocalDate; pattern?: string }) =>
+  date.format(DateTimeFormatter.ofPattern(pattern || 'dd/MM/yy'));

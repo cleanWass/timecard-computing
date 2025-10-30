@@ -115,7 +115,9 @@ const getPeriodValue = (
   periodToCompute: LocalDateRange
 ) => {
   const period = WorkingPeriodTimecard.getTotalWorkingPeriod(timecards);
-  return (periodToCompute.commonRange(period) || period).toFormattedString(false);
+  return (periodToCompute.commonRange(period) || period).toFormattedString({
+    exclusiveEndDate: false,
+  });
 };
 
 export const getFunctionTranslations = (role: EmployeeRole) => EMPLOYEE_ROLE_TRANSLATIONS[role];

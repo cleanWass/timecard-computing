@@ -1,4 +1,4 @@
-import { LocalDate } from '@js-joda/core';
+import { DateTimeFormatter, LocalDate } from '@js-joda/core';
 import * as AWS from 'aws-sdk';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -15,23 +15,17 @@ import * as path from 'node:path';
 import * as process from 'node:process';
 import { prepareEnv } from './application/csv-generation/prepare-env';
 import { LocalDateRange } from './domain/models/local-date-range';
-import { generatePayrollExports } from './generate-csv-payroll';
+import { fetchPayrollData, generatePayrollExports } from './generate-csv-payroll';
 import { formatTimecardComputationReturn } from './infrastructure/formatting/format-timecard-response';
+import { intercontractGenerationRoute } from './infrastructure/route/intercontract-generation-route';
 import { handleModulationDataComputationRoute } from './infrastructure/route/modulation-data-computation-route';
 import { handleTimecardComputationRoute } from './infrastructure/route/timecard-computation-route';
+import { fetchIntercontractData } from './infrastructure/server/intercontract-generation-route-service';
 import { ParseError } from './~shared/error/ParseError';
 import { TimecardComputationError } from './~shared/error/TimecardComputationError';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-
-// // Middleware de journalisation
-// app.use((req, res, next) => {
-//   console.log(`Requête reçue: ${req.method} ${req.url}`);
-//   console.log('En-têtes:', req.headers);
-//   console.log('Corps:', req.body);
-//   next();
-// });
 
 app.use(
   cors({
@@ -161,4 +155,35 @@ app.post('/download-export', async (req, res) => {
     console.error('Unexpected error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
+});
+
+app.post('/intercontract-generation-data', async (req, res) => {
+  console.log('Handling intercontract generation data');
+  const startDate = LocalDate.parse(req.body.startDate, DateTimeFormatter.ofPattern('dd/MM/yy'));
+  const endDate = LocalDate.parse(req.body.endDate, DateTimeFormatter.ofPattern('dd/MM/yy'));
+  const period = new LocalDateRange(startDate, endDate);
+  await pipe(
+    TE.tryCatch(
+      () => fetchIntercontractData(period),
+      e => {
+        return new Error(`Fetching cached data from care data parser went wrong ${e}`);
+      }
+    ),
+    TE.chain(payload => intercontractGenerationRoute(payload)),
+    TE.fold(
+      e => {
+        console.error('Error in TE.fold:', e);
+        return T.of(res.status(500).json({ error: e }));
+      },
+      result => {
+        if (result) {
+          console.log('Result:', result);
+          return T.of(res.status(200).json(result));
+        } else {
+          console.error('Error in TE.fold: Expected Right, but got Left', result);
+          return T.of(res.status(500).json({ error: 'Unexpected result format' }));
+        }
+      }
+    )
+  )();
 });

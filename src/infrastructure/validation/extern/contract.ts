@@ -10,6 +10,11 @@ export const contractValidator = zod.object({
   subType: zod.string().nullish(),
   weeklyHours: zod.string(),
   extraDuration: zod.string().nullish(),
+  metadata: zod
+    .object({
+      contractualPlanning: zod.string().transform(v => JSON.parse(v)),
+    })
+    .optional(),
 });
 
 export type ContractValidatorType = zod.infer<typeof contractValidator>;
