@@ -12,7 +12,10 @@ export const contractValidator = zod.object({
   extraDuration: zod.string().nullish(),
   metadata: zod
     .object({
-      contractualPlanning: zod.string().transform(v => JSON.parse(v)),
+      contractualPlanning: zod
+        .string()
+        .transform(v => JSON.parse(v))
+        .optional(),
     })
     .optional(),
 });

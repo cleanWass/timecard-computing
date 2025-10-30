@@ -142,7 +142,7 @@ export const employeeDataValidator = zod
                 weeklyPlanning
               );
             }, Map<LocalDateRange, WeeklyPlanning>()),
-          contractualPlanning: contract?.metadata
+          contractualPlanning: contract?.metadata?.contractualPlanning
             ? dayShortcuts.reduce((acc, day, index) => {
                 const slots = contract.metadata.contractualPlanning[day]?.map(
                   (slot: { start: string; end: string }) => {
@@ -153,7 +153,9 @@ export const employeeDataValidator = zod
                 );
                 return acc.set(DayOfWeek.values()[index], Set<LocalTimeSlot>(slots));
               }, Map<DayOfWeek, Set<LocalTimeSlot>>())
-            : Map<DayOfWeek, Set<LocalTimeSlot>>(),
+            : Map<DayOfWeek, Set<LocalTimeSlot>>(
+                dayShortcuts.map((d, index) => [DayOfWeek.values()[index], Set<LocalTimeSlot>()])
+              ),
         });
       }),
     };
