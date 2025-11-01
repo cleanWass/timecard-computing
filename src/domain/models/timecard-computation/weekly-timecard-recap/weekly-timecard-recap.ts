@@ -9,12 +9,14 @@ import { WorkingPeriodTimecard } from '../timecard/working-period-timecard';
 export class WeeklyTimecardRecap implements ValueObject {
   private static count = 0;
   public static build({
+    id = `WTR-${WeeklyTimecardRecap.count++}`,
     week,
     employee,
     workingPeriods,
     employmentContracts,
     workingPeriodTimecards,
   }: {
+    id?: WeeklyTimecardRecapId;
     week: LocalDateRange;
     employee: Employee;
     workingPeriods: List<WorkingPeriod>;
@@ -22,7 +24,7 @@ export class WeeklyTimecardRecap implements ValueObject {
     workingPeriodTimecards: List<WorkingPeriodTimecard>;
   }) {
     return new WeeklyTimecardRecap(
-      `${WeeklyTimecardRecap.count++}`,
+      id,
       employee,
       week,
       workingPeriods,

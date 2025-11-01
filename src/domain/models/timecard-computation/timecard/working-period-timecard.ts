@@ -30,18 +30,21 @@ type WorkingPeriodTimecardId = string;
 
 export interface IWorkingPeriodTimecard {
   id: WorkingPeriodTimecardId;
+
   employee: Employee;
   contract: EmploymentContract;
-  workingPeriod: WorkingPeriod;
-  workedHours: WorkedHoursRecapType;
   weeklyPlanning: WeeklyPlanning;
+
+  workingPeriod: WorkingPeriod;
+
   shifts: List<Shift>;
   leaves: List<Leave>;
   benches: Set<Bench>;
   inactiveShifts: List<InactiveShift>;
+  analyzedShifts: List<AnalyzedShift>;
+
+  workedHours: WorkedHoursRecapType;
   mealTickets: number;
-  rentability: number;
-  analyzedShifts?: List<AnalyzedShift>;
 }
 
 export class WorkingPeriodTimecard implements ValueObject {
@@ -50,50 +53,49 @@ export class WorkingPeriodTimecard implements ValueObject {
 
   constructor(
     public readonly id: WorkingPeriodTimecardId,
+
     public readonly employee: Employee,
     public readonly contract: EmploymentContract,
-    public readonly workingPeriod: WorkingPeriod,
-    public readonly workedHours: WorkedHoursRecapType,
     public readonly weeklyPlanning: WeeklyPlanning,
+
+    public readonly workingPeriod: WorkingPeriod,
+
     public readonly shifts: List<Shift>,
     public readonly leaves: List<Leave>,
-    public readonly inactiveShifts: List<InactiveShift>,
     public readonly benches: Set<Bench>,
-    public readonly mealTickets: number,
-    public readonly rentability: number,
-    public readonly analyzedShifts?: List<AnalyzedShift>
+    public readonly inactiveShifts: List<InactiveShift>,
+    public readonly analyzedShifts: List<AnalyzedShift>,
+
+    public readonly workedHours: WorkedHoursRecapType,
+    public readonly mealTickets: number
   ) {
     this._vo = Map<string, TypeProps<IWorkingPeriodTimecard>>()
       .set('id', this.id)
       .set('employee', this.employee)
       .set('contract', this.contract)
+      .set('weeklyPlanning', this.weeklyPlanning)
       .set('workingPeriod', this.workingPeriod)
-      .set('workedHours', this.workedHours)
       .set('shifts', this.shifts)
       .set('leaves', this.leaves)
-      .set('inactiveShifts', this.inactiveShifts)
       .set('benches', this.benches)
-      .set('mealTickets', this.mealTickets)
-      .set('rentability', this.rentability)
-      .set('weeklyPlanning', this.weeklyPlanning)
-      .set('analyzedShifts', this.analyzedShifts);
+      .set('inactiveShifts', this.inactiveShifts)
+      .set('analyzedShifts', this.analyzedShifts)
+      .set('workedHours', this.workedHours)
+      .set('mealTickets', this.mealTickets);
   }
 
   public static build(params: {
     employee: Employee;
     contract: EmploymentContract;
-    workingPeriod: WorkingPeriod;
     weeklyPlanning: WeeklyPlanning;
 
+    workingPeriod: WorkingPeriod;
+
     shifts: List<Shift>;
-    benches?: Set<Bench>;
-    inactiveShifts?: List<InactiveShift>;
 
     leaves: List<Leave>;
 
-    workedHours?: WorkedHoursRecapType;
     mealTickets?: number;
-    rentability?: number;
   }) {
     return new WorkingPeriodTimecard(
       `${params.employee.silaeId}|${formatLocalDate({
@@ -102,15 +104,19 @@ export class WorkingPeriodTimecard implements ValueObject {
       })}|${formatLocalDate({ date: params.workingPeriod.period.end, pattern: 'dd-MM-yy' })}`,
       params.employee,
       params.contract,
-      params.workingPeriod,
-      params.workedHours ?? new WorkedHoursRecap(),
       params.weeklyPlanning ?? Map<DayOfWeek, Set<LocalTimeSlot>>(),
+
+      params.workingPeriod,
+
       params.shifts,
       params.leaves ?? List<Leave>(),
+      Set<Bench>(),
+
       List<InactiveShift>(),
-      params.benches ?? Set<Bench>(),
-      params.mealTickets ?? 0,
-      params.rentability ?? 0
+      List<AnalyzedShift>(),
+
+      new WorkedHoursRecap(),
+      0
     );
   }
 
@@ -178,17 +184,18 @@ export class WorkingPeriodTimecard implements ValueObject {
     return new WorkingPeriodTimecard(
       params.id ?? this.id,
       params.employee ?? this.employee,
+
       params.contract ?? this.contract,
-      params.workingPeriod ?? this.workingPeriod,
-      params.workedHours ?? this.workedHours,
       params.weeklyPlanning ?? this.weeklyPlanning,
+
+      params.workingPeriod ?? this.workingPeriod,
       params.shifts ?? this.shifts,
       params.leaves ?? this.leaves,
-      params.inactiveShifts ?? this.inactiveShifts,
       params.benches ?? this.benches,
-      params.mealTickets ?? this.mealTickets,
-      params.rentability ?? this.rentability,
-      params.analyzedShifts ?? this.analyzedShifts
+      params.inactiveShifts ?? this.inactiveShifts,
+      params.analyzedShifts ?? this.analyzedShifts,
+      params.workedHours ?? this.workedHours,
+      params.mealTickets ?? this.mealTickets
     );
   }
 
