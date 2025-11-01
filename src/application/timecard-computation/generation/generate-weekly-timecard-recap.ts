@@ -4,8 +4,8 @@ import { List, Map } from 'immutable';
 import * as E from 'fp-ts/Either';
 import { Employee } from '../../../domain/models/employee-registration/employee/employee';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
-import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
-import { WeeklyTimecardRecap } from '../../../domain/models/time-card-computation/weekly-timecard-recap/weekly-timecard-recap';
+import { WorkingPeriodTimecard } from '../../../domain/models/timecard-computation/timecard/working-period-timecard';
+import { WeeklyTimecardRecap } from '../../../domain/models/timecard-computation/weekly-timecard-recap/weekly-timecard-recap';
 
 export const generateWeeklyTimecardRecap = (
   timecards: List<WorkingPeriodTimecard>,
@@ -16,7 +16,9 @@ export const generateWeeklyTimecardRecap = (
     generateWeeksForPeriod(period),
     E.map(weeks =>
       weeks.reduce((res, week) => {
-        const timecardsForWeek = timecards.filter(timecard => week.overlaps(timecard.workingPeriod.period));
+        const timecardsForWeek = timecards.filter(timecard =>
+          week.overlaps(timecard.workingPeriod.period)
+        );
         return res.set(
           week,
           WeeklyTimecardRecap.build({

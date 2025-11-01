@@ -42,9 +42,6 @@ export const formatIntercontractGenerationPayload = (
     )
   );
 
-export const validateIntercontractGenerationRoutePayload = (data: unknown) =>
-  pipe(data, parseIntercontractGenerationPayload, formatIntercontractGenerationPayload);
-
 export const fetchIntercontractData = async ({ start, end }: LocalDateRange) => {
   const url = `${process.env.CARE_DATA_PARSER_URL || 'http://localhost:3000'}/intercontract`;
   const r = await axios.post(url, {

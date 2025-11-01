@@ -6,7 +6,7 @@ import { List } from 'immutable';
 import { prepareEnv } from './src/application/csv-generation/prepare-env';
 import { computeTimecardForEmployee } from './src/application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './src/domain/models/local-date-range';
-import { WorkingPeriodTimecard } from './src/domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriodTimecard } from './src/domain/models/timecard-computation/timecard/working-period-timecard';
 import { HolidayComputationService } from './src/domain/service/holiday-computation/holiday-computation-service';
 import { fetchPayrollData, generatePayrollExports } from './src/generate-csv-payroll';
 import { formatPayload, parsePayload } from './src/infrastructure/validation/parse-payload';

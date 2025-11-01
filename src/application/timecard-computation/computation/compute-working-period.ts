@@ -5,7 +5,7 @@ import { EmploymentContract } from '../../../domain/models/employment-contract-m
 import { Leave } from '../../../domain/models/leave-recording/leave/leave';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
-import { WorkingPeriod } from '../../../domain/models/time-card-computation/working-period/working-period';
+import { WorkingPeriod } from '../../../domain/models/timecard-computation/working-period/working-period';
 import { TimecardComputationError } from '../../../~shared/error/TimecardComputationError';
 
 export const computeWorkingPeriods =

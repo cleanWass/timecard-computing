@@ -7,12 +7,14 @@ import { List } from 'immutable';
 import { formatObjectDurations } from '../application/csv-generation/export-csv';
 import { ShiftHeaders } from '../application/csv-generation/headers';
 import { computeTimecardForEmployee } from '../application/timecard-computation/compute-timecard-for-employee';
-import { AnalyzedShift } from '../domain/models/cost-efficiency/analyzed-shift';
 import { getTranslatedLeaveReason } from '../domain/models/leave-recording/leave/leave-retribution';
 import { LocalDateRange } from '../domain/models/local-date-range';
 import { BillingPeriodDefinitionService } from '../domain/service/billing-period-definition/billing-period-definition-service';
-import { fetchEmployeeDataFromCache } from '../infrastructure/server/timecard-route-service';
-import { formatPayload, parsePayload } from '../infrastructure/validation/parse-payload';
+import {
+  fetchEmployeeDataFromCache,
+  validateEmployeeDataApiReturn,
+} from '../infrastructure/server/timecard-route-service';
+
 import { formatDurationAs100 } from '../~shared/util/joda-helper';
 
 const formatDate = (date: LocalDate) => date.format(DateTimeFormatter.ofPattern('dd-MM-yyyy'));
@@ -36,36 +38,19 @@ const generatePremiumDetails = ({
         )
     ),
     TE.chainW(
-      TE.traverseSeqArray(cleanerData => {
-        return pipe(
-          TE.Do,
-          TE.bind('data', () => pipe(parsePayload(cleanerData), TE.fromEither)),
-          TE.bind('timecards', ({ data }) => {
-            return pipe(data, formatPayload, computeTimecardForEmployee(period), TE.fromEither);
-          })
-        );
-      })
+      TE.traverseSeqArray(cleanerData =>
+        pipe(
+          cleanerData,
+          validateEmployeeDataApiReturn,
+          TE.chainW(te => pipe(computeTimecardForEmployee(period)(te), TE.fromEither))
+        )
+      )
     ),
     TE.map(result => {
-      const shifts = result
-        .flatMap(t => t.timecards)
-        .flatMap(t => t.timecards)
-        .flatMap(t => t.shifts.toArray());
-
-      const leaves = result
-        .flatMap(t => t.timecards)
-        .flatMap(t => t.timecards)
-        .flatMap(t => t.leaves.toArray());
-
-      const timecards = result.flatMap(t => t.timecards);
-
-      const premiumShifts = List(
-        result
-          .flatMap(t =>
-            t.timecards.timecards.map(txc => txc.analyzedShifts || List<AnalyzedShift>()).flat(1)
-          )
-          .filter(t => t.size > 0)
-      ).flatten(false) as List<AnalyzedShift>;
+      const timecards = List(result.flatMap(t => t.timecards));
+      const shifts = timecards.flatMap(t => t.shifts);
+      const leaves = timecards.flatMap(t => t.leaves);
+      const premiumShifts = timecards.flatMap(tc => tc.analyzedShifts);
 
       return {
         shifts,
@@ -81,14 +66,8 @@ const generatePremiumDetails = ({
           const contractType =
             timecards
               .filter(tc => tc.employee.silaeId === shift.employeeId)
-              .find(employeeTimecardForPeriod =>
-                employeeTimecardForPeriod.contracts.find(contract =>
-                  contract.period(LocalDate.MAX).includesDate(shift.getDate())
-                )
-              )
-              ?.contracts.find(contract =>
-                contract.period(LocalDate.MAX).includesDate(shift.getDate())
-              )?.type || 'Unknown';
+              .find(tc => tc.workingPeriod.period.includesDate(shift.getDate()))?.contract.type ||
+            'unknown';
           const extraRates = premiumShifts.find(s => s.shift.id === shift.id)?.hoursBreakdown;
 
           const csvRow: { [k in (typeof ShiftHeaders)[number]]: string } = {
@@ -179,7 +158,7 @@ const {
 
 const main = async () => {
   const periods2025 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
-    months: [JULY, AUGUST],
+    months: [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE, JULY, AUGUST, SEPTEMBER, OCTOBER],
     year: '2025',
   });
   const periods2024 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
@@ -228,3 +207,7 @@ const main = async () => {
     )
   )();
 };
+
+main()
+  .then(() => 'Job completed')
+  .catch(e => console.error(e));

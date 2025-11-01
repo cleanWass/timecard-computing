@@ -1,6 +1,6 @@
 import { Leave } from '../../../domain/models/leave-recording/leave/leave';
 import { ModulationDataWorkingPeriodCard } from '../../../domain/models/modulation-data/modulation-data-working-period-card';
-import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriodTimecard } from '../../../domain/models/timecard-computation/timecard/working-period-timecard';
 import { formatDurationAs100, getTotalDuration } from '../../../~shared/util/joda-helper';
 
 export const computeWorkedHours = (timecard: WorkingPeriodTimecard) =>

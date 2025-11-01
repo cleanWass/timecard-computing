@@ -85,8 +85,8 @@ function findMostRecentCsvFile(baseDir: string, month: string, format: string): 
  * Get all available months for a given year
  */
 function getAvailableMonths(year: string, format: string): string[] {
-  const baseDir = path.join('exports', year);
-  const baseDirNew = path.join('exports', `${year}_NEW`);
+  const baseDir = path.join('exports/premium_details', year);
+  const baseDirNew = path.join('exports/premium_details_old', `${year}`);
 
   // Check if the base directories exist
   if (!fs.existsSync(baseDir) || !fs.existsSync(baseDirNew)) {

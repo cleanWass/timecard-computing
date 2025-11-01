@@ -3,8 +3,8 @@ import { List, Map } from 'immutable';
 import { Employee } from '../../../../../src/domain/models/employee-registration/employee/employee';
 import { LocalDateRange } from '../../../../../src/domain/models/local-date-range';
 import { WorkedHoursRecap } from '../../../../../src/domain/models/cost-efficiency/worked-hours-rate';
-import { WorkingPeriodTimecard } from '../../../../../src/domain/models/time-card-computation/timecard/working-period-timecard';
-import { WorkingPeriod } from '../../../../../src/domain/models/time-card-computation/working-period/working-period';
+import { WorkingPeriodTimecard } from '../../../../../src/domain/models/timecard-computation/timecard/working-period-timecard';
+import { WorkingPeriod } from '../../../../../src/domain/models/timecard-computation/working-period/working-period';
 import { ClassAttributes } from '../../../../../src/~shared/util/types';
 import { contracts } from '../../../../application/timecard-computation/computeTimecardHelper';
 

@@ -2,7 +2,7 @@ import { DayOfWeek, LocalDateTime, LocalTime } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { identity } from 'fp-ts/function';
 import { pipe } from 'fp-ts/lib/function';
-import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriodTimecard } from '../../../domain/models/timecard-computation/timecard/working-period-timecard';
 import { HolidayComputationService } from '../../../domain/service/holiday-computation/holiday-computation-service';
 import { _attributeSurchargesCoreLogic } from './attribute-hours-core-logiq';
 

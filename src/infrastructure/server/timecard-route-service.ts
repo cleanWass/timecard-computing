@@ -11,7 +11,7 @@ import { FetchError } from '../../~shared/error/FetchError';
 import { ParseError } from '../../~shared/error/ParseError';
 import { employeeDataValidator } from '../validation/extern/employee';
 import { timecardRoutesPayloadValidator } from '../validation/routes/timecard-route-payload';
-import { validateRoutePayload } from '../validation/validate-route-payload';
+import { createParser } from '../validation/validate-payload';
 
 interface TimecardRouteParams {
   silaeId: string;
@@ -62,7 +62,7 @@ export const fetchActiveCleanersForPeriod = async ({ start, end }: LocalDateRang
 };
 
 export const parseRequestPayload = (payload: unknown) =>
-  validateRoutePayload(timecardRoutesPayloadValidator)(payload);
+  createParser(timecardRoutesPayloadValidator).parse(payload);
 
 export const formatRequestPayload = (data: ReturnType<typeof parseRequestPayload>) =>
   pipe(
@@ -90,23 +90,10 @@ export const formatRequestPayload = (data: ReturnType<typeof parseRequestPayload
     )
   );
 
-export const parseApiReturn = (data: unknown) =>
-  pipe(
-    data,
-    employeeDataValidator.safeParse,
-    E.fromPredicate(
-      parsedJSON => parsedJSON.success && parsedJSON?.data !== null,
-      e =>
-        new ParseError(
-          `safe parse success : ${e.success} \n Error while parsing payload 2 ${e['error']}`
-        )
-    ),
-    E.chain(parsedJSON =>
-      parsedJSON.success ? E.right(parsedJSON.data) : E.left(new ParseError('data is empty'))
-    )
-  );
+export const parseEmployeeDataApiReturn = (data: unknown) =>
+  createParser(employeeDataValidator).parse(data);
 
-export const formatApiReturn = (data: ReturnType<typeof parseApiReturn>) =>
+export const formatEmployeeDataApiReturn = (data: ReturnType<typeof parseEmployeeDataApiReturn>) =>
   pipe(
     data,
     E.map(({ contracts, employee, leaves, shifts }) => ({
@@ -132,4 +119,5 @@ export const fetchTimecardDataForEmployees = (period: LocalDateRange) =>
     e => new FetchError(`Fetching from care data parser went wrong ${e}`)
   )();
 
-export const validateApiReturn = (data: unknown) => pipe(data, parseApiReturn, formatApiReturn);
+export const validateEmployeeDataApiReturn = (data: unknown) =>
+  pipe(data, parseEmployeeDataApiReturn, formatEmployeeDataApiReturn, TE.fromEither);

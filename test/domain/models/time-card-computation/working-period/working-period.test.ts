@@ -1,7 +1,7 @@
 import { ChronoUnit, Duration, LocalDate } from '@js-joda/core';
 import { EmploymentContract } from '../../../../../src/domain/models/employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../../../../../src/domain/models/local-date-range';
-import { WorkingPeriod } from '../../../../../src/domain/models/time-card-computation/working-period/working-period';
+import { WorkingPeriod } from '../../../../../src/domain/models/timecard-computation/working-period/working-period';
 
 const localDateRange = new LocalDateRange(LocalDate.of(2024, 6, 1), LocalDate.of(2024, 8, 1));
 const localDateRangeCopy = new LocalDateRange(LocalDate.of(2024, 1, 1), LocalDate.of(2024, 1, 7));

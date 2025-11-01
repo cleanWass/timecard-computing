@@ -7,6 +7,15 @@ import * as chalk from 'chalk';
 // Define the base directories
 const BASE_DIR_2025 = 'exports/2025';
 const BASE_DIR_2025_NEW = 'exports/2025_NEW';
+const OUTPUT_DIR = 'exports/comparisons';
+const YEAR = '2025';
+
+function stripAnsi(input: string): string {
+  // Remove ANSI escape codes (chalk color codes)
+  // General pattern covering most ANSI codes
+  const ansiRegex = /[\u001B\u009B][[\]()#;?]*(?:((?:[0-9]{1,4})(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><~])/g;
+  return input.replace(ansiRegex, '');
+}
 
 /**
  * Find the most recent CSV file for a given month and format
@@ -69,10 +78,17 @@ function findMostRecentCsvFile(baseDir: string, month: string, format: string): 
   }
 }
 
+function ensureOutputDir(year: string): string {
+  const yearDir = path.join(OUTPUT_DIR, year);
+  if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR);
+  if (!fs.existsSync(yearDir)) fs.mkdirSync(yearDir);
+  return yearDir;
+}
+
 /**
  * Main function to compare CSV files for a given month and format
  */
-function compareCSVMonth(month: string, format: string): void {
+function compareCSVMonth(month: string, format: string, save: boolean): void {
   console.log(chalk.default.cyan(`Comparing ${format} CSV files for ${month}...`));
 
   // Find the most recent CSV files
@@ -94,8 +110,19 @@ function compareCSVMonth(month: string, format: string): void {
   console.log(chalk.default.cyan(`Executing command: ${command}`));
 
   try {
-    // Execute the compare-csv command
-    execSync(command, { stdio: 'inherit' });
+    // Execute the compare-csv command and capture its output
+    const output = execSync(command, { encoding: 'utf-8' });
+
+    // Print to console with colors preserved
+    process.stdout.write(output);
+
+    if (save) {
+      const yearDir = ensureOutputDir(YEAR);
+      const filePath = path.join(yearDir, `${month}.txt`);
+      const plainOutput = stripAnsi(output);
+      fs.writeFileSync(filePath, plainOutput, 'utf-8');
+      console.log(chalk.default.green(`Saved comparison to ${filePath}`));
+    }
   } catch (error) {
     console.error(chalk.default.red(`Error executing compare-csv command: ${error}`));
     process.exit(1);
@@ -113,9 +140,10 @@ program
   .version('1.0.0')
   .requiredOption('-m, --month <month>', 'Month name in English (e.g., april)')
   .requiredOption('-t, --type <type>', 'CSV format type (silae, full, total, weekly)')
+  .option('-s, --save', 'Save the diff to a text file named <month>.txt (without colors)')
   .parse(process.argv);
 
 const options = program.opts();
 
 // Main execution
-compareCSVMonth(options.month.toLowerCase(), options.type.toLowerCase());
+compareCSVMonth(options.month.toLowerCase(), options.type.toLowerCase(), Boolean(options.save));

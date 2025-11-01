@@ -6,7 +6,7 @@ import { Bench } from '../../../domain/models/leave-recording/bench-recording/be
 import { Leave } from '../../../domain/models/leave-recording/leave/leave';
 import { LocalTimeSlot } from '../../../domain/models/local-time-slot';
 import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
-import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriodTimecard } from '../../../domain/models/timecard-computation/timecard/working-period-timecard';
 
 const isShiftDuringLeave = (shift: Shift) => (leave: Leave) =>
   leave.date.isEqual(shift.getDate()) &&

@@ -7,7 +7,7 @@ import {
 } from '../../../domain/models/cost-efficiency/analyzed-shift';
 import { WorkedHoursRate } from '../../../domain/models/cost-efficiency/worked-hours-rate';
 import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
-import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriodTimecard } from '../../../domain/models/timecard-computation/timecard/working-period-timecard';
 import { getLowerDuration } from '../../../~shared/util/joda-helper';
 
 const SHIFT_TYPE_PRIORITY = ['Ponctuel', 'Remplacement', 'Permanent'];

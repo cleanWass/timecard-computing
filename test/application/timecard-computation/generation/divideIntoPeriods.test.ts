@@ -8,7 +8,7 @@ import { EmploymentContract } from '../../../../src/domain/models/employment-con
 import { EmploymentContractId } from '../../../../src/domain/models/employment-contract-management/employment-contract/employment-contract-id';
 import { LocalDateRange } from '../../../../src/domain/models/local-date-range';
 import { LocalTimeSlot } from '../../../../src/domain/models/local-time-slot';
-import { WorkingPeriod } from '../../../../src/domain/models/time-card-computation/working-period/working-period';
+import { WorkingPeriod } from '../../../../src/domain/models/timecard-computation/working-period/working-period';
 import forceSome from '../../../~shared/util/forceSome';
 
 const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY } = DayOfWeek;
@@ -16,16 +16,23 @@ const { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY } = DayOfWeek;
 const mondayToFriday = Set.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY);
 
 const consecutivePeriods =
-  (employeeId: EmployeeId, employmentContractId: EmploymentContractId) => (startDates: LocalDate[], endDate: LocalDate) =>
+  (employeeId: EmployeeId, employmentContractId: EmploymentContractId) =>
+  (startDates: LocalDate[], endDate: LocalDate) =>
     List<LocalDate>(startDates).map((start, index) =>
       WorkingPeriod.build({
         employeeId,
         employmentContractId,
-        period: new LocalDateRange(start, index === startDates.length - 1 ? endDate : startDates[index + 1]),
+        period: new LocalDateRange(
+          start,
+          index === startDates.length - 1 ? endDate : startDates[index + 1]
+        ),
       })
     );
 
-const clone = (base: EmploymentContract, params?: Partial<Parameters<typeof EmploymentContract.build>[0]>) =>
+const clone = (
+  base: EmploymentContract,
+  params?: Partial<Parameters<typeof EmploymentContract.build>[0]>
+) =>
   EmploymentContract.build({
     employeeId: params?.employeeId ?? base.employeeId,
     startDate: params?.startDate ?? base.startDate,
@@ -48,7 +55,10 @@ const _1WeekContract = EmploymentContract.build({
     .reduce((acc, day) => acc.set(day, Set<LocalTimeSlot>()), Map<DayOfWeek, Set<LocalTimeSlot>>())
     .set(
       MONDAY,
-      Set([new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)), new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0))])
+      Set([
+        new LocalTimeSlot(LocalTime.of(8, 30), LocalTime.of(11, 30)),
+        new LocalTimeSlot(LocalTime.of(17, 0), LocalTime.of(21, 0)),
+      ])
     ),
 });
 
@@ -68,7 +78,10 @@ describe('divideIntoPeriods', () => {
             _1WeekContract.startDate,
             forceSome(_1WeekContract.endDate)
           );
-          const expected = contractPeriods([_1WeekContract.startDate], forceSome(_1WeekContract.endDate));
+          const expected = contractPeriods(
+            [_1WeekContract.startDate],
+            forceSome(_1WeekContract.endDate)
+          );
           expect(actual.equals(expected)).toBe(true);
         });
       });
@@ -104,7 +117,10 @@ describe('divideIntoPeriods', () => {
             _11DaysContract.startDate,
             forceSome(_11DaysContract.endDate)
           );
-          const expected = contractPeriods([_11DaysContract.startDate, _1WeekContract.startDate], forceSome(_1WeekContract.endDate));
+          const expected = contractPeriods(
+            [_11DaysContract.startDate, _1WeekContract.startDate],
+            forceSome(_1WeekContract.endDate)
+          );
           expect(actual.equals(expected)).toBe(true);
         });
       });
@@ -124,7 +140,11 @@ describe('divideIntoPeriods', () => {
             forceSome(_14DaysContract.endDate)
           );
           const expected = contractPeriods(
-            [_14DaysContract.startDate, _1WeekContract.startDate, forceSome(_1WeekContract.endDate)],
+            [
+              _14DaysContract.startDate,
+              _1WeekContract.startDate,
+              forceSome(_1WeekContract.endDate),
+            ],
             forceSome(_14DaysContract.endDate)
           );
           expect(actual.equals(expected)).toBe(true);

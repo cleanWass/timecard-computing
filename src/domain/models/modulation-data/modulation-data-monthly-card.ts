@@ -4,7 +4,7 @@ import { formatDurationAs100 } from '../../../~shared/util/joda-helper';
 import { Employee } from '../employee-registration/employee/employee';
 import { EmploymentContract } from '../employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../local-date-range';
-import { WorkingPeriod } from '../time-card-computation/working-period/working-period';
+import { WorkingPeriod } from '../timecard-computation/working-period/working-period';
 import { ModulationDataWorkingPeriodCard } from './modulation-data-working-period-card';
 
 export type ModulationDataMonthlyCardId = string;

@@ -15,13 +15,13 @@ import {
 import { prepareEnv } from './application/csv-generation/prepare-env';
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
-import { WorkingPeriodTimecard } from './domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriodTimecard } from './domain/models/timecard-computation/timecard/working-period-timecard';
 import {
   fetchDataForEmployee,
   fetchTimecardData,
   fetchTimecardDataForEmployees,
+  validateEmployeeDataApiReturn,
 } from './infrastructure/server/timecard-route-service';
-import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
 import { ParseError } from './~shared/error/ParseError';
 
 const displayTimecardDebug = (
@@ -76,14 +76,12 @@ export const generateCsvFromUncachedDataForPeriod = ({
       total = dataCleaners.length;
       return pipe(
         dataCleaners,
-        TE.traverseArray(cleaner =>
+        TE.traverseArray(dataCleaner =>
           pipe(
-            cleaner,
-            parsePayload,
-            TE.fromEither,
+            dataCleaner,
+            validateEmployeeDataApiReturn,
             TE.map(
               flow(
-                formatPayload,
                 computeTimecardForEmployee(period),
                 E.map(results => {
                   if (displayLog) displayTimecardDebug(results.timecards, logger);
@@ -111,7 +109,7 @@ export const generateCsvFromUncachedDataForPeriod = ({
                 }),
                 E.mapLeft(e => {
                   logger(
-                    `error for ${cleaner.cleaner.firstName} + ${cleaner.cleaner.lastName} ${e}`
+                    `error for ${dataCleaner.cleaner.firstName} + ${dataCleaner.cleaner.lastName} ${e}`
                   );
                   failed++;
                   return e;

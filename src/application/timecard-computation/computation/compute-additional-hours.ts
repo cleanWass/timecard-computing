@@ -1,6 +1,6 @@
 import { Duration } from '@js-joda/core';
 import { pipe } from 'fp-ts/function';
-import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriodTimecard } from '../../../domain/models/timecard-computation/timecard/working-period-timecard';
 import { getGreaterDuration, getLowerDuration } from '../../../~shared/util/joda-helper';
 
 const computeSurchargeWithExtraHours = (timecard: WorkingPeriodTimecard) => {
@@ -62,11 +62,12 @@ export const computeTotalAdditionalHours = (timecard: WorkingPeriodTimecard) => 
       TotalInactiveShifts,
       TotalWeekly,
       TotalNationalHolidayLeaves,
+      TotalLeavesPaid,
     },
   } = timecard;
-  const totalEffectiveHours = TotalWeekly.plus(TotalInactiveShifts).plus(
-    TotalNationalHolidayLeaves
-  );
+  const totalEffectiveHours = TotalWeekly.plus(TotalInactiveShifts)
+    .plus(TotalNationalHolidayLeaves)
+    .plus(TotalLeavesPaid);
   const totalAdditionalHours = totalEffectiveHours
     .minus(weeklyTotalWorkedHours)
     .plus(timecard.contract.extraDuration || Duration.ZERO);

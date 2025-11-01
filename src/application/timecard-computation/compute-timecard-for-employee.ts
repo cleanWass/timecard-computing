@@ -1,4 +1,5 @@
 import { DayOfWeek } from '@js-joda/core';
+import { Either } from 'fp-ts/Either';
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import { List, Map, Set } from 'immutable';
@@ -10,9 +11,10 @@ import { Leave } from '../../domain/models/leave-recording/leave/leave';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { LocalTimeSlot } from '../../domain/models/local-time-slot';
 import { Shift } from '../../domain/models/mission-delivery/shift/shift';
-import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
-import { WeeklyTimecardRecap } from '../../domain/models/time-card-computation/weekly-timecard-recap/weekly-timecard-recap';
-import { WorkingPeriod } from '../../domain/models/time-card-computation/working-period/working-period';
+import { WorkingPeriodTimecard } from '../../domain/models/timecard-computation/timecard/working-period-timecard';
+import { WeeklyTimecardRecap } from '../../domain/models/timecard-computation/weekly-timecard-recap/weekly-timecard-recap';
+import { WorkingPeriod } from '../../domain/models/timecard-computation/working-period/working-period';
+import { IllegalArgumentError } from '../../~shared/error/IllegalArgumentError';
 import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
 import {
   computeExtraHoursByRate,
@@ -23,7 +25,6 @@ import {
   computeTotalNormalHoursAvailable,
   computeWorkedHours,
 } from './computation/compute-base-hours';
-import { inferTotalIntercontractAndTotalContract } from './computation/infer-total-intercontract-and-total-contract';
 import { computeMealTickets } from './computation/compute-meal-tickets';
 import { computeSurchargedHours } from './computation/compute-surcharged-hours';
 import {
@@ -31,14 +32,15 @@ import {
   groupShiftsByWorkingPeriods,
   splitPeriodIntoWorkingPeriods,
 } from './computation/compute-working-period';
+import { inferTotalIntercontractAndTotalContract } from './computation/infer-total-intercontract-and-total-contract';
 import {
   curateLeaves,
   filterBenchingShifts,
   filterShifts,
 } from './curation/curate-shifts-and-period';
+import { mergeContractsIfSameWorkingTime } from './curation/merge-contracts-if-same-working-time';
 import { generateInactiveShiftsIfPartialWeek } from './generation/generate-inactive-shifts';
 import { generateWeeklyTimecardRecap } from './generation/generate-weekly-timecard-recap';
-import { mergeContractsIfSameWorkingTime } from './curation/merge-contracts-if-same-working-time';
 import { attributeSurchargedHoursToShifts } from './premium-hours-attribution/attribute-surcharged-hours-to-shifts';
 
 const findContract = (contracts: List<EmploymentContract>) => (workingPeriod: WorkingPeriod) =>
@@ -73,6 +75,19 @@ const initializeWorkingPeriodTimecard = ({
     leaves,
   });
 
+export type ComputeTimecardForEmployeeType = Either<
+  IllegalArgumentError,
+  {
+    period: LocalDateRange;
+    employee: Employee;
+    workingPeriods: List<WorkingPeriod>;
+    groupedShifts: Map<WorkingPeriod, List<Shift>>;
+    timecards: readonly WorkingPeriodTimecard[];
+    contracts: List<EmploymentContract>;
+    weeklyRecaps: Map<LocalDateRange, WeeklyTimecardRecap>;
+  }
+>;
+
 export const computeWorkingPeriodTimecard: (
   workingPeriod: WorkingPeriod,
   shifts: List<Shift>,
@@ -106,8 +121,9 @@ export const computeWorkingPeriodTimecard: (
   );
 };
 
-export const computeTimecardForEmployee = (period: LocalDateRange) => {
-  return ({
+export const computeTimecardForEmployee =
+  (period: LocalDateRange) =>
+  ({
     employee,
     shifts,
     contracts,
@@ -178,4 +194,3 @@ export const computeTimecardForEmployee = (period: LocalDateRange) => {
       }))
     );
   };
-};

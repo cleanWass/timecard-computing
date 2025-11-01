@@ -2,7 +2,7 @@ import { LocalDateTime } from '@js-joda/core';
 import { List, Set } from 'immutable';
 import { LocalTimeSlot } from '../../../domain/models/local-time-slot';
 import { InactiveShift } from '../../../domain/models/mission-delivery/shift/inactive-shift';
-import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriodTimecard } from '../../../domain/models/timecard-computation/timecard/working-period-timecard';
 import { getFirstDayOfWeek, getTotalDuration } from '../../../~shared/util/joda-helper';
 
 export const generateInactiveShifts = (timecard: WorkingPeriodTimecard) => {
@@ -35,5 +35,7 @@ export const generateInactiveShiftsIfPartialWeek = (wpTimecard: WorkingPeriodTim
   if (wpTimecard.workingPeriod.isComplete(wpTimecard.contract)) return wpTimecard;
 
   const inactiveShifts = generateInactiveShifts(wpTimecard);
-  return wpTimecard.with({ inactiveShifts }).register('TotalInactiveShifts', getTotalDuration(inactiveShifts));
+  return wpTimecard
+    .with({ inactiveShifts })
+    .register('TotalInactiveShifts', getTotalDuration(inactiveShifts));
 };

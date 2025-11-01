@@ -18,7 +18,7 @@ import {
   WorkedHoursRecap,
   WorkedHoursRecapType,
 } from '../cost-efficiency/worked-hours-rate';
-import { WorkingPeriod } from '../time-card-computation/working-period/working-period';
+import { WorkingPeriod } from '../timecard-computation/working-period/working-period';
 import {
   SurchargedHoursPool,
   SurchargedHoursPoolRate,

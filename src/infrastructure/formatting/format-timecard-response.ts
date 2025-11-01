@@ -36,7 +36,7 @@ export const formatTimecardComputationReturn = (result: TimecardComputationResul
       },
       workedHours: t.workedHours.toObject(),
       mealTickets: t.mealTickets,
-      rentability: t.rentability,
+      rentability: 0,
       period: {
         start: t.workingPeriod.period.start.toString(),
         end: t.workingPeriod.period.end.toString(),

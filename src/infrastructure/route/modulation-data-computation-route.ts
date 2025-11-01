@@ -8,7 +8,7 @@ import * as TE from 'fp-ts/lib/TaskEither';
 import { computeModulationDataForEmployee } from '../../application/modulation-computation/compute-modulation-data-for-employee';
 import {
   fetchTimecardData,
-  validateApiReturn,
+  validateEmployeeDataApiReturn,
   validateRequestPayload,
 } from '../server/timecard-route-service';
 
@@ -20,7 +20,7 @@ export const handleModulationDataComputationRoute = (
     TE.Do,
     TE.bind('params', () => TE.fromEither(validateRequestPayload(req.body))),
     TE.bind('raw', ({ params }) => fetchTimecardData(params)),
-    TE.bind('data', ({ raw }) => pipe(raw, validateApiReturn, TE.fromEither)),
+    TE.bind('data', ({ raw }) => validateEmployeeDataApiReturn(raw)),
     TE.bind('modulationData', ({ params: { period }, data }) =>
       pipe(data, computeModulationDataForEmployee(period), TE.fromEither)
     ),

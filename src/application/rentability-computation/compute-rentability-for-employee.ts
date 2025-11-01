@@ -4,7 +4,7 @@ import { LocalDateRange } from '../../domain/models/local-date-range';
 import { LocalTimeSlot } from '../../domain/models/local-time-slot';
 import { Shift } from '../../domain/models/mission-delivery/shift/shift';
 import { HoursTypeCodes } from '../../domain/models/cost-efficiency/worked-hours-rate';
-import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriodTimecard } from '../../domain/models/timecard-computation/timecard/working-period-timecard';
 import {
   formatDuration,
   formatDurationAs100,
@@ -66,9 +66,9 @@ export const computeRentabilityForEmployee = (timecard: WorkingPeriodTimecard) =
     (result / (timecard.workedHours.TotalWeekly.toMinutes() / 60)).toFixed(2)
   );
   return timecard.with({
-    rentability: Number.parseFloat(
-      (result / (timecard.workedHours.TotalWeekly.toMinutes() / 60)).toFixed(2)
-    ),
+    // rentability: Number.parseFloat(
+    //   (result / (timecard.workedHours.TotalWeekly.toMinutes() / 60)).toFixed(2)
+    // ),
   });
 };
 export const computeRentabilityForEmployeeTEST =

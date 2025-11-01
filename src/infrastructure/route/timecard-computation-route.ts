@@ -11,7 +11,7 @@ import { computeTimecardForEmployee } from '../../application/timecard-computati
 import { formatTimecardComputationReturn } from '../formatting/format-timecard-response';
 import {
   fetchTimecardData,
-  validateApiReturn,
+  validateEmployeeDataApiReturn,
   validateRequestPayload,
 } from '../server/timecard-route-service';
 
@@ -20,7 +20,7 @@ export const handleTimecardComputationRoute = (req: express.Request, res: expres
     TE.Do,
     TE.bind('params', () => TE.fromEither(validateRequestPayload(req.body))),
     TE.bind('raw', ({ params }) => fetchTimecardData(params)),
-    TE.bind('data', ({ raw }) => pipe(raw, validateApiReturn, TE.fromEither)),
+    TE.bind('data', ({ raw }) => validateEmployeeDataApiReturn(raw)),
     TE.bind('timecards', ({ params: { period }, data }) =>
       pipe(
         data,

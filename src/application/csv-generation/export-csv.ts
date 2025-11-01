@@ -11,7 +11,7 @@ import {
 } from '../../domain/models/employee-registration/employee/employee-role';
 import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import { LocalDateRange } from '../../domain/models/local-date-range';
-import { WorkingPeriodTimecard } from '../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriodTimecard } from '../../domain/models/timecard-computation/timecard/working-period-timecard';
 import { formatDurationAs100, getFirstDayOfWeek } from '../../~shared/util/joda-helper';
 import { ExtractEitherRightType, keys } from '../../~shared/util/types';
 import { computeTimecardForEmployee } from '../timecard-computation/compute-timecard-for-employee';

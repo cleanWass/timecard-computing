@@ -1,4 +1,4 @@
-import { LocalDate, Month } from '@js-joda/core';
+import { Month } from '@js-joda/core';
 import axios from 'axios';
 import * as E from 'fp-ts/Either';
 
@@ -15,9 +15,12 @@ import {
 import { prepareEnv } from './application/csv-generation/prepare-env';
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
-import { WorkingPeriodTimecard } from './domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriodTimecard } from './domain/models/timecard-computation/timecard/working-period-timecard';
 import { BillingPeriodDefinitionService } from './domain/service/billing-period-definition/billing-period-definition-service';
-import { formatPayload, parsePayload } from './infrastructure/validation/parse-payload';
+import {
+  formatEmployeeDataApiReturn,
+  parseEmployeeDataApiReturn,
+} from './infrastructure/server/timecard-route-service';
 
 export type CleanerResponse = {
   cleaner: unknown & { firstName: string; lastName: string; silaeId: string };
@@ -84,11 +87,11 @@ export const generatePayrollExports = ({
         TE.traverseArray(cleaner =>
           pipe(
             cleaner,
-            parsePayload,
+            parseEmployeeDataApiReturn,
+            formatEmployeeDataApiReturn,
             TE.fromEither,
             TE.map(
               flow(
-                formatPayload,
                 computeTimecardForEmployee(period),
                 E.map(results => {
                   if (displayLog) displayTimecardDebug(results.timecards, logger);
@@ -173,8 +176,7 @@ export async function main() {
   try {
     const debug = process.argv.some(arg => ['--debug', '-d'].includes(arg));
     const periods2025 = new BillingPeriodDefinitionService().getBillingPeriodForMonths({
-      months: [AUGUST, JULY, JANUARY, FEBRUARY, MAY, MARCH, APRIL, JUNE],
-      // months: [MAY],
+      months: [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE, JULY, AUGUST],
       year: '2025',
     });
     return await pipe(
@@ -221,4 +223,3 @@ export async function main() {
     console.error(e);
   }
 }
-

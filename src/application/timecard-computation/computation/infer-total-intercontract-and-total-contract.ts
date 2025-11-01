@@ -1,5 +1,5 @@
 import { Duration } from '@js-joda/core';
-import { WorkingPeriodTimecard } from '../../../domain/models/time-card-computation/timecard/working-period-timecard';
+import { WorkingPeriodTimecard } from '../../../domain/models/timecard-computation/timecard/working-period-timecard';
 import { getGreaterDuration } from '../../../~shared/util/joda-helper';
 
 export const inferTotalIntercontractAndTotalContract = (tc: WorkingPeriodTimecard) => {
@@ -14,5 +14,7 @@ export const inferTotalIntercontractAndTotalContract = (tc: WorkingPeriodTimecar
     totalHoursAffected.minus(tc.workedHours.TotalAdditionalHours),
     Duration.ZERO
   );
-  return tc.register('TotalIntercontract', totalIntercontract).register('TotalContract', totalContract);
+  return tc
+    .register('TotalIntercontract', totalIntercontract)
+    .register('TotalContract', totalContract);
 };
