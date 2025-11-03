@@ -3,7 +3,7 @@ import * as E from 'fp-ts/Either';
 import { identity } from 'fp-ts/function';
 import { pipe } from 'fp-ts/lib/function';
 import { WorkingPeriodTimecard } from '../../../domain/models/timecard-computation/timecard/working-period-timecard';
-import { HolidayComputationService } from '../../../domain/service/holiday-computation/holiday-computation-service';
+import { HolidayComputationService } from '../../../domain/services/holiday-computation/holiday-computation-service';
 import { _attributeSurchargesCoreLogic } from './attribute-hours-core-logiq';
 
 const NIGHT_SURCHARGED_HOURS_RATE = ['NightShiftContract', 'NightShiftAdditional'];

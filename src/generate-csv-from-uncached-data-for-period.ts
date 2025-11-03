@@ -22,7 +22,7 @@ import {
   fetchTimecardDataForEmployees,
   validateEmployeeDataApiReturn,
 } from './infrastructure/server/timecard-route-service';
-import { ParseError } from './~shared/error/ParseError';
+import { ParseError } from './~shared/error/parse-error';
 
 const displayTimecardDebug = (
   timecards: Readonly<Array<WorkingPeriodTimecard>>,

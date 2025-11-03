@@ -9,7 +9,7 @@ import { ShiftHeaders } from '../application/csv-generation/headers';
 import { computeTimecardForEmployee } from '../application/timecard-computation/compute-timecard-for-employee';
 import { getTranslatedLeaveReason } from '../domain/models/leave-recording/leave/leave-retribution';
 import { LocalDateRange } from '../domain/models/local-date-range';
-import { BillingPeriodDefinitionService } from '../domain/service/billing-period-definition/billing-period-definition-service';
+import { BillingPeriodDefinitionService } from '../domain/services/billing-period-definition/billing-period-definition-service';
 import {
   fetchEmployeeDataFromCache,
   validateEmployeeDataApiReturn,

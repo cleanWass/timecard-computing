@@ -6,7 +6,7 @@ import { Leave } from '../../../domain/models/leave-recording/leave/leave';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriod } from '../../../domain/models/timecard-computation/working-period/working-period';
-import { TimecardComputationError } from '../../../~shared/error/TimecardComputationError';
+import { TimecardComputationError } from '../../../domain/~shared/error/timecard-computation-error';
 
 export const computeWorkingPeriods =
   (period: LocalDateRange) => (contracts: List<EmploymentContract>) =>

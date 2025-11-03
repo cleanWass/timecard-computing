@@ -1,15 +1,13 @@
 import * as E from 'fp-ts/lib/Either';
-import {Set} from 'immutable';
-import {LocalDate, Month} from '@js-joda/core';
+import { Set } from 'immutable';
+import { LocalDate, Month } from '@js-joda/core';
 import { LocalDateRange } from '../../../../src/domain/models/local-date-range';
-import {
-  HolidayComputationService
-} from '../../../../src/domain/service/holiday-computation/holiday-computation-service';
+import { HolidayComputationService } from '../../../../src/domain/services/holiday-computation/holiday-computation-service';
 
 import forceRight from '../../../~shared/util/forceRight';
 
-const {of} = LocalDate;
-const {JANUARY, APRIL, MAY, JULY, AUGUST, OCTOBER, NOVEMBER, DECEMBER} = Month;
+const { of } = LocalDate;
+const { JANUARY, APRIL, MAY, JULY, AUGUST, OCTOBER, NOVEMBER, DECEMBER } = Month;
 
 const easterMondays = [
   '2000-04-23',
@@ -55,9 +53,7 @@ const easterMondays = [
   '2040-04-01',
 ];
 
-const ascensionThursdays = easterMondays.map(d =>
-  LocalDate.parse(d).plusDays(39).toString()
-);
+const ascensionThursdays = easterMondays.map(d => LocalDate.parse(d).plusDays(39).toString());
 
 const periodOf = (start: LocalDate, end: LocalDate) =>
   forceRight(
@@ -70,11 +66,7 @@ const expectPeriodToBeEmpty = (start: LocalDate, end: LocalDate) => {
   expect(periodOf(start, end).isEmpty()).toBe(true);
 };
 
-const expectPeriodToContain = (
-  start: LocalDate,
-  end: LocalDate,
-  expectedHoliday: LocalDate
-) => {
+const expectPeriodToContain = (start: LocalDate, end: LocalDate, expectedHoliday: LocalDate) => {
   expect(periodOf(start, end).contains(expectedHoliday)).toBe(true);
 };
 
@@ -83,9 +75,7 @@ const expectPeriodToContainOnly = (
   end: LocalDate,
   expectedHoliday: LocalDate
 ) => {
-  expect(
-    periodOf(start, end).equals(Set<LocalDate>().add(expectedHoliday))
-  ).toBe(true);
+  expect(periodOf(start, end).equals(Set<LocalDate>().add(expectedHoliday))).toBe(true);
 };
 
 describe('HolidayComputationService', () => {
@@ -104,35 +94,19 @@ describe('HolidayComputationService', () => {
       });
 
       it('contains the 1st of May', () => {
-        expectPeriodToContainOnly(
-          of(2023, APRIL, 29),
-          of(2023, MAY, 7),
-          of(2023, MAY, 1)
-        );
+        expectPeriodToContainOnly(of(2023, APRIL, 29), of(2023, MAY, 7), of(2023, MAY, 1));
       });
 
       it('contains the 8th of May', () => {
-        expectPeriodToContainOnly(
-          of(2023, MAY, 3),
-          of(2023, MAY, 12),
-          of(2023, MAY, 8)
-        );
+        expectPeriodToContainOnly(of(2023, MAY, 3), of(2023, MAY, 12), of(2023, MAY, 8));
       });
 
       it('contains the 14th of July', () => {
-        expectPeriodToContainOnly(
-          of(2023, JULY, 10),
-          of(2023, JULY, 25),
-          of(2023, JULY, 14)
-        );
+        expectPeriodToContainOnly(of(2023, JULY, 10), of(2023, JULY, 25), of(2023, JULY, 14));
       });
 
       it('contains the 15th of August', () => {
-        expectPeriodToContainOnly(
-          of(2023, AUGUST, 7),
-          of(2023, AUGUST, 20),
-          of(2023, AUGUST, 15)
-        );
+        expectPeriodToContainOnly(of(2023, AUGUST, 7), of(2023, AUGUST, 20), of(2023, AUGUST, 15));
       });
 
       it('contains the 1st of November', () => {

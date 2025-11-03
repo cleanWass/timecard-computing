@@ -1,7 +1,7 @@
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/lib/function';
 import z from 'zod';
-import { ParseError } from '../../~shared/error/ParseError';
+import { ParseError } from '../../~shared/error/parse-error';
 
 export const parseWithValidator = <Output, Input = Output>(
   validator: z.ZodType<Output, z.ZodTypeDef, Input>,

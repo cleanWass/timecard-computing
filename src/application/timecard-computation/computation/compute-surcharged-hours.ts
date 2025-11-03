@@ -6,7 +6,7 @@ import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { LocalTimeSlot } from '../../../domain/models/local-time-slot';
 import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../../domain/models/timecard-computation/timecard/working-period-timecard';
-import { HolidayComputationService } from '../../../domain/service/holiday-computation/holiday-computation-service';
+import { HolidayComputationService } from '../../../domain/services/holiday-computation/holiday-computation-service';
 import { getTotalDuration } from '../../../~shared/util/joda-helper';
 // cleaner travailleur de nuit et shift hors planning => majoration nuit ponctuelle
 // si travailleur événementielle ou hotellerie et travailleur de nuit,

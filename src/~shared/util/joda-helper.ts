@@ -33,3 +33,6 @@ export const getTotalDuration = <T>(entities: List<WithDuration<T>>) =>
 
 export const formatLocalDate = ({ date, pattern }: { date: LocalDate; pattern?: string }) =>
   date.format(DateTimeFormatter.ofPattern(pattern || 'dd/MM/yy'));
+
+export const parseLocalDate = ({ date, pattern }: { date: string; pattern?: string }) =>
+  LocalDate.parse(date, DateTimeFormatter.ofPattern(pattern || 'dd/MM/yy'));

@@ -19,7 +19,7 @@ import {
 } from '../../domain/models/modulation-data/modulation-data-working-period-card';
 import { WorkedHoursRecap } from '../../domain/models/cost-efficiency/worked-hours-rate';
 import { WorkingPeriod } from '../../domain/models/timecard-computation/working-period/working-period';
-import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
+import { TimecardComputationError } from '../../domain/~shared/error/timecard-computation-error';
 import { sequenceList } from '../../~shared/util/sequence-list';
 import { computeWorkingPeriods } from '../timecard-computation/computation/compute-working-period';
 import {

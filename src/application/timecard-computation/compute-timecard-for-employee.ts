@@ -1,6 +1,6 @@
 import { DayOfWeek } from '@js-joda/core';
-import { Either } from 'fp-ts/Either';
 import * as E from 'fp-ts/Either';
+import { Either } from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import { List, Map, Set } from 'immutable';
 import '@js-joda/timezone';
@@ -14,8 +14,9 @@ import { Shift } from '../../domain/models/mission-delivery/shift/shift';
 import { WorkingPeriodTimecard } from '../../domain/models/timecard-computation/timecard/working-period-timecard';
 import { WeeklyTimecardRecap } from '../../domain/models/timecard-computation/weekly-timecard-recap/weekly-timecard-recap';
 import { WorkingPeriod } from '../../domain/models/timecard-computation/working-period/working-period';
-import { IllegalArgumentError } from '../../~shared/error/IllegalArgumentError';
-import { TimecardComputationError } from '../../~shared/error/TimecardComputationError';
+import { IllegalArgumentError } from '../../domain/~shared/error/illegal-argument-error';
+import { TimecardComputationError } from '../../domain/~shared/error/timecard-computation-error';
+import { EmployeeData } from '../ports/services/care-data-parser-client';
 import {
   computeExtraHoursByRate,
   computeTotalAdditionalHours,
@@ -123,17 +124,7 @@ export const computeWorkingPeriodTimecard: (
 
 export const computeTimecardForEmployee =
   (period: LocalDateRange) =>
-  ({
-    employee,
-    shifts,
-    contracts,
-    leaves,
-  }: {
-    employee: Employee;
-    shifts: List<Shift>;
-    leaves: List<Leave>;
-    contracts: List<EmploymentContract>;
-  }) => {
+  ({ employee, shifts, contracts, leaves }: EmployeeData) => {
     if (contracts.isEmpty() && shifts.isEmpty()) {
       return E.right({
         period,

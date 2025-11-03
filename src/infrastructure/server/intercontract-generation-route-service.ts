@@ -4,7 +4,7 @@ import { pipe } from 'fp-ts/function';
 import { List } from 'immutable';
 import { z } from 'zod';
 import { LocalDateRange } from '../../domain/models/local-date-range';
-import { ParseError } from '../../~shared/error/ParseError';
+import { ParseError } from '../../~shared/error/parse-error';
 import { employeeDataValidator } from '../validation/extern/employee';
 
 export const parseIntercontractGenerationPayload = (data: unknown) =>

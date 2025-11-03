@@ -13,7 +13,6 @@ import * as TE from 'fp-ts/lib/TaskEither';
 import fs from 'fs';
 import * as path from 'node:path';
 import * as process from 'node:process';
-import { generateIntercontract } from './application/bench-generation/generate-intercontract';
 import { prepareEnv } from './application/csv-generation/prepare-env';
 import { LocalDateRange } from './domain/models/local-date-range';
 import { fetchPayrollData, generatePayrollExports } from './generate-csv-payroll';
@@ -21,8 +20,8 @@ import { formatTimecardComputationReturn } from './infrastructure/formatting/for
 import { handleModulationDataComputationRoute } from './infrastructure/route/modulation-data-computation-route';
 import { handleTimecardComputationRoute } from './infrastructure/route/timecard-computation-route';
 import { fetchIntercontractData } from './infrastructure/server/intercontract-generation-route-service';
-import { ParseError } from './~shared/error/ParseError';
-import { TimecardComputationError } from './~shared/error/TimecardComputationError';
+import { ParseError } from './~shared/error/parse-error';
+import { TimecardComputationError } from './domain/~shared/error/timecard-computation-error';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -155,14 +154,4 @@ app.post('/download-export', async (req, res) => {
     console.error('Unexpected error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
-});
-
-app.post('/intercontract-generation-data', async (req, res) => {
-  console.log('Handling intercontract generation data');
-  const startDate = LocalDate.parse(req.body.startDate, DateTimeFormatter.ofPattern('dd/MM/yy'));
-  const endDate = LocalDate.parse(req.body.endDate, DateTimeFormatter.ofPattern('dd/MM/yy'));
-  const period = new LocalDateRange(startDate, endDate);
-  const result = await generateIntercontract(period)();
-
-  return res.status(200).json(result);
 });

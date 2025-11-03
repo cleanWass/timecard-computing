@@ -16,7 +16,7 @@ import { prepareEnv } from './application/csv-generation/prepare-env';
 import { computeTimecardForEmployee } from './application/timecard-computation/compute-timecard-for-employee';
 import { LocalDateRange } from './domain/models/local-date-range';
 import { WorkingPeriodTimecard } from './domain/models/timecard-computation/timecard/working-period-timecard';
-import { BillingPeriodDefinitionService } from './domain/service/billing-period-definition/billing-period-definition-service';
+import { BillingPeriodDefinitionService } from './domain/services/billing-period-definition/billing-period-definition-service';
 import {
   formatEmployeeDataApiReturn,
   parseEmployeeDataApiReturn,
