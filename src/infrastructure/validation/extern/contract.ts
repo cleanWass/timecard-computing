@@ -11,8 +11,19 @@ export const contractValidator = zod.object({
   weeklyHours: zod.string(),
   extraDuration: zod.string().nullish(),
   metadata: zod
-    .string()
-    .transform(v => JSON.parse(v))
+    .object({
+      contractualPlanning: zod
+        .record(
+          zod.enum(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']),
+          z.array(
+            zod.object({
+              start: zod.string(),
+              end: zod.string(),
+            })
+          )
+        )
+        .optional(),
+    })
     .optional(),
 });
 
