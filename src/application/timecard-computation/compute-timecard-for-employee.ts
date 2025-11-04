@@ -1,4 +1,4 @@
-import { DayOfWeek } from '@js-joda/core';
+import { DayOfWeek, LocalDate } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { Either } from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
@@ -179,7 +179,7 @@ export const computeTimecardForEmployee =
         employee,
         workingPeriods,
         groupedShifts,
-        timecards: timecards,
+        timecards,
         contracts,
         weeklyRecaps,
       }))

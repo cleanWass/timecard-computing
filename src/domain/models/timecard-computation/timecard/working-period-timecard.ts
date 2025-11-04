@@ -205,57 +205,72 @@ export class WorkingPeriodTimecard implements ValueObject {
     });
   }
 
-  debug() {
+  debug(showPlanning = false): string {
     return `
         WorkingPeriodTimecard ${this.id} for ${this.employee.firstName} ${
           this.employee.lastName
         } (${this.employee.silaeId})
+        ----------------------------
         MealTickets: ${this.mealTickets}
+        ----------------------------
         Period: ${this.workingPeriod.period.toFormattedString()}
-        Contract: ${this.contract.id} ${formatDuration(
-          this.contract.weeklyTotalWorkedHours
-        )} / week - ${this.contract.subType} ${
-          this.contract.extraDuration || ''
-        } \n NightWorker : ${this.getNightOrdinary().join(', ')} - SundayWorker : ${
-          this.contract.isSundayWorker() ? 'Yes' : 'No'
-        }
+        ----------------------------
+        Contract: 
+${this.contract.id} ${formatDuration(this.contract.weeklyTotalWorkedHours)} / week - ${
+      this.contract.subType
+    } ${this.contract.extraDuration || ''} \n NightWorker : ${this.getNightOrdinary().join(
+      ', '
+    )} - SundayWorker : ${this.contract.isSundayWorker() ? 'Yes' : 'No'}
+        ----------------------------
         WorkedHours: 
-            ${this.workedHours
-              .toSeq()
-              .map((duration, rate) =>
-                duration.isZero()
-                  ? ``
-                  : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`
-              )
-              .filter(s => s)
-              .join('\n\t\t')}
-        Leaves: ${this.leaves
-          .sortBy(
-            s => s.date,
-            (a, b) => a.compareTo(b)
-          )
-          .map(l => l.debug())
-          .join(' | ')}
-        Shifts: ${this.shifts
-          .sortBy(
-            s => s.startTime,
-            (a, b) => a.compareTo(b)
-          )
-          .map(s => s.debug())
-          .join(' | ')}
-        Benches: ${this.benches
-          .sortBy(
-            s => LocalDateTime.of(s.date, s.timeslot.startTime),
-            (a, b) => a.compareTo(b)
-          )
-          .map(s => s.debug())
-          .join(' | ')}
-        InactiveShifts: ${this.inactiveShifts.map(s => s.debug()).join(' | ')}
-        AnalyzedShifts: ${this.analyzedShifts?.map(s => s.debug()).join(' | ') ?? ''}
-        _____
-        planning: ${this.weeklyPlanning
-          .map((slots, day) => `${day} -> ${slots.map(s => s.debug()).join(' | ')}`)
-          .join('\n\t\t')}
+${this.workedHours
+  .toSeq()
+  .map((duration, rate) =>
+    duration.isZero() ? `` : `${HoursTypeCodes[rate]} -> ${formatDurationAs100(duration)}`
+  )
+  .filter(s => s)
+  .join('\n\t\t')}
+          ----------------------------
+        Leaves: ${this.leaves.size}
+${this.leaves
+  .sortBy(
+    s => s.date,
+    (a, b) => a.compareTo(b)
+  )
+  .map(l => l.debug())
+  .join('\n')}
+          ----------------------------
+        Shifts: ${this.shifts.size}
+${this.shifts
+  .sortBy(
+    s => s.startTime,
+    (a, b) => a.compareTo(b)
+  )
+  .map(s => s.debug())
+  .join('\n')}
+          ----------------------------
+        Benches:
+${this.benches
+  .sortBy(
+    s => LocalDateTime.of(s.date, s.timeslot.startTime),
+    (a, b) => a.compareTo(b)
+  )
+  .map(s => s.debug())
+  .join(' | ')}
+          ----------------------------
+        InactiveShifts:
+${this.inactiveShifts.map(s => s.debug()).join(' | ')}
+          ----------------------------
+        AnalyzedShifts:
+${this.analyzedShifts?.map(s => s.debug()).join(' | ') ?? ''}
+        ${
+          showPlanning &&
+          `----------------------------
+          Planning:
+${this.weeklyPlanning
+  .map((slots, day) => `${day} -> ${slots.map(s => s.debug()).join(' | ')}`)
+  .join('\n\t\t')}`
+        }
       `;
   }
 }

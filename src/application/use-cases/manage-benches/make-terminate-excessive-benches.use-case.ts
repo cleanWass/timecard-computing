@@ -47,17 +47,6 @@ export const makeTerminateExcessiveBenchesUseCase = (
           )
         )
       ),
-      TE.tapIO(
-        ({ timecardComputationResultForPeriod }) =>
-          () =>
-            console.log(
-              'Terminated excessive benches',
-              timecardComputationResultForPeriod
-                .flatMap(t => t.timecards)
-                .map(t => t.debug())
-                .join('\n')
-            )
-      ),
       TE.map(({ excessiveBenches }) =>
         excessiveBenches.map(({ employee, weeksToReset, benches }) => ({
           employee,

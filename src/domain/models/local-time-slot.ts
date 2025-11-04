@@ -141,7 +141,7 @@ export class LocalTimeSlot implements ValueObject {
   overlaps(addend: LocalTimeSlot) {
     return (
       Math.min(this.endTime.toSecondOfDay(), addend.endTime.toSecondOfDay()) -
-        Math.max(this.startTime.toSecondOfDay(), addend.startTime.toSecondOfDay()) >=
+        Math.max(this.startTime.toSecondOfDay(), addend.startTime.toSecondOfDay()) >
       0
     );
   }

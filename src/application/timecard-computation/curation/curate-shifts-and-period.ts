@@ -105,7 +105,10 @@ export const curateLeaves = (timecard: WorkingPeriodTimecard) => {
 
   const filterOutPaidLeavesCanceledByHolidays = (leave: Leave) =>
     leave.compensation !== 'PAID' ||
-    !holidays.some(holiday => holiday.getTimeSlot().overlaps(leave.getTimeSlot()));
+    !holidays.some(
+      holiday =>
+        holiday.getTimeSlot().overlaps(leave.getTimeSlot()) && holiday.date.isEqual(leave.date)
+    );
 
   const leaves = timecard.leaves
     .filterNot(leave => leave.absenceType === 'HOLIDAY')

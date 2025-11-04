@@ -41,6 +41,7 @@ export const handleTimecardComputationRoute = (req: express.Request, res: expres
       ...timecards,
       prospectiveTimecards: prospectiveTimecards.timecards,
     })),
+
     TE.fold(
       e => {
         console.error('Error in TE.fold:', e);

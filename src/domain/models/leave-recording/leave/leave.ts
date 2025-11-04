@@ -118,8 +118,8 @@ export class Leave implements ValueObject, ILeave {
 
   debug(): string {
     return `${this.getStartDateTime().format(
-      DateTimeFormatter.ofPattern('HH:mm dd/MM/yy')
-    )} -> ${this.getEndDateTime().format(DateTimeFormatter.ofPattern('HH:mm dd/MM/yy'))} : ${
+      DateTimeFormatter.ofPattern('dd/MM/yy HH:mm')
+    )} -> ${this.getEndDateTime().format(DateTimeFormatter.ofPattern('HH:mm'))} : ${
       this.absenceType
     } ${this.clientName}`;
   }

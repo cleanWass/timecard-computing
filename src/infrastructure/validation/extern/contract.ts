@@ -1,4 +1,4 @@
-import zod from 'zod';
+import zod, { z } from 'zod';
 import { CONTRACT_TYPE } from '../../../domain/models/employment-contract-management/employment-contract/contract-type';
 import { periodValidator } from './temporals';
 
@@ -13,8 +13,15 @@ export const contractValidator = zod.object({
   metadata: zod
     .object({
       contractualPlanning: zod
-        .string()
-        .transform(v => JSON.parse(v))
+        .record(
+          zod.enum(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']),
+          z.array(
+            zod.object({
+              start: zod.string(),
+              end: zod.string(),
+            })
+          )
+        )
         .optional(),
     })
     .optional(),
