@@ -94,6 +94,12 @@ export const generateAffectationsForBenchesFromContractualPlanning = (
     affectations: Set(),
   };
 
+  console.log(
+    `${timecard.employee.firstName} ${
+      timecard.employee.lastName
+    } remainingDuration: ${ctx.remainingDuration.toMinutes()} minutes`
+  );
+
   while (
     isDurationPositive(ctx.remainingDuration) &&
     ctx.currentDay.isBefore(workingPeriod.period.end)

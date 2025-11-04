@@ -6,6 +6,7 @@ import { CareDataParserClient } from '../../../application/ports/services/care-d
 import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { FetchError } from '../../../~shared/error/fetch-error';
 import { mapApiEmployeeDataToEmployeeData } from './mappers/api-employee-data.mapper';
+import { mapBenchToBenchPayloadDto } from './mappers/bench-payload-dto.mapper';
 
 export const makeCareDataParserClient = (config: {
   baseUrl: string;
@@ -20,7 +21,7 @@ export const makeCareDataParserClient = (config: {
   });
 
   return {
-    getIntercontractEmployees: (period: LocalDateRange) => {
+    getEmployeesWithBenchGeneration: (period: LocalDateRange) => {
       return pipe(
         TE.tryCatch(
           () =>
@@ -52,17 +53,36 @@ export const makeCareDataParserClient = (config: {
         TE.chainW(flow(mapApiEmployeeDataToEmployeeData, TE.fromEither))
       ),
 
-    createBenchAffectations: ({ silaeId, affectations }) =>
+    generateBenchAffectation: bench =>
+      pipe(
+        TE.tryCatch(
+          () => {
+            return client.post(`/generate-bench-affectation`, {
+              payload: mapBenchToBenchPayloadDto(bench),
+              // .map(mapBenchAffectationToApiPayload),
+            });
+          },
+          error => {
+            console.log('error', error);
+            return new FetchError(`API Care-data-parser:
+          Failed to create bench affectations: ${error}`);
+          }
+        ),
+        TE.map(() => undefined)
+      ),
+
+    deleteBenchAffectations: ({ silaeId, affectationsIds }) =>
       pipe(
         TE.tryCatch(
           () =>
-            client.post(`/employees/${silaeId}/benches`, {
-              affectations: affectations,
+            client.post(`/delete-bench-affectations`, {
+              silaeId,
+              affectationsIds,
               // .map(mapBenchAffectationToApiPayload),
             }),
           error =>
             new FetchError(`API Care-data-parser:
-          Failed to create bench affectations: ${error}`)
+          Failed to delete bench affectations: ${error}`)
         ),
         TE.map(() => undefined)
       ),

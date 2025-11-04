@@ -5,7 +5,7 @@ import { EmploymentContract } from '../../../domain/models/employment-contract-m
 import { Leave } from '../../../domain/models/leave-recording/leave/leave';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
-import { SlotToCreate } from '../../../domain/services/bench-generation/types';
+import { BenchAffectation, SlotToCreate } from '../../../domain/services/bench-generation/types';
 
 export type EmployeeData = {
   employee: Employee;
@@ -15,7 +15,7 @@ export type EmployeeData = {
 };
 
 export interface CareDataParserClient {
-  getIntercontractEmployees: (
+  getEmployeesWithBenchGeneration: (
     period: LocalDateRange
   ) => TE.TaskEither<Error, ReadonlyArray<EmployeeData>>;
 
@@ -24,8 +24,10 @@ export interface CareDataParserClient {
     period: LocalDateRange;
   }) => TE.TaskEither<Error, EmployeeData>;
 
-  createBenchAffectations: (params: {
+  generateBenchAffectation: (params: BenchAffectation) => TE.TaskEither<Error, void>;
+
+  deleteBenchAffectations: (params: {
     silaeId: string;
-    affectations: SlotToCreate[];
+    affectationsIds: string[];
   }) => TE.TaskEither<Error, void>;
 }

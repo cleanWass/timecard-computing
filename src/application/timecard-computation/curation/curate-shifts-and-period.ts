@@ -62,6 +62,7 @@ export const filterBenchingShifts = (timecard: WorkingPeriodTimecard) => {
         date: sh.getDate(),
         timeslot: sh.getTimeSlot(),
         client: { name: sh.clientName, id: sh.clientId },
+        affectationId: sh.id,
       })
     )
   );

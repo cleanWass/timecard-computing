@@ -1,3 +1,4 @@
+import { LocalDateTime } from '@js-joda/core';
 import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -52,4 +53,4 @@ export const createContextLogger = (context: Record<string, any>) => {
   return logger.child(context);
 };
 
-export const generateRequestId = (): string => uuidv4();
+export const generateRequestId = (): string => LocalDateTime.now().toString() + '-';

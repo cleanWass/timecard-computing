@@ -179,7 +179,7 @@ export const computeTimecardForEmployee =
         employee,
         workingPeriods,
         groupedShifts,
-        timecards,
+        timecards: timecards,
         contracts,
         weeklyRecaps,
       }))

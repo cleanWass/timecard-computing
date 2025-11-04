@@ -28,7 +28,7 @@ export const makeApp = (dependencies: AppDependencies): Express => {
   // ══════════════════════════════════════════════════════════════════════
 
   const routes = makeRoutes(dependencies);
-  app.use('/api', routes);
+  app.use('', routes);
 
   // ══════════════════════════════════════════════════════════════════════
   // ERROR HANDLER (doit être en dernier)

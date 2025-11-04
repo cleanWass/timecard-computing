@@ -2,13 +2,10 @@ import {
   ChronoUnit,
   DateTimeFormatter,
   Duration,
-  Instant,
   LocalDate,
   LocalDateTime,
   LocalTime,
-  ZoneId,
 } from '@js-joda/core';
-import { Interval } from '@js-joda/extra';
 import { pipe } from 'fp-ts/function';
 import { getOrElse, Option } from 'fp-ts/Option';
 import { Map, ValueObject } from 'immutable';

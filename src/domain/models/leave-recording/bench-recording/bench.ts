@@ -1,7 +1,5 @@
 import { DateTimeFormatter, Duration, LocalDate, LocalDateTime } from '@js-joda/core';
-import { pipe } from 'fp-ts/function';
-import * as O from 'fp-ts/Option';
-import { Map, ValueObject, Set } from 'immutable';
+import { Map, Set, ValueObject } from 'immutable';
 
 import { formatDurationAs100 } from '../../../../~shared/util/joda-helper';
 import { TypeProps } from '../../../../~shared/util/types';
@@ -10,23 +8,26 @@ import { Client } from '../../mission-delivery/client/client';
 import { Shift } from '../../mission-delivery/shift/shift';
 import { BenchId } from './bench-id';
 
+export const CLEANY_INTERCONTRAT_ID = '0010Y00000Ijn8cQAB';
+
 export type IBench = {
   id: BenchId;
   employeeId: string;
   date: LocalDate;
   timeslot: LocalTimeSlot;
   client: Client;
+  affectationId: string;
 };
 
 export class Bench implements ValueObject, IBench {
   private readonly _vo: ValueObject;
 
-  public static build({ id, employeeId, date, timeslot, client }: IBench) {
-    return new Bench(id, employeeId, date, timeslot, client);
+  public static build({ id, employeeId, date, timeslot, client, affectationId }: IBench) {
+    return new Bench(id, employeeId, date, timeslot, client, affectationId);
   }
 
   public static isBench(shift: Shift): boolean {
-    return shift.clientId === '0010Y00000Ijn8cQAB' || shift.type === 'Intercontrat';
+    return shift.clientId === CLEANY_INTERCONTRAT_ID || shift.type === 'Intercontrat';
   }
 
   public static totalBenchesDuration(benches: Set<Bench>): Duration {
@@ -38,14 +39,16 @@ export class Bench implements ValueObject, IBench {
     public readonly employeeId: string,
     public readonly date: LocalDate,
     public readonly timeslot: LocalTimeSlot,
-    public readonly client: Client
+    public readonly client: Client,
+    public readonly affectationId: string
   ) {
     this._vo = Map<string, TypeProps<IBench>>()
       .set('id', this.id)
       .set('employeeId', this.employeeId)
       .set('date', this.date)
       .set('timeslot', this.timeslot)
-      .set('client', this.client);
+      .set('client', this.client)
+      .set('affectationId', this.affectationId);
   }
 
   equals(other: unknown): boolean {
@@ -74,5 +77,13 @@ export class Bench implements ValueObject, IBench {
     )} -> ${this.end().format(DateTimeFormatter.ofPattern('HH:mm'))} ${this.client.name} ${
       this.client.id
     } ${formatDurationAs100(this.duration())}`;
+  }
+
+  isExtraService(): boolean {
+    return this.client.id !== CLEANY_INTERCONTRAT_ID;
+  }
+
+  getAffectationId(): string {
+    return this.affectationId.split('-')[0];
   }
 }

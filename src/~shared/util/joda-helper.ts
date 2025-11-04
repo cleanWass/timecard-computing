@@ -36,3 +36,6 @@ export const formatLocalDate = ({ date, pattern }: { date: LocalDate; pattern?: 
 
 export const parseLocalDate = ({ date, pattern }: { date: string; pattern?: string }) =>
   LocalDate.parse(date, DateTimeFormatter.ofPattern(pattern || 'dd/MM/yy'));
+
+export const toHoursFloat = (duration: Duration): number =>
+  duration.seconds() / 3600 + duration.nano() / 3.6e12;

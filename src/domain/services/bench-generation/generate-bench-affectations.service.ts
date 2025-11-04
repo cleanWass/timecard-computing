@@ -1,4 +1,6 @@
-import { DayOfWeek, Duration } from '@js-joda/core';
+import { DayOfWeek, Duration, LocalTime } from '@js-joda/core';
+import { toArray } from 'fp-ts/Map';
+import * as RA from 'fp-ts/ReadonlyArray';
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
@@ -6,63 +8,98 @@ import { List, Map, Set } from 'immutable';
 import { TimecardComputationResult } from '../../../application/csv-generation/export-csv';
 import { Bench } from '../../models/leave-recording/bench-recording/bench';
 import { LocalDateRange } from '../../models/local-date-range';
+import { LocalTimeSlot } from '../../models/local-time-slot';
+import { WorkingPeriodTimecard } from '../../models/timecard-computation/timecard/working-period-timecard';
 import {
   generateAffectationsForBenchesFromContractualPlanning,
   groupSameHoursSlots,
   logBenchAffectations,
   mergeContinuousTimeSlots,
 } from './helper';
-import { SlotToCreate } from './types';
+import { BenchAffectation, SlotToCreate } from './types';
+
+const buildBenchAffectation =
+  (timecard: WorkingPeriodTimecard) =>
+  (groupedByDaysSlots: Map<Set<DayOfWeek>, Set<SlotToCreate>>) =>
+    groupedByDaysSlots
+      .map(
+        (slots, days) =>
+          ({
+            slot: slots.first()?.slot || new LocalTimeSlot(LocalTime.MIN, LocalTime.MIN),
+            days,
+            duration: slots.first()?.duration || Duration.ZERO,
+            period: timecard.workingPeriod.period,
+            employee: timecard.employee,
+          }) satisfies BenchAffectation
+      )
+      .toSet();
 
 export const generateSlotToCreatesService = {
-  generateIntercontract:
+  generateMissingBenches:
     ({ period }: { period: LocalDateRange }) =>
-    (result: TimecardComputationResult[]) => {
-      let slotsToCreate = Map<string, Set<SlotToCreate>>();
+    (result: readonly TimecardComputationResult[]) => {
       return pipe(
         result,
         TE.traverseArray(computationResult => {
-          const unregisteredBenches = computationResult.timecards.reduce(
-            (acc, tc) =>
-              acc.set(
-                tc.workingPeriod.period,
-                pipe(
-                  tc,
-                  generateAffectationsForBenchesFromContractualPlanning,
-                  mergeContinuousTimeSlots,
-                  slots => {
-                    slotsToCreate = slotsToCreate.update(
-                      computationResult.employee.silaeId,
-                      Set<SlotToCreate>(),
-                      s => s?.union(slots)
-                    );
-                    return slots;
-                  },
-                  groupSameHoursSlots
-                )
-              ),
-            Map<LocalDateRange, Map<Set<DayOfWeek>, Set<SlotToCreate>>>()
+          const benchesToCreate = Set(computationResult.timecards).flatMap(tc =>
+            pipe(
+              tc,
+              generateAffectationsForBenchesFromContractualPlanning,
+              mergeContinuousTimeSlots,
+              groupSameHoursSlots,
+              buildBenchAffectation(tc)
+            )
           );
 
-          logBenchAffectations(
-            slotsToCreate.get(computationResult.employee.silaeId)?.size || 0,
-            unregisteredBenches,
-            computationResult.employee
-          );
+          // logBenchAffectations(
+          //   slotsToCreate.get(computationResult.employee.silaeId)?.size || 0,
+          //   unregisteredBenches,
+          //   computationResult.employee
+          // );
 
-          return TE.right({
-            employee: computationResult.employee,
-            timecards: computationResult.timecards,
-            benches: List(computationResult.timecards.flatMap(tc => tc.benches.toArray())),
-            weeklyRecaps: computationResult.weeklyRecaps,
-            workingPeriods: computationResult.workingPeriods,
-            period,
-            benchesToCreate:
-              slotsToCreate.get(computationResult.employee.silaeId) || Set<SlotToCreate>(),
-          });
-        })
+          return TE.right(benchesToCreate.toArray());
+        }),
+        TE.map(result => result.flat(1)),
+        t => t
       );
     },
+
+  terminateExcessiveBenches: (result: readonly TimecardComputationResult[]) => {
+    return pipe(
+      result,
+      TE.traverseArray(computationResult =>
+        pipe(
+          computationResult.timecards,
+          TE.traverseArray(tc => {
+            const benchesDeltaForPeriod = tc.workedHours.TotalIntercontract.minus(
+              Bench.totalBenchesDuration(tc.benches)
+            );
+            return TE.right({
+              week: tc.workingPeriod.period,
+              delta: benchesDeltaForPeriod,
+              benches: tc.benches
+                .filter(({ date }) => tc.workingPeriod.period.contains(date))
+                .filterNot(bench => bench.isExtraService()),
+            });
+          }),
+          TE.map(RA.filter(({ delta }) => delta.isNegative())),
+          TE.map(deltas => {
+            console.log(`${deltas.map(({ week }) => week).map(w => w.toFormattedString())}`);
+            console.log(
+              `Benches to terminate: ${Set(deltas)
+                .flatMap(({ benches }) => benches)
+                .map(b => b.affectationId + ' ' + b.client.name)}`
+            );
+            return {
+              employee: computationResult.employee,
+              weeksToReset: deltas.map(({ week }) => week),
+              benches: Set(deltas).flatMap(({ benches }) => benches),
+            };
+          })
+        )
+      )
+    );
+  },
 
   filterNewAffectations: (
     affectations: Set<SlotToCreate>,
@@ -79,9 +116,8 @@ export const generateSlotToCreatesService = {
     return E.right(affectation);
   },
 
-  computeStatistics: (affectations: Set<SlotToCreate>) => ({
+  computeStatistics: (affectations: Set<BenchAffectation>) => ({
     totalCount: affectations.size,
     totalDuration: affectations.reduce((sum, aff) => sum.plus(aff.duration), Duration.ZERO),
-    byDate: affectations.groupBy(aff => aff.date.toString()).map(affs => affs.size),
   }),
 };

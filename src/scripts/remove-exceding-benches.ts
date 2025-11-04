@@ -1,11 +1,11 @@
-import * as E from 'fp-ts/Either';
 import { DateTimeFormatter, LocalDate } from '@js-joda/core';
+import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
-import { makeCreateMissingBenchesUseCase } from '../application/use-cases/manage-benches/make-create-missing-benches.use-case';
+import { makeTerminateExcessiveBenchesUseCase } from '../application/use-cases/manage-benches/make-terminate-excessive-benches.use-case';
 import { EnvService } from '../config/env';
 import { LocalDateRange } from '../domain/models/local-date-range';
 import { makeCareDataParserClient } from '../infrastructure/http/care-data-parser/care-cata-parser.client';
-
+// 0010Y00000Ijn8cQAB
 const DATE_FORMAT = 'dd/MM/yy';
 const REQUIRED_ARGS_COUNT = 4;
 
@@ -34,23 +34,25 @@ async function main(): Promise<void> {
     baseUrl: EnvService.get('CARE_DATA_PARSER_URL'),
     apiKey: EnvService.get('CARE_DATA_PARSER_API_KEY'),
   });
-  const useCase = makeCreateMissingBenchesUseCase(careDataCareClient);
+  const useCase = makeTerminateExcessiveBenchesUseCase(careDataCareClient);
 
   const period = parseCommandLineArgs();
-  const result = await useCase.execute({ period })();
+  const result = await useCase.execute(period)();
   console.log(
     'end generatePayrollExports',
     pipe(
       result,
       E.foldW(
         error => error,
-        result => `${result.processedEmployees} processed employees with ${
-          result.totalAffectationsCreated
-        } intercontracts created
-        ${result.details
+        result => ` 
+        ${result
           .map(
             d =>
-              `${d.employee.firstName} ${d.employee.lastName} ${d.employee.silaeId}: ${d.affectations.size} affectations created`
+              `${d.employee.firstName} ${d.employee.lastName} ${
+                d.employee.silaeId
+              }: ${d.weeksToReset.map(w => w.toFormattedString())}
+              ${d.benches.map(b => `${b.client.name} ${b.affectationId} ${b.id}`).join(', ')}
+              `
           )
           .join('\n')}
         
