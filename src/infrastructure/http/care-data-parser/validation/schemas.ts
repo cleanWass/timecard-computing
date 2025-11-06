@@ -70,8 +70,8 @@ export const apiLeavePeriodsSchema = z.object({
   startTime: zod.string().nullish(),
   endTime: zod.string().nullish(),
   period: zod.object({
-    startDate: zod.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    endDate: zod.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    start: zod.string(),
+    end: zod.string(),
   }),
   employeeId: zod.string(),
   silaeId: zod.string(),

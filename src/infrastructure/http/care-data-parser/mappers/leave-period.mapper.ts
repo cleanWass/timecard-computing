@@ -32,25 +32,25 @@ export const mapApiLeavePeriodToLeavePeriod = (
       'period',
       ({
         parsedData: {
-          period: { endDate, startDate },
+          period: { end, start },
         },
       }) => {
-        const start = E.tryCatch(
-          () => LocalDate.parse(startDate),
+        const startDate = E.tryCatch(
+          () => LocalDate.parse(start),
           error =>
             new ParseError('mapApiLeavePeriodToLeavePeriod ParseError : ' + JSON.stringify(error))
         );
-        const end = E.tryCatch(
-          () => LocalDate.parse(endDate),
+        const endDate = E.tryCatch(
+          () => (end ? LocalDate.parse(end) : LocalDate.now().plusYears(1)),
           error =>
             new ParseError('mapApiLeavePeriodToLeavePeriod ParseError : ' + JSON.stringify(error))
         );
         return pipe(
           A.sequenceS(E.Apply)({
-            start,
-            end,
+            startDate,
+            endDate,
           }),
-          E.chain(({ start, end }) => LocalDateRange.of(start, end))
+          E.chain(({ startDate, endDate }) => LocalDateRange.of(startDate, endDate))
         );
       }
     ),

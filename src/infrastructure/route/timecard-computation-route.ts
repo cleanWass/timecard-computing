@@ -8,6 +8,7 @@ import * as T from 'fp-ts/lib/Task';
 import * as TE from 'fp-ts/lib/TaskEither';
 import { List } from 'immutable';
 import { computeTimecardForEmployee } from '../../application/timecard-computation/compute-timecard-for-employee';
+import { LeavePeriod } from '../../domain/models/leave-recording/leave/leave-period';
 import { formatTimecardComputationReturn } from '../formatting/format-timecard-response';
 import {
   fetchTimecardData,
@@ -31,7 +32,11 @@ export const handleTimecardComputationRoute = (req: express.Request, res: expres
     ),
     TE.bind('prospectiveTimecards', ({ params: { period, prospectiveShifts }, data }) =>
       pipe(
-        { ...data, shifts: data.shifts.concat(List(prospectiveShifts)) },
+        {
+          ...data,
+          shifts: data.shifts.concat(List(prospectiveShifts)),
+          leavePeriods: List<LeavePeriod>(),
+        },
         computeTimecardForEmployee(period),
         E.map(formatTimecardComputationReturn),
         TE.fromEither

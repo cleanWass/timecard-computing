@@ -1,10 +1,11 @@
 import { DayOfWeek, Duration, LocalDate } from '@js-joda/core';
 import { Employee } from '../../models/employee-registration/employee/employee';
 import { EmploymentContract } from '../../models/employment-contract-management/employment-contract/employment-contract';
+import { LeavePeriod } from '../../models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../models/local-date-range';
 import { LocalTimeSlot } from '../../models/local-time-slot';
 import { WorkingPeriodTimecard } from '../../models/timecard-computation/timecard/working-period-timecard';
-import { Set } from 'immutable';
+import { List, Set } from 'immutable';
 
 export type IntercontractResult = {
   period: LocalDateRange;
@@ -22,6 +23,7 @@ export type SlotToCreate = {
   slot: LocalTimeSlot;
   duration: Duration;
   date: LocalDate;
+  isDuringLeavePeriod: boolean;
 };
 
 export type BenchAffectation = {
@@ -29,7 +31,7 @@ export type BenchAffectation = {
   slot: LocalTimeSlot;
   duration: Duration;
   period: LocalDateRange;
-  // isDuringLeavePeriod: boolean;
+  isDuringLeavePeriod: boolean;
   days: Set<DayOfWeek>;
 };
 

@@ -8,6 +8,7 @@ import '@js-joda/timezone';
 import { Employee } from '../../domain/models/employee-registration/employee/employee';
 import { EmploymentContract } from '../../domain/models/employment-contract-management/employment-contract/employment-contract';
 import { Leave } from '../../domain/models/leave-recording/leave/leave';
+import { LeavePeriod } from '../../domain/models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { LocalTimeSlot } from '../../domain/models/local-time-slot';
 import { Shift } from '../../domain/models/mission-delivery/shift/shift';
@@ -54,12 +55,14 @@ const findContract = (contracts: List<EmploymentContract>) => (workingPeriod: Wo
 const initializeWorkingPeriodTimecard = ({
   shifts,
   leaves,
+  leavePeriods,
   contract,
   workingPeriod,
   employee,
 }: {
   shifts: List<Shift>;
   leaves: List<Leave>;
+  leavePeriods: List<LeavePeriod>;
   contract: EmploymentContract;
   employee: Employee;
   workingPeriod: WorkingPeriod;
@@ -74,6 +77,7 @@ const initializeWorkingPeriodTimecard = ({
     ),
     shifts,
     leaves,
+    leavePeriods,
   });
 
 export type ComputeTimecardForEmployeeType = Either<
@@ -93,9 +97,10 @@ export const computeWorkingPeriodTimecard: (
   workingPeriod: WorkingPeriod,
   shifts: List<Shift>,
   leaves: List<Leave>,
+  leavePeriods: List<LeavePeriod>,
   contract: EmploymentContract,
   employee: Employee
-) => WorkingPeriodTimecard = (workingPeriod, shifts, leaves, contract, employee) => {
+) => WorkingPeriodTimecard = (workingPeriod, shifts, leaves, leavePeriods, contract, employee) => {
   return pipe(
     {
       contract,
@@ -103,6 +108,7 @@ export const computeWorkingPeriodTimecard: (
       workingPeriod,
       shifts,
       leaves,
+      leavePeriods,
     },
     initializeWorkingPeriodTimecard,
     curateLeaves,
@@ -124,7 +130,7 @@ export const computeWorkingPeriodTimecard: (
 
 export const computeTimecardForEmployee =
   (period: LocalDateRange) =>
-  ({ employee, shifts, contracts, leaves }: EmployeeData) => {
+  ({ employee, shifts, contracts, leaves, leavePeriods }: EmployeeData) => {
     if (contracts.isEmpty() && shifts.isEmpty()) {
       return E.right({
         period,
@@ -151,8 +157,18 @@ export const computeTimecardForEmployee =
       E.bind('groupedLeaves', ({ workingPeriods }) =>
         groupLeavesByWorkingPeriods(leaves, workingPeriods)
       ),
-      E.bind('timecards', ({ mergedContracts, workingPeriods, groupedShifts, groupedLeaves }) =>
-        pipe(
+      E.bind('timecards', ({ mergedContracts, workingPeriods, groupedShifts, groupedLeaves }) => {
+        console.log('leaves : ', leaves.map(l => l.debug()).join('\n'));
+        console.log(
+          'groupedLeaves :',
+          groupedLeaves
+            .map(
+              (lg, wp) => wp.period.toFormattedString() + ' : ' + lg.map(l => l.debug()).join('\n')
+            )
+            .join('--------------\n')
+        );
+        console.log('leavePeriods : ', leavePeriods.map(lp => lp.debug()).join('\n'));
+        return pipe(
           workingPeriods.toArray(),
           E.traverseArray(wp =>
             pipe(
@@ -163,14 +179,15 @@ export const computeTimecardForEmployee =
                   workingPeriod,
                   groupedShifts.get(workingPeriod, List<Shift>()),
                   groupedLeaves.get(workingPeriod, List<Leave>()),
+                  leavePeriods,
                   contract,
                   employee
                 )
               )
             )
           )
-        )
-      ),
+        );
+      }),
       E.bind('weeklyRecaps', ({ timecards }) =>
         generateWeeklyTimecardRecap(List(timecards), employee, period)
       ),

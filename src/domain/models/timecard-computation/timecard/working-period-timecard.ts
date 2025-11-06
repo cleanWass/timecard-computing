@@ -20,6 +20,7 @@ import {
 } from '../../employment-contract-management/employment-contract/employment-contract';
 import { Bench } from '../../leave-recording/bench-recording/bench';
 import { Leave } from '../../leave-recording/leave/leave';
+import { LeavePeriod } from '../../leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../local-date-range';
 import { LocalTimeSlot } from '../../local-time-slot';
 import { InactiveShift } from '../../mission-delivery/shift/inactive-shift';
@@ -39,6 +40,7 @@ export interface IWorkingPeriodTimecard {
 
   shifts: List<Shift>;
   leaves: List<Leave>;
+  leavePeriods: List<LeavePeriod>;
   benches: Set<Bench>;
   inactiveShifts: List<InactiveShift>;
   analyzedShifts: List<AnalyzedShift>;
@@ -62,6 +64,7 @@ export class WorkingPeriodTimecard implements ValueObject {
 
     public readonly shifts: List<Shift>,
     public readonly leaves: List<Leave>,
+    public readonly leavePeriods: List<LeavePeriod>,
     public readonly benches: Set<Bench>,
     public readonly inactiveShifts: List<InactiveShift>,
     public readonly analyzedShifts: List<AnalyzedShift>,
@@ -77,6 +80,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       .set('workingPeriod', this.workingPeriod)
       .set('shifts', this.shifts)
       .set('leaves', this.leaves)
+      .set('leavePeriods', this.leavePeriods)
       .set('benches', this.benches)
       .set('inactiveShifts', this.inactiveShifts)
       .set('analyzedShifts', this.analyzedShifts)
@@ -94,6 +98,7 @@ export class WorkingPeriodTimecard implements ValueObject {
     shifts: List<Shift>;
 
     leaves: List<Leave>;
+    leavePeriods: List<LeavePeriod>;
 
     mealTickets?: number;
   }) {
@@ -110,6 +115,7 @@ export class WorkingPeriodTimecard implements ValueObject {
 
       params.shifts,
       params.leaves ?? List<Leave>(),
+      params.leavePeriods ?? List<LeavePeriod>(),
       Set<Bench>(),
 
       List<InactiveShift>(),
@@ -191,6 +197,7 @@ export class WorkingPeriodTimecard implements ValueObject {
       params.workingPeriod ?? this.workingPeriod,
       params.shifts ?? this.shifts,
       params.leaves ?? this.leaves,
+      params.leavePeriods ?? this.leavePeriods,
       params.benches ?? this.benches,
       params.inactiveShifts ?? this.inactiveShifts,
       params.analyzedShifts ?? this.analyzedShifts,

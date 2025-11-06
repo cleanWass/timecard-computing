@@ -22,6 +22,8 @@ import { ShiftId } from './shift-id';
 import '@js-joda/timezone';
 import { ShiftReason } from './shift-reason';
 
+export const CLEANY_INTERCONTRAT_ID = '0010Y00000Ijn8cQAB';
+
 export type IShift = {
   id: ShiftId;
   startTime: LocalDateTime;
@@ -128,6 +130,10 @@ export class Shift implements ValueObject, IShift {
       precedenceDate: params.precedenceDate ?? this.precedenceDate,
       parentAffectationId: params.parentAffectationId ?? this.parentAffectationId,
     });
+  }
+
+  isBench() {
+    return this.clientId === '0010Y00000Ijn8cQAB' || this.type === 'Intercontrat';
   }
 
   getDuration(): Duration {

@@ -4,6 +4,7 @@ import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import { List } from 'immutable';
+import { LeavePeriod } from '../../domain/models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { ProspectiveShift } from '../../domain/models/mission-delivery/shift/prospective-shift';
 import { fetchPayrollData } from '../../generate-csv-payroll';
@@ -100,6 +101,8 @@ export const formatEmployeeDataApiReturn = (data: ReturnType<typeof parseEmploye
       employee,
       shifts: List(shifts),
       leaves: List(leaves),
+      // FIXME  Leaves periods shouldn't be this
+      leavePeriods: List<LeavePeriod>(),
       contracts: List(contracts),
     }))
   );

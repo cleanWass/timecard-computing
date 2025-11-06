@@ -6,11 +6,14 @@ import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import { List, Map, Set } from 'immutable';
 import { TimecardComputationResult } from '../../../application/csv-generation/export-csv';
+import { Employee } from '../../models/employee-registration/employee/employee';
 import { Bench } from '../../models/leave-recording/bench-recording/bench';
+import { LeavePeriod } from '../../models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../models/local-date-range';
 import { LocalTimeSlot } from '../../models/local-time-slot';
 import { WorkingPeriodTimecard } from '../../models/timecard-computation/timecard/working-period-timecard';
 import {
+  checkIfDuringLeavePeriod,
   generateAffectationsForBenchesFromContractualPlanning,
   groupSameHoursSlots,
   logBenchAffectations,
@@ -30,6 +33,7 @@ const buildBenchAffectation =
             duration: slots.first()?.duration || Duration.ZERO,
             period: timecard.workingPeriod.period,
             employee: timecard.employee,
+            isDuringLeavePeriod: slots.some(sl => sl.isDuringLeavePeriod),
           }) satisfies BenchAffectation
       )
       .toSet();
@@ -41,15 +45,16 @@ export const generateSlotToCreatesService = {
       return pipe(
         result,
         TE.traverseArray(computationResult => {
-          const benchesToCreate = Set(computationResult.timecards).flatMap(tc =>
-            pipe(
+          const benchesToCreate = Set(computationResult.timecards).flatMap(tc => {
+            console.log(tc.debug());
+            return pipe(
               tc,
               generateAffectationsForBenchesFromContractualPlanning,
               mergeContinuousTimeSlots,
               groupSameHoursSlots,
               buildBenchAffectation(tc)
-            )
-          );
+            );
+          });
 
           return TE.right(benchesToCreate.toArray());
         }),

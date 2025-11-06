@@ -69,7 +69,7 @@ export function durationToPgInterval(d: Duration): string {
 export type BenchPayloadDto = {
   contractId: string;
   cleanerId: string;
-  type: 'Intercontrat';
+  type: 'Absence' | 'Intercontrat';
   startDate: string;
   endDate: string;
   startTime: string;

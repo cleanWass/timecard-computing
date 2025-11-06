@@ -1,4 +1,6 @@
 import { DayOfWeek, LocalDate, LocalDateTime } from '@js-joda/core';
+import { pipe } from 'fp-ts/function';
+import * as O from 'fp-ts/Option';
 import { List, Map, Set } from 'immutable';
 import { formatLocalDate, getLowerDuration } from '../../../~shared/util/joda-helper';
 import { Employee } from '../../models/employee-registration/employee/employee';
@@ -52,12 +54,24 @@ export const processContractualSlot = (
     const duration = getLowerDuration(slot.duration(), remainingDuration);
     remainingDuration = remainingDuration.minus(duration);
 
+    let timeSlot = new LocalTimeSlot(slot.startTime, slot.startTime.plus(duration));
     affectations = affectations.add({
       employee: ctx.timecard.employee,
       contract: ctx.timecard.contract,
-      slot: new LocalTimeSlot(slot.startTime, slot.startTime.plus(duration)),
+      slot: timeSlot,
       duration,
       date: ctx.currentDay,
+      isDuringLeavePeriod: ctx.timecard.leavePeriods.some(
+        leavePeriod =>
+          leavePeriod.period.includesDate(ctx.currentDay) &&
+          pipe(
+            leavePeriod.timeSlot,
+            O.fold(
+              () => true,
+              ts => ts.overlaps(timeSlot)
+            )
+          )
+      ),
     });
   });
 
@@ -116,6 +130,9 @@ export const generateAffectationsForBenchesFromContractualPlanning = (
   return ctx.affectations;
 };
 
+export const checkIfDuringLeavePeriod =
+  (tc: WorkingPeriodTimecard) => (slots: Set<SlotToCreate>) => {};
+
 export const mergeContinuousTimeSlots = (slots: Set<SlotToCreate>): Set<SlotToCreate> => {
   if (slots.isEmpty()) return slots;
 
@@ -140,6 +157,7 @@ export const mergeContinuousTimeSlots = (slots: Set<SlotToCreate>): Set<SlotToCr
         date: last.date,
         slot: new LocalTimeSlot(last.slot.startTime, current.slot.endTime),
         duration: last.duration.plus(current.duration),
+        isDuringLeavePeriod: last.isDuringLeavePeriod,
       };
       return acc.pop().push(mergedSlot);
     }
@@ -156,7 +174,12 @@ export const groupSameHoursSlots = (
   if (slots.isEmpty()) return Map<Set<DayOfWeek>, Set<SlotToCreate>>();
 
   return slots
-    .groupBy(slot => `${slot.slot.startTime.toString()}-${slot.slot.endTime.toString()}`)
+    .groupBy(
+      slot =>
+        `${slot.slot.startTime.toString()}-${slot.slot.endTime.toString()}-${
+          slot.isDuringLeavePeriod
+        }`
+    )
     .mapKeys((_, slotsForTimeRange) =>
       slotsForTimeRange.map(slot => slot.date.dayOfWeek()).toSet()
     );

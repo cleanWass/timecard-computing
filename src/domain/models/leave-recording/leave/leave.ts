@@ -14,6 +14,8 @@ import { LocalTimeSlot } from '../../local-time-slot';
 import { LeaveRetribution, PaidLeaveReason, UnpaidLeaveReason } from './leave-retribution';
 import '@js-joda/timezone';
 
+export const CLEANY_INTERCONTRAT_ID = '0010Y00000Ijn8cQAB';
+
 interface ILeave {
   id: string;
   date: LocalDate;
@@ -114,6 +116,10 @@ export class Leave implements ValueObject, ILeave {
       params.clientId ?? this.clientId,
       params.clientName ?? this.clientName
     );
+  }
+
+  isBench() {
+    return this.clientId === CLEANY_INTERCONTRAT_ID;
   }
 
   debug(): string {

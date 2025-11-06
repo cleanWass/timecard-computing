@@ -1,6 +1,8 @@
 import { flow, pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
-import { Set } from 'immutable';
+import { List, Set } from 'immutable';
+import { Employee } from '../../../domain/models/employee-registration/employee/employee';
+import { LeavePeriod } from '../../../domain/models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { generateSlotToCreatesService } from '../../../domain/services/bench-generation/generate-bench-affectations.service';
 import { IntercontractResult } from '../../../domain/services/bench-generation/types';
@@ -32,26 +34,17 @@ export const makeCreateMissingBenchesUseCase = (
           timecardComputationResultForPeriod
         )
       ),
-      TE.bind(
-        'benchAffectations',
-        ({ employeesWithBenchGeneration, missingBenches, timecardComputationResultForPeriod }) =>
-          pipe(missingBenches, TE.traverseArray(careDataParserClient.generateBenchAffectation))
+      TE.bind('benchAffectations', ({ missingBenches }) =>
+        pipe(missingBenches, TE.traverseArray(careDataParserClient.generateBenchAffectation))
       ),
-      TE.map(
-        ({
-          missingBenches,
-          timecardComputationResultForPeriod,
-          employeesWithBenchGeneration,
-          benchAffectations,
-        }) => ({
-          period,
-          processedEmployees: employeesWithBenchGeneration.length,
-          totalAffectationsCreated: benchAffectations.length,
-          details: employeesWithBenchGeneration.map(r => ({
-            employee: r.employee,
-            affectations: Set(missingBenches.filter(a => a.employee.id === r.employee.id)),
-          })),
-        })
-      )
+      TE.map(({ missingBenches, employeesWithBenchGeneration, benchAffectations }) => ({
+        period,
+        processedEmployees: employeesWithBenchGeneration.length,
+        totalAffectationsCreated: benchAffectations.length,
+        details: employeesWithBenchGeneration.map(r => ({
+          employee: r.employee,
+          affectations: Set(missingBenches.filter(a => a.employee.id === r.employee.id)),
+        })),
+      }))
     ),
 });

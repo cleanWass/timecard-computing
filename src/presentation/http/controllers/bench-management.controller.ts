@@ -11,17 +11,17 @@ import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { parseLocalDate } from '../../../~shared/util/joda-helper';
 
 export const makeBenchManagementController = (
-  manageIntercontractUseCase: MakeCreateMissingBenchesUseCase,
+  makeCreateMissingBenchesUseCase: MakeCreateMissingBenchesUseCase,
   makeTerminateExcessiveBenchesUseCase: MakeTerminateExcessiveBenchesUseCase
 ) => ({
   generate: async (req: Request, res: Response) => {
     const { startDate, endDate } = req.body;
 
     await pipe(
-      TE.of(
-        new LocalDateRange(parseLocalDate({ date: startDate }), parseLocalDate({ date: endDate }))
+      TE.fromEither(
+        LocalDateRange.of(parseLocalDate({ date: startDate }), parseLocalDate({ date: endDate }))
       ),
-      TE.chain(period => manageIntercontractUseCase.execute({ period })),
+      TE.chain(period => makeCreateMissingBenchesUseCase.execute({ period })),
       TE.fold(
         error => {
           console.error('[Intercontract Controller] Error:', error);

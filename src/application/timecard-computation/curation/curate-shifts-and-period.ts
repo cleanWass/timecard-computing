@@ -53,23 +53,42 @@ export const getCuratedShifts = (leave: Leave, shift: Shift) =>
   );
 
 export const filterBenchingShifts = (timecard: WorkingPeriodTimecard) => {
-  const shifts = timecard.shifts.filterNot(Bench.isBench);
-  const benches = timecard.benches.concat(
-    timecard.shifts.filter(Bench.isBench).map(sh =>
-      Bench.build({
-        id: sh.id,
-        employeeId: sh.employeeId,
-        date: sh.getDate(),
-        timeslot: sh.getTimeSlot(),
-        client: { name: sh.clientName, id: sh.clientId },
-        affectationId: sh.id,
-      })
-    )
+  console.log('fitler benching shifts ', timecard.leaves.map(s => s.debug()).join(','));
+  const shifts = timecard.shifts.filterNot(sh => sh.isBench());
+  let benches = timecard.benches.concat(
+    timecard.shifts
+      .filter(sh => sh.isBench())
+      .map(sh =>
+        Bench.build({
+          id: sh.id,
+          employeeId: sh.employeeId,
+          date: sh.getDate(),
+          timeslot: sh.getTimeSlot(),
+          client: { name: sh.clientName, id: sh.clientId },
+          affectationId: sh.id,
+        })
+      )
   );
 
+  const leaves = timecard.leaves.filterNot(leave => leave.isBench());
+  benches = benches.concat(
+    timecard.leaves
+      .filter(leave => leave.isBench())
+      .map(leave =>
+        Bench.build({
+          id: leave.id,
+          employeeId: leave.employeeId,
+          date: leave.date,
+          timeslot: leave.getTimeSlot(),
+          client: { name: leave.clientName, id: leave.clientId },
+          affectationId: leave.id,
+        })
+      )
+  );
   return timecard.with({
     shifts,
     benches,
+    leaves,
   });
 };
 

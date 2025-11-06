@@ -26,10 +26,6 @@ export class Bench implements ValueObject, IBench {
     return new Bench(id, employeeId, date, timeslot, client, affectationId);
   }
 
-  public static isBench(shift: Shift): boolean {
-    return shift.clientId === CLEANY_INTERCONTRAT_ID || shift.type === 'Intercontrat';
-  }
-
   public static totalBenchesDuration(benches: Set<Bench>): Duration {
     return benches.reduce((acc, bench) => acc.plus(bench.duration()), Duration.ZERO);
   }
