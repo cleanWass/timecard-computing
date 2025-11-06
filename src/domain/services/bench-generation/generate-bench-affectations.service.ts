@@ -51,16 +51,9 @@ export const generateSlotToCreatesService = {
             )
           );
 
-          // logBenchAffectations(
-          //   slotsToCreate.get(computationResult.employee.silaeId)?.size || 0,
-          //   unregisteredBenches,
-          //   computationResult.employee
-          // );
-
           return TE.right(benchesToCreate.toArray());
         }),
-        TE.map(result => result.flat(1)),
-        t => t
+        TE.map(result => result.flat(1))
       );
     },
 

@@ -1,6 +1,14 @@
+import { LocalTime } from '@js-joda/core';
+import { id } from 'fp-ts/Reader';
 import zod, { z } from 'zod';
 import { EMPLOYEE_ROLE } from '../../../../domain/models/employee-registration/employee/employee-role';
-import { LEAVE_REASON } from '../../../../domain/models/leave-recording/leave/leave-retribution';
+import { LeaveId } from '../../../../domain/models/leave-recording/leave/leave-id';
+import {
+  LEAVE_REASON,
+  PaidLeaveReason,
+  UnpaidLeaveReason,
+} from '../../../../domain/models/leave-recording/leave/leave-retribution';
+import { LocalDateRange } from '../../../../domain/models/local-date-range';
 import { SHIFT_REASON } from '../../../../domain/models/mission-delivery/shift/shift-reason';
 import { apiScheduledContractSchema } from './scheduled-contract.schema';
 
@@ -57,11 +65,27 @@ export const apiLeaveSchema = z.object({
 
 export type ApiLeave = z.infer<typeof apiLeaveSchema>;
 
+export const apiLeavePeriodsSchema = z.object({
+  id: zod.string().min(1),
+  startTime: zod.string().nullish(),
+  endTime: zod.string().nullish(),
+  period: zod.object({
+    startDate: zod.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    endDate: zod.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  }),
+  employeeId: zod.string(),
+  silaeId: zod.string(),
+  absenceType: zod.enum(LEAVE_REASON),
+});
+
+export type ApiLeavePeriods = z.infer<typeof apiLeavePeriodsSchema>;
+
 export const apiEmployeeDataSchema = z.object({
   cleaner: apiEmployeeSchema,
   shifts: z.array(apiShiftSchema),
   plannings: z.array(apiScheduledContractSchema),
   leaves: z.array(apiLeaveSchema),
+  leavePeriods: z.array(apiLeavePeriodsSchema),
 });
 
 export type ApiEmployeeData = z.infer<typeof apiEmployeeDataSchema>;

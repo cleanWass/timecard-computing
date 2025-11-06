@@ -29,6 +29,7 @@ export type BenchAffectation = {
   slot: LocalTimeSlot;
   duration: Duration;
   period: LocalDateRange;
+  // isDuringLeavePeriod: boolean;
   days: Set<DayOfWeek>;
 };
 

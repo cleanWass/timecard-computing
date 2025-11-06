@@ -1,52 +1,49 @@
-import { DateTimeFormatter, Duration, Instant, LocalDateTime, LocalTime, ZoneId } from '@js-joda/core';
-import { Interval } from '@js-joda/extra';
+import { DateTimeFormatter, LocalDate, LocalDateTime, LocalTime } from '@js-joda/core';
 import '@js-joda/timezone';
+import { pipe } from 'fp-ts/function';
 import * as O from 'fp-ts/Option';
 import { Map, ValueObject } from 'immutable';
+import { formatLocalDate } from '../../../../~shared/util/joda-helper';
 import { LocalDateRange } from '../../local-date-range';
-import { Shift } from '../../mission-delivery/shift/shift';
+import { LocalTimeSlot } from '../../local-time-slot';
 
 import { LeaveId } from './leave-id';
-import { LeaveRetribution } from './leave-retribution';
+import { PaidLeaveReason, UnpaidLeaveReason } from './leave-retribution';
 
 export type ILeavePeriod = {
   id: LeaveId;
-  reason: LeaveRetribution;
-  startTime: LocalTime;
-  endTime: LocalTime;
+  timeSlot: O.Option<LocalTimeSlot>;
   period: LocalDateRange;
-  comment: O.Option<string>;
+  employeeId: string;
+  silaeId: string;
+  absenceType: PaidLeaveReason | UnpaidLeaveReason;
 };
 
 export class LeavePeriod implements ValueObject, ILeavePeriod {
-  public static build(params: {
-    id: LeaveId;
-    reason: LeaveRetribution;
-    startTime: LocalTime;
-    endTime: LocalTime;
-    period: LocalDateRange;
-    comment: O.Option<string>;
-  }) {
-    return new LeavePeriod(params.id, params.reason, params.startTime, params.endTime, params.period, params.comment);
+  public static build({ absenceType, employeeId, id, period, silaeId, timeSlot }: ILeavePeriod) {
+    return new LeavePeriod(id, employeeId, silaeId, period, timeSlot, absenceType);
   }
 
   private readonly _vo: ValueObject;
 
   private constructor(
     public readonly id: LeaveId,
-    public readonly reason: LeaveRetribution,
-    public readonly startTime: LocalTime,
-    public readonly endTime: LocalTime,
+    public readonly employeeId: string,
+    public readonly silaeId: string,
     public readonly period: LocalDateRange,
-    public readonly comment: O.Option<string>
+    public readonly timeSlot: O.Option<LocalTimeSlot>,
+    public readonly absenceType: PaidLeaveReason | UnpaidLeaveReason
   ) {
-    this._vo = Map<string, ValueObject | string | number | boolean | O.Option<string>>()
+    this._vo = Map<
+      string,
+      ValueObject | string | number | boolean | O.Option<string | LocalTimeSlot>
+    >()
       .set('id', this.id)
-      .set('reason', this.reason)
-      .set('startTime', this.startTime)
-      .set('endTime', this.endTime)
+      .set('employeeId', this.employeeId)
+      .set('silaeId', this.silaeId)
       .set('period', this.period)
-      .set('comment', this.comment);
+      .set('timeSlot', this.timeSlot)
+      .set('absenceType', this.absenceType);
   }
 
   equals(other: unknown): boolean {
@@ -60,30 +57,23 @@ export class LeavePeriod implements ValueObject, ILeavePeriod {
   with(params: Partial<LeavePeriod>): LeavePeriod {
     return new LeavePeriod(
       params.id ?? this.id,
-      params.reason ?? this.reason,
-      params.startTime ?? this.startTime,
-      params.endTime ?? this.endTime,
+      params.employeeId ?? this.employeeId,
+      params.silaeId ?? this.silaeId,
       params.period ?? this.period,
-      params.comment ?? this.comment
+      params.timeSlot ?? this.timeSlot,
+      params.absenceType ?? this.absenceType
     );
-  }
-
-  getInterval(): Interval {
-    return Interval.of(
-      Instant.from(LocalDateTime.of(this.period.start, this.startTime).atZone(ZoneId.of('Europe/Paris'))),
-      Instant.from(LocalDateTime.of(this.period.end.minusDays(1), this.endTime).atZone(ZoneId.of('Europe/Paris')))
-    );
-  }
-
-  containsShift(shift: Shift): boolean {
-    return this.getInterval().contains(Instant.from(shift.startTime.atZone(ZoneId.of('Europe/Paris'))));
   }
 
   debug(): string {
-    return `${LocalDateTime.of(this.period.start, this.startTime).format(
-      DateTimeFormatter.ofPattern('HH:mm dd/MM/yy')
-    )} -> ${LocalDateTime.of(this.period.end.minusDays(1), this.endTime).format(
-      DateTimeFormatter.ofPattern('HH:mm dd/MM/yy')
-    )} --> ${this.reason}`;
+    return `${formatLocalDate({ date: this.period.start })} -> ${formatLocalDate({
+      date: this.period.end.minusDays(1),
+    })} --> ${this.absenceType}${pipe(
+      this.timeSlot,
+      O.fold(
+        () => '',
+        slot => ` ${slot.debug()}`
+      )
+    )}`;
   }
 }
