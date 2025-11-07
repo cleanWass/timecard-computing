@@ -1,18 +1,12 @@
 import { Request, Response } from 'express';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
-import { LocalDate } from '@js-joda/core';
-import { MakeCreateMissingBenchesUseCase } from '../../../application/use-cases/manage-benches/make-create-missing-benches.use-case';
-import {
-  MakeTerminateExcessiveBenchesUseCase,
-  makeTerminateExcessiveBenchesUseCase,
-} from '../../../application/use-cases/manage-benches/make-terminate-excessive-benches.use-case';
+import { BenchManagementUseCases } from '../../../application/use-cases/manage-benches';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { parseLocalDate } from '../../../~shared/util/joda-helper';
 
 export const makeBenchManagementController = (
-  makeCreateMissingBenchesUseCase: MakeCreateMissingBenchesUseCase,
-  makeTerminateExcessiveBenchesUseCase: MakeTerminateExcessiveBenchesUseCase
+  benchManagementUseCases: BenchManagementUseCases
 ) => ({
   generate: async (req: Request, res: Response) => {
     const { startDate, endDate } = req.body;
@@ -21,7 +15,7 @@ export const makeBenchManagementController = (
       TE.fromEither(
         LocalDateRange.of(parseLocalDate({ date: startDate }), parseLocalDate({ date: endDate }))
       ),
-      TE.chain(period => makeCreateMissingBenchesUseCase.execute({ period })),
+      TE.chain(period => benchManagementUseCases.benchGenerationUseCase.execute({ period })),
       TE.fold(
         error => {
           console.error('[Intercontract Controller] Error:', error);
@@ -52,7 +46,7 @@ export const makeBenchManagementController = (
       TE.of(
         new LocalDateRange(parseLocalDate({ date: startDate }), parseLocalDate({ date: endDate }))
       ),
-      TE.chain(period => makeTerminateExcessiveBenchesUseCase.execute({ period })),
+      TE.chain(period => benchManagementUseCases.benchSuppressionUseCase.execute({ period })),
       TE.fold(
         error => {
           console.error('[Intercontract Controller] Error:', error);

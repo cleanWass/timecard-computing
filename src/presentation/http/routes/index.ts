@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { S3Service } from '../../../infrastructure/storage/s3/s3.service';
-import { makeIntercontractRoutes } from './benching-management.route';
+import { makeBenchManagementRoutes } from './benching-management.route';
 
 export const makeRoutes = (dependencies: { s3Service: S3Service }) => {
   const router = Router();
@@ -9,7 +9,7 @@ export const makeRoutes = (dependencies: { s3Service: S3Service }) => {
   // router.use(makeTimecardRoutes());
   // router.use(makeModulationRoutes());
   // router.use(makePayrollRoutes(dependencies.s3Service));
-  router.use(makeIntercontractRoutes());
+  router.use(makeBenchManagementRoutes());
 
   return router;
 };

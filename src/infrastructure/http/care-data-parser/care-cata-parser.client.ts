@@ -5,6 +5,7 @@ import * as TE from 'fp-ts/TaskEither';
 import { CareDataParserClient } from '../../../application/ports/services/care-data-parser-client';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { FetchError } from '../../../~shared/error/fetch-error';
+import { logger } from '../../../~shared/logging/logger';
 import { mapApiEmployeeDataToEmployeeData } from './mappers/api-employee-data.mapper';
 import { mapBenchToBenchPayloadDto } from './mappers/bench-payload-dto.mapper';
 
@@ -19,6 +20,43 @@ export const makeCareDataParserClient = (config: {
       'Content-Type': 'application/json',
     },
   });
+
+  client.interceptors.request.use(
+    config => {
+      logger.debug('API Request', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        params: config.params,
+        body_size: config.data ? Buffer.byteLength(JSON.stringify(config.data)) : 0,
+      });
+      return config;
+    },
+    error => {
+      logger.error('API Request Error', { error: error.message });
+      return Promise.reject(error);
+    }
+  );
+
+  client.interceptors.response.use(
+    response => {
+      logger.debug('API Response', {
+        method: response.config.method?.toUpperCase(),
+        url: response.config.url,
+        status: response.status,
+        response_size: Buffer.byteLength(JSON.stringify(response.data)),
+      });
+      return response;
+    },
+    error => {
+      logger.error('API Response Error', {
+        method: error.config?.method?.toUpperCase(),
+        url: error.config?.url,
+        status: error.response?.status,
+        error: error.message,
+      });
+      return Promise.reject(error);
+    }
+  );
 
   return {
     getEmployeesWithBenchGeneration: (period: LocalDateRange) => {

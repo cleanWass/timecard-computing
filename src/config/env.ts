@@ -9,8 +9,11 @@ const envEntries = [
   'AWS_S3_BUCKET_NAME',
   'NODE_ENV',
   'PORT',
+  'LOG_LEVEL',
   'CARE_DATA_PARSER_URL',
   'CARE_DATA_PARSER_API_KEY',
+  'INTERCONTRACT_SCHEDULER_ENABLED',
+  'INTERCONTRACT_CRON_SCHEDULE',
 ] as const;
 
 type EnvKey = (typeof envEntries)[number];

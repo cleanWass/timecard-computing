@@ -1,7 +1,7 @@
 import { DateTimeFormatter, LocalDate } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
-import { makeTerminateExcessiveBenchesUseCase } from '../application/use-cases/manage-benches/make-terminate-excessive-benches.use-case';
+import { makeTerminateExcessiveBenchesUseCase } from '../application/use-cases/manage-benches/make-remove-excessive-benches.use-case';
 import { EnvService } from '../config/env';
 import { LocalDateRange } from '../domain/models/local-date-range';
 import { makeCareDataParserClient } from '../infrastructure/http/care-data-parser/care-cata-parser.client';

@@ -6,7 +6,7 @@ import {
   durationToPgInterval,
 } from '../../../../application/ports/repositories/bench-payload.dto';
 
-import { BenchAffectation } from '../../../../domain/services/bench-generation/types';
+import { BenchAffectation } from '../../../../domain/services/bench-management/types';
 import { toHoursFloat } from '../../../../~shared/util/joda-helper';
 
 export const mapBenchToBenchPayloadDto = (bench: BenchAffectation): BenchPayloadDto => ({

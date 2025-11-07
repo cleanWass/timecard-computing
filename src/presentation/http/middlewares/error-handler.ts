@@ -1,27 +1,47 @@
+// presentation/http/middlewares/error-handler.middleware.ts
+
 import { Request, Response, NextFunction } from 'express';
-
 import { TimecardComputationError } from '../../../domain/~shared/error/timecard-computation-error';
-import { ParseError } from '../../../~shared/error/parse-error';
+import { ValidationError } from '../../../~shared/error/validation-error';
+import { logger } from '../../../~shared/logging/logger';
 
-export const errorHandler = (error: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('[Error Handler]', error);
+export const errorHandlerMiddleware = (
+  error: Error,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const log = logger.child({
+    request_id: req.requestId,
+    error_handler: true,
+  });
 
-  if (error instanceof ParseError) {
+  log.error('Unhandled error', {
+    error_name: error.name,
+    error_message: error.message,
+    stack: error.stack,
+    method: req.method,
+    path: req.path,
+    body: req.body,
+  });
+
+  if (error instanceof ValidationError) {
     return res.status(400).json({
-      error: 'Parse error',
+      error: 'Validation failed',
       message: error.message,
     });
   }
 
   if (error instanceof TimecardComputationError) {
     return res.status(422).json({
-      error: 'Timecard computation error',
+      error: 'Timecard computation failed',
       message: error.message,
     });
   }
 
-  return res.status(500).json({
+  res.status(500).json({
     error: 'Internal server error',
-    message: error.message,
+    message: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : error.message,
+    request_id: req.requestId,
   });
 };

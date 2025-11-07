@@ -5,39 +5,46 @@ import * as RA from 'fp-ts/ReadonlyArray';
 import * as T from 'fp-ts/Task';
 import * as TE from 'fp-ts/TaskEither';
 import { prepareEnv } from './application/csv-generation/prepare-env';
+import { benchManagementUseCases } from './application/use-cases/manage-benches';
+import { makeCreateMissingBenchesUseCase } from './application/use-cases/manage-benches/make-create-missing-benches.use-case';
+import { makeTerminateExcessiveBenchesUseCase } from './application/use-cases/manage-benches/make-remove-excessive-benches.use-case';
 import { EnvService } from './config/env';
 import { serverConfig } from './config/server.config';
 import { configureAWS, createS3Client } from './config/aws.config';
 import { LocalDateRange } from './domain/models/local-date-range';
 import { generatePayrollExports } from './generate-csv-payroll';
 import { formatTimecardComputationReturn } from './infrastructure/formatting/format-timecard-response';
+import { makeCareDataParserClient } from './infrastructure/http/care-data-parser/care-cata-parser.client';
 import { handleTimecardComputationRoute } from './infrastructure/route/timecard-computation-route';
+import { makeCreateMissingBenchesScheduler } from './infrastructure/scheduling/bench-generation-scheduler.service';
+import { schedulerConfig } from './infrastructure/scheduling/scheduler.config';
 import { makeApp } from './presentation/http/app';
 import { makeS3Service } from './infrastructure/storage/s3/s3.service';
+import { generateRequestId, logger } from './~shared/logging/logger';
 
 const start = async () => {
+  const log = logger.child({ request_id: generateRequestId(), service: 'main' });
+
   try {
-    console.log('🔧 Configuring AWS...');
+    log.info('🔧 Configuring AWS...');
     configureAWS();
 
-    console.log('📦 Creating dependencies...');
+    log.info('📦 Creating dependencies...');
     const s3Client = createS3Client();
     const s3Service = makeS3Service(s3Client);
 
-    console.log('🚀 Creating Express app...');
+    log.info('🚀 Creating Express app...');
     const app = makeApp({ s3Service });
 
     app.listen(serverConfig.port, () => {
-      console.log('');
-      console.log('✅ Timecard Computing Server is running');
-      console.log(`   Port: ${serverConfig.port}`);
-      console.log(`   Environment: ${serverConfig.nodeEnv}`);
-      console.log(`   AWS Region: ${EnvService.get('AWS_REGION')}`);
-      console.log('');
+      log.info(`✅ Timecard Computing Server is running`);
+      log.info(`\nPort: ${serverConfig.port}`);
+      log.info(`\nEnvironment: ${serverConfig.nodeEnv}`);
+      log.info(`\nAWS Region: ${EnvService.get('AWS_REGION')}`);
     });
 
     app.post('/timecard', async (req, res) => {
-      console.log('/timecard', { body: req.body, params: req.params });
+      log.info('/timecard', { body: req.body, params: req.params });
       await handleTimecardComputationRoute(req, res)();
     });
 
@@ -73,7 +80,7 @@ const start = async () => {
       )();
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    log.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 };

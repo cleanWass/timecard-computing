@@ -3,7 +3,7 @@ import { DateTimeFormatter, LocalDate } from '@js-joda/core';
 import { pipe } from 'fp-ts/function';
 import { makeCreateMissingBenchesUseCase } from '../application/use-cases/manage-benches/make-create-missing-benches.use-case';
 import { makeGenerateMatchingBenchesListUseCase } from '../application/use-cases/manage-benches/make-generate-matching-benches-list.use-case';
-import { makeTerminateExcessiveBenchesUseCase } from '../application/use-cases/manage-benches/make-terminate-excessive-benches.use-case';
+import { makeTerminateExcessiveBenchesUseCase } from '../application/use-cases/manage-benches/make-remove-excessive-benches.use-case';
 import { EnvService } from '../config/env';
 import { LocalDateRange } from '../domain/models/local-date-range';
 import { makeCareDataParserClient } from '../infrastructure/http/care-data-parser/care-cata-parser.client';

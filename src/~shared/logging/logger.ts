@@ -1,6 +1,7 @@
 import { LocalDateTime } from '@js-joda/core';
 import winston from 'winston';
 import { v4 as uuidv4 } from 'uuid';
+import { EnvService } from '../../config/env';
 
 const jsonFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
@@ -23,15 +24,15 @@ const consoleFormat = winston.format.combine(
 );
 
 export const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: EnvService.get('LOG_LEVEL', 'info'),
   format: jsonFormat,
   defaultMeta: {
     service: 'timecard-computing',
-    environment: process.env.NODE_ENV || 'development',
+    environment: EnvService.get('NODE_ENV', 'development') || 'development',
   },
   transports: [
     new winston.transports.Console({
-      format: process.env.NODE_ENV === 'production' ? jsonFormat : consoleFormat,
+      format: EnvService.get('NODE_ENV', 'info') === 'production' ? jsonFormat : consoleFormat,
     }),
 
     new winston.transports.File({

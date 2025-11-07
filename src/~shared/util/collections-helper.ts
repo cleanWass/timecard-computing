@@ -1,7 +1,7 @@
 import { Either, left, right, isLeft } from 'fp-ts/Either';
 import { List } from 'immutable';
 
-export const sequenceList = <E, A>(list: List<Either<E, A>>): Either<E, List<A>> => {
+export const collectionsHelper = <E, A>(list: List<Either<E, A>>): Either<E, List<A>> => {
   let result: List<A> = List();
 
   for (const either of list) {
@@ -13,3 +13,6 @@ export const sequenceList = <E, A>(list: List<Either<E, A>>): Either<E, List<A>>
   }
   return right(result);
 };
+
+export const compact = <T>(arr: (T | null | undefined)[]): T[] =>
+  arr.filter((v): v is T => v != null);

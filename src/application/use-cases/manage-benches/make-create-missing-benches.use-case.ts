@@ -4,8 +4,9 @@ import { List, Set } from 'immutable';
 import { Employee } from '../../../domain/models/employee-registration/employee/employee';
 import { LeavePeriod } from '../../../domain/models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
-import { generateSlotToCreatesService } from '../../../domain/services/bench-generation/generate-bench-affectations.service';
-import { IntercontractResult } from '../../../domain/services/bench-generation/types';
+import { manageBenchAffectationService } from '../../../domain/services/bench-management/generate-bench-affectations.service';
+import { IntercontractResult } from '../../../domain/services/bench-management/types';
+import { generateRequestId, logger } from '../../../~shared/logging/logger';
 import { CareDataParserClient } from '../../ports/services/care-data-parser-client';
 
 import { computeTimecardForEmployee } from '../../timecard-computation/compute-timecard-for-employee';
@@ -17,11 +18,27 @@ export type MakeCreateMissingBenchesUseCase = {
 export const makeCreateMissingBenchesUseCase = (
   careDataParserClient: CareDataParserClient
 ): MakeCreateMissingBenchesUseCase => ({
-  execute: ({ period }) =>
-    pipe(
+  execute: ({ period }) => {
+    const log = logger.child({ request_id: generateRequestId(), use_case: 'manage-intercontract' });
+    const startTime = Date.now();
+
+    log.info('Use case started', {
+      period: period.toFormattedString(),
+    });
+
+    return pipe(
       TE.Do,
       TE.bind('employeesWithBenchGeneration', () =>
         careDataParserClient.getEmployeesWithBenchGeneration(period)
+      ),
+      TE.chainFirst(({ employeesWithBenchGeneration }) =>
+        TE.fromTask(async () => {
+          log.info('Employees fetched', {
+            count: employeesWithBenchGeneration.length,
+            employeesData: employeesWithBenchGeneration,
+          });
+          return undefined;
+        })
       ),
       TE.bind(`timecardComputationResultForPeriod`, ({ employeesWithBenchGeneration }) =>
         pipe(
@@ -30,7 +47,7 @@ export const makeCreateMissingBenchesUseCase = (
         )
       ),
       TE.bind('missingBenches', ({ timecardComputationResultForPeriod }) =>
-        generateSlotToCreatesService.generateMissingBenches({ period })(
+        manageBenchAffectationService.generateMissingBenches({ period })(
           timecardComputationResultForPeriod
         )
       ),
@@ -46,5 +63,6 @@ export const makeCreateMissingBenchesUseCase = (
           affectations: Set(missingBenches.filter(a => a.employee.id === r.employee.id)),
         })),
       }))
-    ),
+    );
+  },
 });

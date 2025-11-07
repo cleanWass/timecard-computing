@@ -20,7 +20,7 @@ import {
 import { WorkedHoursRecap } from '../../domain/models/cost-efficiency/worked-hours-rate';
 import { WorkingPeriod } from '../../domain/models/timecard-computation/working-period/working-period';
 import { TimecardComputationError } from '../../domain/~shared/error/timecard-computation-error';
-import { sequenceList } from '../../~shared/util/sequence-list';
+import { collectionsHelper } from '../../~shared/util/collections-helper';
 import { computeWorkingPeriods } from '../timecard-computation/computation/compute-working-period';
 import {
   computeModulationLeavesHours,
@@ -118,7 +118,7 @@ export const computeModulationDataForEmployee =
               )
             )
           ),
-          sequenceList,
+          collectionsHelper,
           c => c
         )
       ),
@@ -143,7 +143,7 @@ export const computeModulationDataForEmployee =
                 )
               )
             ),
-            sequenceList
+            collectionsHelper
           )
       ),
       E.bind(
