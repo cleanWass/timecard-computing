@@ -2,6 +2,8 @@ import * as E from 'fp-ts/Either';
 import { DateTimeFormatter, LocalDate } from '@js-joda/core';
 import { pipe } from 'fp-ts/function';
 import { makeCreateMissingBenchesUseCase } from '../application/use-cases/manage-benches/make-create-missing-benches.use-case';
+import { makeGenerateMatchingBenchesListUseCase } from '../application/use-cases/manage-benches/make-generate-matching-benches-list.use-case';
+import { makeTerminateExcessiveBenchesUseCase } from '../application/use-cases/manage-benches/make-terminate-excessive-benches.use-case';
 import { EnvService } from '../config/env';
 import { LocalDateRange } from '../domain/models/local-date-range';
 import { makeCareDataParserClient } from '../infrastructure/http/care-data-parser/care-cata-parser.client';
@@ -34,30 +36,34 @@ async function main(): Promise<void> {
     baseUrl: EnvService.get('CARE_DATA_PARSER_URL'),
     apiKey: EnvService.get('CARE_DATA_PARSER_API_KEY'),
   });
-  const useCase = makeCreateMissingBenchesUseCase(careDataCareClient);
+  const terminateExcessiveBenchesUseCase = makeTerminateExcessiveBenchesUseCase(careDataCareClient);
+  const createMissingBenchesUseCase = makeCreateMissingBenchesUseCase(careDataCareClient);
+  const generateMatchingListUseCase = makeGenerateMatchingBenchesListUseCase(careDataCareClient);
 
   const period = parseCommandLineArgs();
-  const result = await useCase.execute({ period })();
-  console.log(
-    'end generatePayrollExports',
-    pipe(
-      result,
-      E.foldW(
-        error => error,
-        result => `${result.processedEmployees} processed employees with ${
-          result.totalAffectationsCreated
-        } intercontracts created
-        ${result.details
-          .map(
-            d =>
-              `${d.employee.firstName} ${d.employee.lastName} ${d.employee.silaeId}: ${d.affectations.size} affectations created`
-          )
-          .join('\n')}
-        
-        `
-      )
-    )
-  );
+
+  const removedBenches = await terminateExcessiveBenchesUseCase.execute({ period })();
+  const result = await createMissingBenchesUseCase.execute({ period })();
+  const list = await generateMatchingListUseCase.execute({ period })();
+  // console.log(
+  //   pipe(
+  //     result,
+  //     E.foldW(
+  //       error => error,
+  //       result => `${result.processedEmployees} processed employees with ${
+  //         result.totalAffectationsCreated
+  //       } intercontracts created
+  //       ${result.details
+  //         .map(
+  //           d =>
+  //             `${d.employee.firstName} ${d.employee.lastName} ${d.employee.silaeId}: ${d.affectations.size} affectations created`
+  //         )
+  //         .join('\n')}
+  //
+  //       `
+  //     )
+  //   )
+  // );
 }
 
 main().catch(e => {

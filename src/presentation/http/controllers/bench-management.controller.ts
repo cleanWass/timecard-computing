@@ -52,7 +52,7 @@ export const makeBenchManagementController = (
       TE.of(
         new LocalDateRange(parseLocalDate({ date: startDate }), parseLocalDate({ date: endDate }))
       ),
-      TE.chain(period => makeTerminateExcessiveBenchesUseCase.execute(period)),
+      TE.chain(period => makeTerminateExcessiveBenchesUseCase.execute({ period })),
       TE.fold(
         error => {
           console.error('[Intercontract Controller] Error:', error);

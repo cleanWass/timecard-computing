@@ -2,6 +2,7 @@ import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import { List } from 'immutable';
 import { EmployeeData } from '../../../../application/ports/services/care-data-parser-client';
+import { LeavePeriod } from '../../../../domain/models/leave-recording/leave/leave-period';
 import { ParseError } from '../../../../~shared/error/parse-error';
 import { ValidationError } from '../../../../~shared/error/validation-error';
 import { apiEmployeeDataSchema } from '../validation/schemas';
@@ -46,11 +47,16 @@ export const mapApiEmployeeDataToEmployeeData = (
         ),
         E.bind('leavePeriods', () =>
           pipe(
-            validatedData.leavePeriods,
-            E.traverseArray(mapApiLeavePeriodToLeavePeriod),
-            E.map(leavePeriods => List(leavePeriods))
+            // validatedData.leavePeriods,
+            // E.traverseArray(mapApiLeavePeriodToLeavePeriod),
+            // E.map(leavePeriods => List(leavePeriods))
+            E.right(List<LeavePeriod>())
           )
         )
       )
-    )
+    ),
+    E.mapLeft(e => {
+      console.log('errrrre', e);
+      return e;
+    })
   );

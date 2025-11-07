@@ -37,7 +37,7 @@ async function main(): Promise<void> {
   const useCase = makeTerminateExcessiveBenchesUseCase(careDataCareClient);
 
   const period = parseCommandLineArgs();
-  const result = await useCase.execute(period)();
+  const result = await useCase.execute({ period })();
   console.log(
     'end generatePayrollExports',
     pipe(

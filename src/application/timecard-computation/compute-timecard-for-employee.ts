@@ -157,18 +157,8 @@ export const computeTimecardForEmployee =
       E.bind('groupedLeaves', ({ workingPeriods }) =>
         groupLeavesByWorkingPeriods(leaves, workingPeriods)
       ),
-      E.bind('timecards', ({ mergedContracts, workingPeriods, groupedShifts, groupedLeaves }) => {
-        console.log('leaves : ', leaves.map(l => l.debug()).join('\n'));
-        console.log(
-          'groupedLeaves :',
-          groupedLeaves
-            .map(
-              (lg, wp) => wp.period.toFormattedString() + ' : ' + lg.map(l => l.debug()).join('\n')
-            )
-            .join('--------------\n')
-        );
-        console.log('leavePeriods : ', leavePeriods.map(lp => lp.debug()).join('\n'));
-        return pipe(
+      E.bind('timecards', ({ mergedContracts, workingPeriods, groupedShifts, groupedLeaves }) =>
+        pipe(
           workingPeriods.toArray(),
           E.traverseArray(wp =>
             pipe(
@@ -186,8 +176,8 @@ export const computeTimecardForEmployee =
               )
             )
           )
-        );
-      }),
+        )
+      ),
       E.bind('weeklyRecaps', ({ timecards }) =>
         generateWeeklyTimecardRecap(List(timecards), employee, period)
       ),

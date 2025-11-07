@@ -53,6 +53,25 @@ export const makeCareDataParserClient = (config: {
         TE.chainW(flow(mapApiEmployeeDataToEmployeeData, TE.fromEither))
       ),
 
+    getAllActiveEmployeesData: (period: LocalDateRange) =>
+      pipe(
+        TE.tryCatch(
+          () => client.get(`/payroll/${period.start.toString()}/${period.end.toString()}`),
+          error => {
+            console.log('error', error);
+            return new FetchError(`API Care-data-parser:
+          Failed to getAllActiveEmployeesData: ${error}`);
+          }
+        ),
+        TE.map(response => response.data as Array<unknown>),
+        TE.chainW(r =>
+          pipe(
+            r,
+            TE.traverseArray(d => pipe(d, mapApiEmployeeDataToEmployeeData, TE.fromEither))
+          )
+        )
+      ),
+
     generateBenchAffectation: bench =>
       pipe(
         TE.tryCatch(

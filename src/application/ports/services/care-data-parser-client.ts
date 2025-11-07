@@ -26,6 +26,10 @@ export interface CareDataParserClient {
     period: LocalDateRange;
   }) => TE.TaskEither<Error, EmployeeData>;
 
+  getAllActiveEmployeesData: (
+    period: LocalDateRange
+  ) => TE.TaskEither<Error, ReadonlyArray<EmployeeData>>;
+
   generateBenchAffectation: (params: BenchAffectation) => TE.TaskEither<Error, void>;
 
   deleteBenchAffectations: (params: {

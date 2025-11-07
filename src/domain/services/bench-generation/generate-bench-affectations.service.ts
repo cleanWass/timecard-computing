@@ -46,7 +46,6 @@ export const generateSlotToCreatesService = {
         result,
         TE.traverseArray(computationResult => {
           const benchesToCreate = Set(computationResult.timecards).flatMap(tc => {
-            console.log(tc.debug());
             return pipe(
               tc,
               generateAffectationsForBenchesFromContractualPlanning,
@@ -65,8 +64,8 @@ export const generateSlotToCreatesService = {
   terminateExcessiveBenches: (result: readonly TimecardComputationResult[]) => {
     return pipe(
       result,
-      TE.traverseArray(computationResult =>
-        pipe(
+      TE.traverseArray(computationResult => {
+        return pipe(
           computationResult.timecards,
           TE.traverseArray(tc => {
             const benchesDeltaForPeriod = tc.workedHours.TotalIntercontract.minus(
@@ -81,21 +80,13 @@ export const generateSlotToCreatesService = {
             });
           }),
           TE.map(RA.filter(({ delta }) => delta.isNegative())),
-          TE.map(deltas => {
-            console.log(`${deltas.map(({ week }) => week).map(w => w.toFormattedString())}`);
-            console.log(
-              `Benches to terminate: ${Set(deltas)
-                .flatMap(({ benches }) => benches)
-                .map(b => b.affectationId + ' ' + b.client.name)}`
-            );
-            return {
-              employee: computationResult.employee,
-              weeksToReset: deltas.map(({ week }) => week),
-              benches: Set(deltas).flatMap(({ benches }) => benches),
-            };
-          })
-        )
-      )
+          TE.map(deltas => ({
+            employee: computationResult.employee,
+            weeksToReset: deltas.map(({ week }) => week),
+            benches: Set(deltas).flatMap(({ benches }) => benches),
+          }))
+        );
+      })
     );
   },
 

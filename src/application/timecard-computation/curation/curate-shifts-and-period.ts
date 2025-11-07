@@ -53,7 +53,6 @@ export const getCuratedShifts = (leave: Leave, shift: Shift) =>
   );
 
 export const filterBenchingShifts = (timecard: WorkingPeriodTimecard) => {
-  console.log('fitler benching shifts ', timecard.leaves.map(s => s.debug()).join(','));
   const shifts = timecard.shifts.filterNot(sh => sh.isBench());
   let benches = timecard.benches.concat(
     timecard.shifts

@@ -213,6 +213,18 @@ export class LocalTimeSlot implements ValueObject {
     )} (${this.duration().toMinutes()} minutes)`;
   }
 
+  toMinutesOfDay(): Set<number> {
+    const startMinute = this.startTime.toSecondOfDay() / 60;
+    const endMinute = this.endTime.toSecondOfDay() / 60;
+    let minutes: Set<number> = Set();
+
+    for (let minute = startMinute; minute < endMinute; minute++) {
+      minutes = minutes.add(minute);
+    }
+
+    return minutes;
+  }
+
   private includesAddendEnd(addend: LocalTimeSlot) {
     return addend.endTime.isAfter(this.startTime) && addend.endTime.isBefore(this.endTime);
   }

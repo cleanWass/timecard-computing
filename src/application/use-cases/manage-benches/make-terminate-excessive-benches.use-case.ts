@@ -10,9 +10,11 @@ import { CareDataParserClient } from '../../ports/services/care-data-parser-clie
 import { computeTimecardForEmployee } from '../../timecard-computation/compute-timecard-for-employee';
 
 export type MakeTerminateExcessiveBenchesUseCase = {
-  execute: (
-    period: LocalDateRange
-  ) => TE.TaskEither<
+  execute: ({
+    period,
+  }: {
+    period: LocalDateRange;
+  }) => TE.TaskEither<
     Error,
     readonly { employee: Employee; weeksToReset: LocalDateRange[]; benches: Set<Bench> }[]
   >;
@@ -21,7 +23,7 @@ export type MakeTerminateExcessiveBenchesUseCase = {
 export const makeTerminateExcessiveBenchesUseCase = (
   careDataParserClient: CareDataParserClient
 ): MakeTerminateExcessiveBenchesUseCase => ({
-  execute: period =>
+  execute: ({ period }) =>
     pipe(
       TE.Do,
       TE.bind('employeesWithBenchGeneration', () =>
