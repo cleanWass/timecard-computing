@@ -1,25 +1,18 @@
-import { DayOfWeek, Duration, LocalTime } from '@js-joda/core';
-import { toArray } from 'fp-ts/Map';
-import * as RA from 'fp-ts/ReadonlyArray';
+import { Duration } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
+import * as RA from 'fp-ts/ReadonlyArray';
 import * as TE from 'fp-ts/TaskEither';
-import { List, Map, Set } from 'immutable';
+import { List, Set } from 'immutable';
 import { TimecardComputationResult } from '../../../application/csv-generation/export-csv';
 import { compact } from '../../../~shared/util/collections-helper';
-import { Employee } from '../../models/employee-registration/employee/employee';
 import { Bench } from '../../models/leave-recording/bench-recording/bench';
-import { LeavePeriod } from '../../models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../models/local-date-range';
-import { LocalTimeSlot } from '../../models/local-time-slot';
-import { WorkingPeriodTimecard } from '../../models/timecard-computation/timecard/working-period-timecard';
 import { buildBenchAffectation } from './bench-generation/helper';
 import { categorizeMatches, findBestMatches, generateCsvLine } from './bench-matching-list/hekper';
 import {
-  checkIfDuringLeavePeriod,
   generateAffectationsForBenchesFromContractualPlanning,
   groupSameHoursSlots,
-  logBenchAffectations,
   mergeContinuousTimeSlots,
 } from './helper';
 import { BenchAffectation, SlotToCreate } from './types';

@@ -34,16 +34,24 @@ export const makeCreateMissingBenchesScheduler = (
     );
 
     await pipe(
-      benchManagementUseCases.benchGenerationUseCase.execute({ period }),
+      TE.Do,
+      TE.bind('suppressedBenches', () =>
+        benchManagementUseCases.benchSuppressionUseCase.execute({ period })
+      ),
+      TE.bind('generatedBenches', () =>
+        benchManagementUseCases.benchGenerationUseCase.execute({ period })
+      ),
       TE.fold(
         error => {
           log.error('[Bench Management Scheduler] Error:', { error });
           return TE.of(undefined);
         },
-        result => {
+        ({ generatedBenches, suppressedBenches }) => {
           log.info('[Bench Management Scheduler] Success:', {
-            processedEmployees: result.processedEmployees,
-            affectationsCreated: result.totalAffectationsCreated,
+            suppressedBenches: suppressedBenches.flatMap(employee => employee.benches.toArray())
+              .length,
+            processedEmployees: generatedBenches.processedEmployees,
+            generatedBenches: generatedBenches.totalAffectationsCreated,
           });
           return TE.of(undefined);
         }

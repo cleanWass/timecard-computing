@@ -1,6 +1,6 @@
 import { flow, pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
-import { List, Set } from 'immutable';
+import { Set } from 'immutable';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { manageBenchAffectationService } from '../../../domain/services/bench-management/generate-bench-affectations.service';
 import { CareDataParserClient } from '../../ports/services/care-data-parser-client';

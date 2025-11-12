@@ -7,7 +7,7 @@ import { LocalTimeSlot } from '../../models/local-time-slot';
 import { WorkingPeriodTimecard } from '../../models/timecard-computation/timecard/working-period-timecard';
 import { List, Set } from 'immutable';
 
-export type IntercontractResult = {
+export type BenchGenerationProcessResult = {
   period: LocalDateRange;
   processedEmployees: number;
   totalAffectationsCreated: number;

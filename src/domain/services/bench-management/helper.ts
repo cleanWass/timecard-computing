@@ -108,12 +108,6 @@ export const generateAffectationsForBenchesFromContractualPlanning = (
     affectations: Set(),
   };
 
-  console.log(
-    `${timecard.employee.firstName} ${
-      timecard.employee.lastName
-    } remainingDuration: ${ctx.remainingDuration.toMinutes()} minutes`
-  );
-
   while (
     isDurationPositive(ctx.remainingDuration) &&
     ctx.currentDay.isBefore(workingPeriod.period.end)
@@ -129,9 +123,6 @@ export const generateAffectationsForBenchesFromContractualPlanning = (
 
   return ctx.affectations;
 };
-
-export const checkIfDuringLeavePeriod =
-  (tc: WorkingPeriodTimecard) => (slots: Set<SlotToCreate>) => {};
 
 export const mergeContinuousTimeSlots = (slots: Set<SlotToCreate>): Set<SlotToCreate> => {
   if (slots.isEmpty()) return slots;
