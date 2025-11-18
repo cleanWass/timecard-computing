@@ -40,7 +40,7 @@ export const manageBenchAffectationService = {
       );
     },
 
-  removeExcessiveBenches: (result: readonly TimecardComputationResult[]) => {
+  removeExtraBenches: (result: readonly TimecardComputationResult[]) => {
     return pipe(
       result,
       TE.traverseArray(computationResult => {

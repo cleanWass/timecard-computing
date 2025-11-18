@@ -1,4 +1,4 @@
-import { DateTimeFormatter, LocalDate } from '@js-joda/core';
+import { LocalDate } from '@js-joda/core';
 import * as AWS from 'aws-sdk';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -15,13 +15,12 @@ import * as path from 'node:path';
 import * as process from 'node:process';
 import { prepareEnv } from './application/csv-generation/prepare-env';
 import { LocalDateRange } from './domain/models/local-date-range';
-import { fetchPayrollData, generatePayrollExports } from './generate-csv-payroll';
+import { TimecardComputationError } from './domain/~shared/error/timecard-computation-error';
+import { generatePayrollExports } from './generate-csv-payroll';
 import { formatTimecardComputationReturn } from './infrastructure/formatting/format-timecard-response';
 import { handleModulationDataComputationRoute } from './infrastructure/route/modulation-data-computation-route';
 import { handleTimecardComputationRoute } from './infrastructure/route/timecard-computation-route';
-import { fetchIntercontractData } from './infrastructure/server/intercontract-generation-route-service';
 import { ParseError } from './~shared/error/parse-error';
-import { TimecardComputationError } from './domain/~shared/error/timecard-computation-error';
 
 const app = express();
 const PORT = process.env.PORT || 3001;

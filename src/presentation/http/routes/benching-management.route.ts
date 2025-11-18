@@ -1,7 +1,5 @@
 import { Router } from 'express';
-import { benchManagementUseCases } from '../../../application/use-cases/manage-benches';
-import { makeCreateMissingBenchesUseCase } from '../../../application/use-cases/manage-benches/make-create-missing-benches.use-case';
-import { makeTerminateExcessiveBenchesUseCase } from '../../../application/use-cases/manage-benches/make-remove-excessive-benches.use-case';
+import { benchManagementUseCases } from '../../../application/use-cases/manage-benches/manage-benches.use-case';
 import { EnvService } from '../../../config/env';
 import { makeCareDataParserClient } from '../../../infrastructure/http/care-data-parser/care-cata-parser.client';
 import { makeBenchManagementController } from '../controllers/bench-management.controller';

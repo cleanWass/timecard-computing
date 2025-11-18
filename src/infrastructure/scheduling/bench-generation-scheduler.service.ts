@@ -2,7 +2,7 @@ import { LocalDate } from '@js-joda/core';
 import { pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import cron from 'node-cron';
-import { BenchManagementUseCases } from '../../application/use-cases/manage-benches';
+import { BenchManagementUseCases } from '../../application/use-cases/manage-benches/manage-benches.use-case';
 import { LocalDateRange } from '../../domain/models/local-date-range';
 import { generateRequestId, logger } from '../../~shared/logging/logger';
 import { getFirstDayOfWeek } from '../../~shared/util/joda-helper';
@@ -36,10 +36,10 @@ export const makeCreateMissingBenchesScheduler = (
     await pipe(
       TE.Do,
       TE.bind('suppressedBenches', () =>
-        benchManagementUseCases.benchSuppressionUseCase.execute({ period })
+        benchManagementUseCases.removeExtraBenches.execute({ period })
       ),
       TE.bind('generatedBenches', () =>
-        benchManagementUseCases.benchGenerationUseCase.execute({ period })
+        benchManagementUseCases.generateMissingBenches.execute({ period })
       ),
       TE.fold(
         error => {

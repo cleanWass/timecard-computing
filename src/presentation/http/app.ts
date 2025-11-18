@@ -1,7 +1,7 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { benchManagementUseCases } from '../../application/use-cases/manage-benches';
+import { benchManagementUseCases } from '../../application/use-cases/manage-benches/manage-benches.use-case';
 import { corsConfig } from '../../config/cors.config';
 import { EnvService } from '../../config/env';
 import { makeCareDataParserClient } from '../../infrastructure/http/care-data-parser/care-cata-parser.client';

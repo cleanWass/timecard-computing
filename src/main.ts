@@ -5,21 +5,15 @@ import * as RA from 'fp-ts/ReadonlyArray';
 import * as T from 'fp-ts/Task';
 import * as TE from 'fp-ts/TaskEither';
 import { prepareEnv } from './application/csv-generation/prepare-env';
-import { benchManagementUseCases } from './application/use-cases/manage-benches';
-import { makeCreateMissingBenchesUseCase } from './application/use-cases/manage-benches/make-create-missing-benches.use-case';
-import { makeTerminateExcessiveBenchesUseCase } from './application/use-cases/manage-benches/make-remove-excessive-benches.use-case';
+import { configureAWS, createS3Client } from './config/aws.config';
 import { EnvService } from './config/env';
 import { serverConfig } from './config/server.config';
-import { configureAWS, createS3Client } from './config/aws.config';
 import { LocalDateRange } from './domain/models/local-date-range';
 import { generatePayrollExports } from './generate-csv-payroll';
 import { formatTimecardComputationReturn } from './infrastructure/formatting/format-timecard-response';
-import { makeCareDataParserClient } from './infrastructure/http/care-data-parser/care-cata-parser.client';
 import { handleTimecardComputationRoute } from './infrastructure/route/timecard-computation-route';
-import { makeCreateMissingBenchesScheduler } from './infrastructure/scheduling/bench-generation-scheduler.service';
-import { schedulerConfig } from './infrastructure/scheduling/scheduler.config';
-import { makeApp } from './presentation/http/app';
 import { makeS3Service } from './infrastructure/storage/s3/s3.service';
+import { makeApp } from './presentation/http/app';
 import { generateRequestId, logger } from './~shared/logging/logger';
 
 const start = async () => {

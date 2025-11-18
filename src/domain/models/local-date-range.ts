@@ -139,13 +139,7 @@ export class LocalDateRange implements ValueObject {
     if (this.start.dayOfMonth() !== 1) {
       months = months.push(new LocalDateRange(this.start, firstDayOfMonth));
     }
-    console.log(
-      'months ->',
-      months
-        .map(range => range.toFormattedString())
-        .toArray()
-        .join(' | ')
-    );
+
     return months.concat(
       new LocalDateRange(firstDayOfMonth, this.end).divideIntoLocalDateRange(ChronoUnit.MONTHS)
     );

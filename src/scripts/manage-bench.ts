@@ -1,11 +1,12 @@
 import { DateTimeFormatter, LocalDate } from '@js-joda/core';
-import * as E from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
-import { makeTerminateExcessiveBenchesUseCase } from '../application/use-cases/manage-benches/make-remove-excessive-benches.use-case';
+import * as T from 'fp-ts/Task';
+import * as TE from 'fp-ts/TaskEither';
+import { benchManagementUseCases } from '../application/use-cases/manage-benches/manage-benches.use-case';
 import { EnvService } from '../config/env';
 import { LocalDateRange } from '../domain/models/local-date-range';
 import { makeCareDataParserClient } from '../infrastructure/http/care-data-parser/care-cata-parser.client';
-// 0010Y00000Ijn8cQAB
+
 const DATE_FORMAT = 'dd/MM/yy';
 const REQUIRED_ARGS_COUNT = 4;
 
@@ -27,39 +28,40 @@ const parseCommandLineArgs = (): LocalDateRange => {
   return new LocalDateRange(start, end);
 };
 
-async function main(): Promise<void> {
+async function main() {
   console.log('start generatePayrollExports', process.argv[2]);
 
   const careDataCareClient = makeCareDataParserClient({
     baseUrl: EnvService.get('CARE_DATA_PARSER_URL'),
     apiKey: EnvService.get('CARE_DATA_PARSER_API_KEY'),
   });
-  const useCase = makeTerminateExcessiveBenchesUseCase(careDataCareClient);
+
+  const { removeExtraBenches, generateMissingBenches, computeBenchesMatchingShiftsList } =
+    benchManagementUseCases(careDataCareClient);
 
   const period = parseCommandLineArgs();
-  const result = await useCase.execute({ period })();
-  console.log(
-    'end generatePayrollExports',
-    pipe(
-      result,
-      E.foldW(
-        error => error,
-        result => ` 
-        ${result
-          .map(
-            d =>
-              `${d.employee.firstName} ${d.employee.lastName} ${
-                d.employee.silaeId
-              }: ${d.weeksToReset.map(w => w.toFormattedString())}
-              ${d.benches.map(b => `${b.client.name} ${b.affectationId} ${b.id}`).join(', ')}
-              `
-          )
-          .join('\n')}
-        
-        `
-      )
+
+  return pipe(
+    TE.Do,
+    TE.bind('removedBenches', () => removeExtraBenches.execute({ period })),
+    TE.bind('generatedBenches', () => generateMissingBenches.execute({ period })),
+    TE.bind('benchesMatchingShifts', () => computeBenchesMatchingShiftsList.execute({ period })),
+    TE.foldW(
+      e => {
+        console.log('Error in bench generation', e);
+        return T.of(e);
+      },
+      data => {
+        console.log(
+          `Bench management completed successfully:
+          ${data.removedBenches.flatMap(({ benches }) => benches.toArray()).length} removed benches
+          ${data.generatedBenches.totalAffectationsCreated} generated benches
+         `
+        );
+        return T.of(data);
+      }
     )
-  );
+  )();
 }
 
 main().catch(e => {

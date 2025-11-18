@@ -56,10 +56,6 @@ export const fetchActiveCleanersForPeriod = async ({ start, end }: LocalDateRang
   return r.data as {
     [key in 'silaeId' | 'id' | 'role' | 'firstName' | 'lastName']: string;
   }[];
-  // .catch(e => {
-  //   console.log(`error while fetching activeCleaners ${e.response.data}`);
-  //   return new FetchError('error while fetching activeCleaners');
-  // });
 };
 
 export const parseRequestPayload = (payload: unknown) =>

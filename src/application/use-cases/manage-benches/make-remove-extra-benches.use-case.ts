@@ -9,7 +9,7 @@ import { CareDataParserClient } from '../../ports/services/care-data-parser-clie
 
 import { computeTimecardForEmployee } from '../../timecard-computation/compute-timecard-for-employee';
 
-export type MakeRemoveExcessiveBenchesUseCase = {
+export type MakeRemoveExtraBenchesUseCase = {
   execute: ({
     period,
   }: {
@@ -20,9 +20,9 @@ export type MakeRemoveExcessiveBenchesUseCase = {
   >;
 };
 
-export const makeTerminateExcessiveBenchesUseCase = (
+export const makeRemoveExtraBenchesUseCase = (
   careDataParserClient: CareDataParserClient
-): MakeRemoveExcessiveBenchesUseCase => ({
+): MakeRemoveExtraBenchesUseCase => ({
   execute: ({ period }) =>
     pipe(
       TE.Do,
@@ -35,12 +35,12 @@ export const makeTerminateExcessiveBenchesUseCase = (
           TE.traverseArray(flow(computeTimecardForEmployee(period), TE.fromEither))
         )
       ),
-      TE.bind('excessiveBenches', ({ timecardComputationResultForPeriod }) =>
-        manageBenchAffectationService.removeExcessiveBenches(timecardComputationResultForPeriod)
+      TE.bind('extraBenches', ({ timecardComputationResultForPeriod }) =>
+        manageBenchAffectationService.removeExtraBenches(timecardComputationResultForPeriod)
       ),
-      TE.bind('benchAffectationsToDelete', ({ excessiveBenches }) =>
+      TE.bind('benchAffectationsToDelete', ({ extraBenches }) =>
         pipe(
-          excessiveBenches,
+          extraBenches,
           TE.traverseArray(employeeData =>
             careDataParserClient.deleteBenchAffectations({
               affectationsIds: employeeData.benches.map(b => b.getAffectationId()).toArray(),
@@ -49,8 +49,8 @@ export const makeTerminateExcessiveBenchesUseCase = (
           )
         )
       ),
-      TE.map(({ excessiveBenches }) =>
-        excessiveBenches.map(({ employee, weeksToReset, benches }) => ({
+      TE.map(({ extraBenches }) =>
+        extraBenches.map(({ employee, weeksToReset, benches }) => ({
           employee,
           weeksToReset,
           benches: Set(benches),

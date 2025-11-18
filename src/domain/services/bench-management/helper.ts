@@ -175,26 +175,3 @@ export const groupSameHoursSlots = (
       slotsForTimeRange.map(slot => slot.date.dayOfWeek()).toSet()
     );
 };
-
-export const logBenchAffectations = (
-  size: number,
-  benches: Map<LocalDateRange, Map<Set<DayOfWeek>, Set<SlotToCreate>>>,
-  employee: Employee
-): void => {
-  console.log(
-    `Generated ${size} bench affectations for ${employee.firstName} ${employee.lastName} ${employee.silaeId}`
-  );
-
-  benches.forEach((groupedSlots, week) => {
-    console.log(`Week ${week.toFormattedString()}`);
-    groupedSlots.forEach((slots, daysOfWeek) => {
-      console.log(`Days: ${daysOfWeek.map(d => d.toString()).join(', ')}`);
-      console.log(
-        `Slots: ${slots
-          .map(({ slot, date }) => `${formatLocalDate({ date })} ${slot.debug()}`)
-          .join(', ')}`
-      );
-      console.log('');
-    });
-  });
-};

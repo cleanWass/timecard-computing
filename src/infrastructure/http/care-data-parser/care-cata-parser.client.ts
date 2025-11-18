@@ -80,9 +80,9 @@ export const makeCareDataParserClient = (config: {
       pipe(
         TE.tryCatch(
           () =>
-            client.post(`/employees/${silaeId}/data`, {
-              startDate: period.start.toString(),
-              endDate: period.end.toString(),
+            client.post(`/employee-data`, {
+              period: { startDate: period.start.toString(), endDate: period.end.toString() },
+              silaeId,
             }),
           error =>
             new FetchError(`API Care-data-parser:

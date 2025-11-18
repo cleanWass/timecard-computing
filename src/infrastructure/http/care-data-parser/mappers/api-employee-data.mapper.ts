@@ -47,16 +47,12 @@ export const mapApiEmployeeDataToEmployeeData = (
         ),
         E.bind('leavePeriods', () =>
           pipe(
-            // validatedData.leavePeriods,
-            // E.traverseArray(mapApiLeavePeriodToLeavePeriod),
-            // E.map(leavePeriods => List(leavePeriods))
-            E.right(List<LeavePeriod>())
+            validatedData.leavePeriods,
+            E.traverseArray(mapApiLeavePeriodToLeavePeriod),
+            E.map(leavePeriods => List(leavePeriods))
           )
         )
       )
     ),
-    E.mapLeft(e => {
-      console.log('errrrre', e);
-      return e;
-    })
+    E.mapLeft(e => e)
   );
