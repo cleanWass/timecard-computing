@@ -45,7 +45,7 @@
     "prepare": "yarn compile",
     "pretest": "yarn compile",
     "posttest": "yarn lint",
-    "start": "node ./build/src/main.js",
+    "start": "bun run compile && node ./build/src/main.js",
     "launch": "tsc ; bun start -d",
     "generate-csv": "tsc ; bun run src/scripts/run-generate-csv.ts --debug",
     "generate-csv-d": "tsc ; bun run src/scripts/run-generate-csv.ts --debug > logs/log.txt",
