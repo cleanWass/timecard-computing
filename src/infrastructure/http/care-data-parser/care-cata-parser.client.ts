@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { response } from 'express';
 import { flow } from 'fp-ts/function';
 import { pipe } from 'fp-ts/lib/function';
 import * as TE from 'fp-ts/TaskEither';
@@ -9,7 +10,7 @@ import { logger } from '../../../~shared/logging/logger';
 import { mapApiEmployeeDataToEmployeeData } from './mappers/api-employee-data.mapper';
 import { mapBenchToBenchPayloadDto } from './mappers/bench-payload-dto.mapper';
 
-export const makeCareDataParserClient = (config: {
+const makeCareDataParserClient = (config: {
   baseUrl: string;
   apiKey: string;
 }): CareDataParserClient => {
@@ -59,8 +60,8 @@ export const makeCareDataParserClient = (config: {
   );
 
   return {
-    getEmployeesWithBenchGeneration: (period: LocalDateRange) => {
-      return pipe(
+    getEmployeesWithBenchGeneration: (period: LocalDateRange) =>
+      pipe(
         TE.tryCatch(
           () =>
             client.post('/intercontract', {
@@ -73,8 +74,7 @@ export const makeCareDataParserClient = (config: {
         ),
         TE.map(response => response.data as Array<unknown>),
         TE.chainW(TE.traverseArray(flow(mapApiEmployeeDataToEmployeeData, TE.fromEither)))
-      );
-    },
+      ),
 
     getEmployeeData: ({ silaeId, period }) =>
       pipe(
@@ -102,12 +102,16 @@ export const makeCareDataParserClient = (config: {
           }
         ),
         TE.map(response => response.data as Array<unknown>),
+        TE.tapIO(
+          response => () => console.log('Fetched Payroll', Array.isArray(response), response.length)
+        ),
         TE.chainW(r =>
           pipe(
-            r,
+            r ?? [],
             TE.traverseArray(d => pipe(d, mapApiEmployeeDataToEmployeeData, TE.fromEither))
           )
-        )
+        ),
+        TE.tapIO(() => () => console.log('Mapped Payroll'))
       ),
 
     generateBenchAffectation: bench =>
@@ -145,3 +149,4 @@ export const makeCareDataParserClient = (config: {
       ),
   };
 };
+export default makeCareDataParserClient;

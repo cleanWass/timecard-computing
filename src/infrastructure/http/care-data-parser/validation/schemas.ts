@@ -85,7 +85,7 @@ export const apiEmployeeDataSchema = z.object({
   shifts: z.array(apiShiftSchema),
   plannings: z.array(apiScheduledContractSchema),
   leaves: z.array(apiLeaveSchema),
-  leavePeriods: z.array(apiLeavePeriodsSchema).optional(),
+  leavePeriods: z.array(apiLeavePeriodsSchema).optional().default([]),
 });
 
 export type ApiEmployeeData = z.infer<typeof apiEmployeeDataSchema>;

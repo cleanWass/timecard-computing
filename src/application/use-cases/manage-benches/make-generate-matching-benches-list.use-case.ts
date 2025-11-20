@@ -1,52 +1,74 @@
 import { flow, pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import { Set } from 'immutable';
+import { EnvService } from '../../../config/env';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
-import { manageBenchAffectationService } from '../../../domain/services/bench-management/generate-bench-affectations.service';
+import { manageBenchAffectationService } from '../../../domain/services/bench-management/bench-management.service';
 import { CareDataParserClient } from '../../ports/services/care-data-parser-client';
+import { FileStoragePort, UploadFileResult } from '../../ports/services/file-storage-port';
 import { computeTimecardForEmployee } from '../../timecard-computation/compute-timecard-for-employee';
 
 export type MakeGenerateMatchingBenchesListUseCase = {
-  execute: (params: { period: LocalDateRange }) => TE.TaskEither<Error, string>;
+  execute: (params: { period: LocalDateRange }) => TE.TaskEither<Error, UploadFileResult>;
 };
 
-export const makeGenerateMatchingBenchesListUseCase = (
-  careDataParserClient: CareDataParserClient
-): MakeGenerateMatchingBenchesListUseCase => ({
-  execute: ({ period }) =>
-    pipe(
-      TE.Do,
-      TE.bind('benchedEmployees', () =>
-        careDataParserClient.getEmployeesWithBenchGeneration(period)
-      ),
-      TE.bind('benchedTimecards', ({ benchedEmployees }) =>
-        pipe(
-          benchedEmployees,
-          TE.traverseArray(flow(computeTimecardForEmployee(period), TE.fromEither))
-        )
-      ),
-      TE.bind('activeEmployees', ({ benchedEmployees }) =>
-        pipe(
-          careDataParserClient.getAllActiveEmployeesData(period),
-          TE.map(allActive => {
-            const benchedIds = Set(benchedEmployees.map(e => e.employee.silaeId));
-            return allActive.filter(e => !benchedIds.has(e.employee.silaeId));
+export const makeGenerateMatchingBenchesListUseCase =
+  (careDataParserClient: CareDataParserClient) =>
+  (fileStoragePort: FileStoragePort): MakeGenerateMatchingBenchesListUseCase => ({
+    execute: ({ period }) =>
+      pipe(
+        TE.Do,
+        TE.tapIO(() => () => console.log('1/ Generate matching benches list use case started')),
+        TE.bind('benchedEmployees', () =>
+          careDataParserClient.getEmployeesWithBenchGeneration(period)
+        ),
+        TE.tapIO(() => () => console.log('2/Benched employees fetched')),
+        TE.bind('benchedTimecards', ({ benchedEmployees }) =>
+          pipe(
+            benchedEmployees ?? [],
+            TE.traverseArray(flow(computeTimecardForEmployee(period), TE.fromEither))
+          )
+        ),
+        TE.tapIO(() => () => console.log('3/ Benched employees timecards fetched')),
+        TE.bind('activeEmployees', ({ benchedEmployees }) =>
+          pipe(
+            careDataParserClient.getAllActiveEmployeesData(period),
+            TE.map(allActive => {
+              const benchedIds = Set(benchedEmployees.map(e => e.employee.silaeId));
+              return allActive.filter(e => !benchedIds.has(e.employee.silaeId));
+            })
+          )
+        ),
+        TE.tapIO(() => () => console.log('4/ Active employees fetched')),
+        TE.bind('activeTimecards', ({ activeEmployees }) =>
+          pipe(
+            activeEmployees,
+            TE.traverseArray(flow(computeTimecardForEmployee(period), TE.fromEither))
+          )
+        ),
+        TE.tapIO(() => () => console.log('5/ Active employees timecards fetched')),
+        TE.bind('weeks', () => TE.of(period.divideIntoCalendarWeeks())),
+        TE.tapIO(() => () => console.log('6/ Weeks computed')),
+        TE.bind('csvContent', ({ weeks, benchedTimecards, activeTimecards }) =>
+          TE.of(
+            manageBenchAffectationService.computeMatchingAffectationsList({
+              weeks,
+              benchedEmployeesTimecard: benchedTimecards,
+              activeEmployeesTimecard: activeTimecards,
+            })
+          )
+        ),
+        TE.bind(`fileName`, () =>
+          TE.of(`matching-benches-list-${period.toFormattedString({ connector: '-' })}.csv`)
+        ),
+        TE.chain(({ csvContent, fileName }) =>
+          fileStoragePort.uploadFile({
+            bucketName: EnvService.get('AWS_S3_BUCKET_NAME'),
+            fileName,
+            content: csvContent,
+            contentType: 'text/csv',
           })
-        )
+        ),
+        TE.tapIO(res => () => console.log('Upload file result:', res))
       ),
-      TE.bind('activeTimecards', ({ activeEmployees }) =>
-        pipe(
-          activeEmployees,
-          TE.traverseArray(flow(computeTimecardForEmployee(period), TE.fromEither))
-        )
-      ),
-      TE.bind('weeks', () => TE.of(period.divideIntoCalendarWeeks())),
-      TE.map(({ weeks, benchedTimecards, activeTimecards }) =>
-        manageBenchAffectationService.computeMatchingAffectationsList({
-          weeks,
-          benchedEmployeesTimecard: benchedTimecards,
-          activeEmployeesTimecard: activeTimecards,
-        })
-      )
-    ),
-});
+  });

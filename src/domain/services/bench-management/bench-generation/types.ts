@@ -1,10 +1,10 @@
 import { DayOfWeek, Duration, LocalDate } from '@js-joda/core';
-import { Employee } from '../../models/employee-registration/employee/employee';
-import { EmploymentContract } from '../../models/employment-contract-management/employment-contract/employment-contract';
-import { LeavePeriod } from '../../models/leave-recording/leave/leave-period';
-import { LocalDateRange } from '../../models/local-date-range';
-import { LocalTimeSlot } from '../../models/local-time-slot';
-import { WorkingPeriodTimecard } from '../../models/timecard-computation/timecard/working-period-timecard';
+import { Employee } from '../../../models/employee-registration/employee/employee';
+import { EmploymentContract } from '../../../models/employment-contract-management/employment-contract/employment-contract';
+import { LeavePeriod } from '../../../models/leave-recording/leave/leave-period';
+import { LocalDateRange } from '../../../models/local-date-range';
+import { LocalTimeSlot } from '../../../models/local-time-slot';
+import { WorkingPeriodTimecard } from '../../../models/timecard-computation/timecard/working-period-timecard';
 import { List, Set } from 'immutable';
 
 export type BenchGenerationProcessResult = {

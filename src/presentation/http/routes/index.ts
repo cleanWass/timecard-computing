@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { S3Service } from '../../../infrastructure/storage/s3/s3.service';
+import { FileStoragePort } from '../../../application/ports/services/file-storage-port';
 import { makeBenchManagementRoutes } from './benching-management.route';
 
-export const makeRoutes = (dependencies: { s3Service: S3Service }) => {
+export const makeRoutes = (dependencies: { s3Service: FileStoragePort }) => {
   const router = Router();
 
   // Monter toutes les routes

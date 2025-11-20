@@ -6,7 +6,10 @@ import { Leave } from '../../../domain/models/leave-recording/leave/leave';
 import { LeavePeriod } from '../../../domain/models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { Shift } from '../../../domain/models/mission-delivery/shift/shift';
-import { BenchAffectation, SlotToCreate } from '../../../domain/services/bench-management/types';
+import {
+  BenchAffectation,
+  SlotToCreate,
+} from '../../../domain/services/bench-management/bench-generation/types';
 
 export type EmployeeData = {
   employee: Employee;

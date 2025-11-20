@@ -1,19 +1,19 @@
 import express, { Express } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import { FileStoragePort } from '../../application/ports/services/file-storage-port';
 import { benchManagementUseCases } from '../../application/use-cases/manage-benches/manage-benches.use-case';
 import { corsConfig } from '../../config/cors.config';
 import { EnvService } from '../../config/env';
-import { makeCareDataParserClient } from '../../infrastructure/http/care-data-parser/care-cata-parser.client';
+import makeCareDataParserClient from '../../infrastructure/http/care-data-parser/care-cata-parser.client';
 import { makeCreateMissingBenchesScheduler } from '../../infrastructure/scheduling/bench-generation-scheduler.service';
 import { schedulerConfig } from '../../infrastructure/scheduling/scheduler.config';
-import { S3Service } from '../../infrastructure/storage/s3/s3.service';
 import { errorHandlerMiddleware } from './middlewares/error-handler';
 import { httpLoggingMiddleware, requestIdMiddleware } from './middlewares/logging.middleware';
 import { makeRoutes } from './routes';
 
 export type AppDependencies = {
-  s3Service: S3Service;
+  s3Service: FileStoragePort;
 };
 
 export const makeApp = (dependencies: AppDependencies): Express => {

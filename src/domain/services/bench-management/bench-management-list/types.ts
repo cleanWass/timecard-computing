@@ -1,0 +1,37 @@
+export const BenchManagementListHeaders = [
+  'Manager',
+  'Silae id',
+  'Prénom',
+  'Nom',
+  'Téléphone',
+  'Code Postal',
+  'Total 8W',
+  '8W Surqualité',
+  'IC W+0',
+  'IC W+1',
+  'IC W+2',
+  'IC W+3',
+  'IC W+4',
+  'IC W+5',
+  'IC W+6',
+  'IC W+7',
+  'IC W+8',
+  'IC Lun',
+  'Dispo Lun',
+  'IC Mar',
+  'Dispo Mar',
+  'IC Mer',
+  'Dispo Mer',
+  'IC Jeu',
+  'Dispo Jeu',
+  'IC Ven',
+  'Dispo Ven',
+  'IC Sam',
+  'Dispo Sam',
+  'IC Dim',
+  'Dispo Dim',
+] as const;
+
+export type BenchManagementListHeaders = (typeof BenchManagementListHeaders)[number];
+
+export type BenchManagementListRow = { [K in BenchManagementListHeaders]: string };

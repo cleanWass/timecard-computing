@@ -3,9 +3,11 @@ import { pipe } from 'fp-ts/function';
 import * as T from 'fp-ts/Task';
 import * as TE from 'fp-ts/TaskEither';
 import { benchManagementUseCases } from '../application/use-cases/manage-benches/manage-benches.use-case';
+import { createS3Client } from '../config/aws.config';
 import { EnvService } from '../config/env';
 import { LocalDateRange } from '../domain/models/local-date-range';
-import { makeCareDataParserClient } from '../infrastructure/http/care-data-parser/care-cata-parser.client';
+import makeCareDataParserClient from '../infrastructure/http/care-data-parser/care-cata-parser.client';
+import { makeS3Service } from '../infrastructure/storage/s3/s3.service';
 
 const DATE_FORMAT = 'dd/MM/yy';
 const REQUIRED_ARGS_COUNT = 4;
@@ -36,6 +38,9 @@ async function main() {
     apiKey: EnvService.get('CARE_DATA_PARSER_API_KEY'),
   });
 
+  const s3Client = createS3Client();
+  const s3Service = makeS3Service(s3Client);
+
   const { removeExtraBenches, generateMissingBenches, computeBenchesMatchingShiftsList } =
     benchManagementUseCases(careDataCareClient);
 
@@ -43,9 +48,11 @@ async function main() {
 
   return pipe(
     TE.Do,
-    TE.bind('removedBenches', () => removeExtraBenches.execute({ period })),
-    TE.bind('generatedBenches', () => generateMissingBenches.execute({ period })),
-    TE.bind('benchesMatchingShifts', () => computeBenchesMatchingShiftsList.execute({ period })),
+    // TE.bind('removedBenches', () => removeExtraBenches.execute({ period })),
+    // TE.bind('generatedBenches', () => generateMissingBenches.execute({ period })),
+    TE.bind('benchesMatchingShifts', () =>
+      computeBenchesMatchingShiftsList(s3Service).execute({ period })
+    ),
     TE.foldW(
       e => {
         console.log('Error in bench generation', e);
@@ -53,10 +60,10 @@ async function main() {
       },
       data => {
         console.log(
-          `Bench management completed successfully:
-          ${data.removedBenches.flatMap(({ benches }) => benches.toArray()).length} removed benches
-          ${data.generatedBenches.totalAffectationsCreated} generated benches
-         `
+          `Bench management completed successfully: ${data.benchesMatchingShifts}`
+          // ${data.removedBenches.flatMap(({ benches }) => benches.toArray()).length} removed benches
+          // ${data.generatedBenches.totalAffectationsCreated} generated benches
+          // `
         );
         return T.of(data);
       }

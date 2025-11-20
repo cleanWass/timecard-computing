@@ -26,7 +26,7 @@ export const formatTimeSlot = (item: { timeslot: LocalTimeSlot }): string =>
   `${item.timeslot.startTime.format(TIME_FORMAT)} - ${item.timeslot.endTime.format(TIME_FORMAT)}`;
 
 export const formatDaySchedule = (schedule: DaySchedule, day: DayOfWeek): string => {
-  return schedule.get(day)?.map(formatTimeSlot).join(',') ?? '';
+  return schedule.get(day)?.map(formatTimeSlot).join(' ') ?? '';
 };
 
 export const computeMinutesSet = (items: List<{ timeslot: LocalTimeSlot }>): Set<number> => {
@@ -123,7 +123,16 @@ export const formatCategoryMatches = (
     return ``;
   }
 
-  return `${matches.map(formatEmployeeMatch).join('|')}`;
+  return `${matches.map(formatEmployeeMatch).join(',')}`;
+};
+
+export const formatMatches = (categorizedMatches: CategorizedMatches) => {
+  return categorizedMatches
+    .valueSeq()
+    .flatMap(l => l)
+    .sort((a, b) => b.percentage - a.percentage)
+    .map(formatEmployeeMatch)
+    .join(',');
 };
 
 export const generateCsvLine = (
@@ -141,5 +150,8 @@ export const generateCsvLine = (
   const match40 = formatCategoryMatches(categorizedMatches, 'match40');
   const match20 = formatCategoryMatches(categorizedMatches, 'match20');
 
-  return `${benchedEmployee.silaeId},${benchedEmployee.lastName},${benchedEmployee.firstName},${days},${match100},${match80},${match60},${match40},${match20},`;
+  // return `${benchedEmployee.silaeId},${benchedEmployee.lastName},${benchedEmployee.firstName},${days},${match100},${match80},${match60},${match40},${match20},`;
+  return `${benchedEmployee.silaeId},${benchedEmployee.lastName},${
+    benchedEmployee.firstName
+  },${days},${formatMatches(categorizedMatches)}`;
 };

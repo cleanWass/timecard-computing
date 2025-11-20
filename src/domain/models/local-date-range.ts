@@ -39,13 +39,19 @@ export class LocalDateRange implements ValueObject {
   }
 
   toFormattedString(
-    { exclusiveEndDate, pattern }: { exclusiveEndDate?: boolean; pattern?: string } = {
+    {
+      exclusiveEndDate,
+      pattern,
+      connector,
+    }: { exclusiveEndDate?: boolean; pattern?: string; connector?: string } = {
       exclusiveEndDate: false,
       pattern: 'dd/MM/yy',
     }
   ) {
     const endDate = exclusiveEndDate ? this.end : this.end.minusDays(1);
-    return `${formatLocalDate({ date: this.start, pattern })} -> ${formatLocalDate({
+    return `${formatLocalDate({ date: this.start, pattern })}${
+      connector ?? ' -> '
+    }${formatLocalDate({
       date: endDate,
       pattern,
     })}`;

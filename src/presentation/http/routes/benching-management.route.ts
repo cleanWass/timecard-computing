@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { benchManagementUseCases } from '../../../application/use-cases/manage-benches/manage-benches.use-case';
 import { EnvService } from '../../../config/env';
-import { makeCareDataParserClient } from '../../../infrastructure/http/care-data-parser/care-cata-parser.client';
+import makeCareDataParserClient from '../../../infrastructure/http/care-data-parser/care-cata-parser.client';
 import { makeBenchManagementController } from '../controllers/bench-management.controller';
 import { intercontractRequestSchema } from '../dto/bench.dto';
 import { validateRequest } from '../middlewares/validation';

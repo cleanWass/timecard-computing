@@ -4,8 +4,8 @@ import { List, Set } from 'immutable';
 import { Employee } from '../../../domain/models/employee-registration/employee/employee';
 import { LeavePeriod } from '../../../domain/models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
-import { manageBenchAffectationService } from '../../../domain/services/bench-management/generate-bench-affectations.service';
-import { BenchGenerationProcessResult } from '../../../domain/services/bench-management/types';
+import { manageBenchAffectationService } from '../../../domain/services/bench-management/bench-management.service';
+import { BenchGenerationProcessResult } from '../../../domain/services/bench-management/bench-generation/types';
 import { generateRequestId, logger } from '../../../~shared/logging/logger';
 import { CareDataParserClient } from '../../ports/services/care-data-parser-client';
 

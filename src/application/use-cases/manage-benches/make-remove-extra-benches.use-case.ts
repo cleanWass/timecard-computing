@@ -4,7 +4,7 @@ import { Set } from 'immutable';
 import { Employee } from '../../../domain/models/employee-registration/employee/employee';
 import { Bench } from '../../../domain/models/leave-recording/bench-recording/bench';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
-import { manageBenchAffectationService } from '../../../domain/services/bench-management/generate-bench-affectations.service';
+import { manageBenchAffectationService } from '../../../domain/services/bench-management/bench-management.service';
 import { CareDataParserClient } from '../../ports/services/care-data-parser-client';
 
 import { computeTimecardForEmployee } from '../../timecard-computation/compute-timecard-for-employee';

@@ -1,26 +1,21 @@
 import * as AWS from 'aws-sdk';
-import * as TE from 'fp-ts/TaskEither';
 import { pipe } from 'fp-ts/function';
-import fs from 'fs';
-import { EnvService } from '../../../config/env';
-import { UploadFileParams, UploadFileResult } from './types';
+import * as TE from 'fp-ts/TaskEither';
+import {
+  FileStoragePort,
+  UploadFileResult,
+} from '../../../application/ports/services/file-storage-port';
 
-export type S3Service = {
-  uploadFile: (params: UploadFileParams) => TE.TaskEither<Error, UploadFileResult>;
-};
-
-export const makeS3Service = (s3Client: AWS.S3): S3Service => ({
-  uploadFile: ({ filePath, key, contentType = 'text/csv' }) =>
+export const makeS3Service = (s3Client: AWS.S3): FileStoragePort => ({
+  uploadFile: ({ bucketName: Bucket, content: Body, fileName: Key, contentType = 'text/csv' }) =>
     pipe(
       TE.tryCatch(
         () =>
           new Promise<UploadFileResult>((resolve, reject) => {
-            const fileStream = fs.createReadStream(filePath);
-
             const uploadParams: AWS.S3.PutObjectRequest = {
-              Bucket: EnvService.get('AWS_S3_BUCKET_NAME'),
-              Key: key,
-              Body: fileStream,
+              Bucket,
+              Key,
+              Body,
               ContentType: contentType,
             };
 
