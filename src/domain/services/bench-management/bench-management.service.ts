@@ -2,15 +2,17 @@ import { Duration } from '@js-joda/core';
 import * as E from 'fp-ts/Either';
 import { Set } from 'immutable';
 import { Bench } from '../../models/leave-recording/bench-recording/bench';
-import { generateMissingBenches } from './bench-generation/generate-bench-affectations';
+import { generateMissingBenchesService } from './bench-generation/generate-bench-affectations.service';
 import { BenchAffectation, SlotToCreate } from './bench-generation/types';
-import { computeMatchingAffectationsList } from './bench-matching-list/generate-bench-matching-list';
-import { removeExtraBenches } from './bench-suppression/remove-extra-bench';
+import generateBenchManagementListService from './bench-management-list/generate-bench-management-list.service';
+import { computeMatchingAffectationsListService } from './bench-matching-list/generate-bench-matching-list.service';
+import { removeExtraBenchesService } from './bench-suppression/remove-extra-bench.service.';
 
-export const manageBenchAffectationService = {
-  generateMissingBenches,
-  removeExtraBenches,
-  computeMatchingAffectationsList,
+export const manageBenchesService = {
+  generateMissingBenches: generateMissingBenchesService,
+  removeExtraBenches: removeExtraBenchesService,
+  computeMatchingAffectationsList: computeMatchingAffectationsListService,
+  generateBenchManagementList: generateBenchManagementListService,
 
   filterNewAffectations: (
     affectations: Set<SlotToCreate>,

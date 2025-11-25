@@ -4,7 +4,7 @@ import { Set } from 'immutable';
 import { Employee } from '../../../domain/models/employee-registration/employee/employee';
 import { Bench } from '../../../domain/models/leave-recording/bench-recording/bench';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
-import { manageBenchAffectationService } from '../../../domain/services/bench-management/bench-management.service';
+import { manageBenchesService } from '../../../domain/services/bench-management/bench-management.service';
 import { CareDataParserClient } from '../../ports/services/care-data-parser-client';
 
 import { computeTimecardForEmployee } from '../../timecard-computation/compute-timecard-for-employee';
@@ -36,7 +36,7 @@ export const makeRemoveExtraBenchesUseCase = (
         )
       ),
       TE.bind('extraBenches', ({ timecardComputationResultForPeriod }) =>
-        manageBenchAffectationService.removeExtraBenches(timecardComputationResultForPeriod)
+        manageBenchesService.removeExtraBenches(timecardComputationResultForPeriod)
       ),
       TE.bind('benchAffectationsToDelete', ({ extraBenches }) =>
         pipe(

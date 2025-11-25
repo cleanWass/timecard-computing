@@ -5,7 +5,6 @@ import { formatDurationAs100 } from '../../../../~shared/util/joda-helper';
 import { TypeProps } from '../../../../~shared/util/types';
 import { LocalTimeSlot } from '../../local-time-slot';
 import { Client } from '../../mission-delivery/client/client';
-import { Shift } from '../../mission-delivery/shift/shift';
 import { BenchId } from './bench-id';
 
 export const CLEANY_INTERCONTRAT_ID = '0010Y00000Ijn8cQAB';

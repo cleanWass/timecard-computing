@@ -20,8 +20,7 @@ import {
   ApiScheduledContract,
   apiScheduledContractSchema,
 } from '../validation/scheduled-contract.schema';
-
-const dayShortcuts = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+import { dayShortcuts } from './helper';
 
 export const mapApiContractsToContracts =
   (employee: Employee) =>

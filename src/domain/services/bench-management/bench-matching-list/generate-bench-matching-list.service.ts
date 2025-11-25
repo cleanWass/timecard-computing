@@ -4,7 +4,7 @@ import { compact } from '../../../../~shared/util/collections-helper';
 import { LocalDateRange } from '../../../models/local-date-range';
 import { categorizeMatches, findBestMatches, generateCsvLine } from './helper';
 
-export const computeMatchingAffectationsList = ({
+export const computeMatchingAffectationsListService = ({
   weeks,
   benchedEmployeesTimecard,
   activeEmployeesTimecard,

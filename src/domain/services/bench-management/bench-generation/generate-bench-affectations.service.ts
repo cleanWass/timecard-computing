@@ -10,7 +10,7 @@ import {
   mergeContinuousTimeSlots,
 } from './helper';
 
-export const generateMissingBenches =
+export const generateMissingBenchesService =
   ({ period }: { period: LocalDateRange }) =>
   (result: readonly TimecardComputationResult[]) => {
     return pipe(

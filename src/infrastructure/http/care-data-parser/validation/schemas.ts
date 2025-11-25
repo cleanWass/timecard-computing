@@ -1,14 +1,7 @@
-import { LocalTime } from '@js-joda/core';
-import { id } from 'fp-ts/Reader';
+import { LocalDate } from '@js-joda/core';
 import zod, { z } from 'zod';
 import { EMPLOYEE_ROLE } from '../../../../domain/models/employee-registration/employee/employee-role';
-import { LeaveId } from '../../../../domain/models/leave-recording/leave/leave-id';
-import {
-  LEAVE_REASON,
-  PaidLeaveReason,
-  UnpaidLeaveReason,
-} from '../../../../domain/models/leave-recording/leave/leave-retribution';
-import { LocalDateRange } from '../../../../domain/models/local-date-range';
+import { LEAVE_REASON } from '../../../../domain/models/leave-recording/leave/leave-retribution';
 import { SHIFT_REASON } from '../../../../domain/models/mission-delivery/shift/shift-reason';
 import { apiScheduledContractSchema } from './scheduled-contract.schema';
 
@@ -20,7 +13,7 @@ export const apiEmployeeSchema = z.object({
   role: zod.enum(EMPLOYEE_ROLE),
   seniorityDate: zod.string(),
   email: zod.string().optional(),
-  phone: zod.string().optional(),
+  phoneNumber: zod.string().optional(),
   managerId: zod.string().optional(),
   managerName: zod.string().optional(),
   address: zod
@@ -30,6 +23,18 @@ export const apiEmployeeSchema = z.object({
       city: zod.string(),
     })
     .optional(),
+  availabilityPlanning: zod
+    .record(
+      zod.enum(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']),
+      z.array(
+        zod.object({
+          start: zod.string(),
+          end: zod.string(),
+        })
+      )
+    )
+    .optional(),
+  generateIntercontract: zod.boolean().optional(),
 });
 
 export type ApiEmployee = z.infer<typeof apiEmployeeSchema>;
@@ -71,7 +76,7 @@ export const apiLeavePeriodsSchema = z.object({
   endTime: zod.string().nullish(),
   period: zod.object({
     start: zod.string(),
-    end: zod.string(),
+    end: zod.string().optional().default(LocalDate.MAX.toString()),
   }),
   employeeId: zod.string(),
   silaeId: zod.string(),

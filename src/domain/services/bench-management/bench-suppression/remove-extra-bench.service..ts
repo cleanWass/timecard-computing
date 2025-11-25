@@ -5,7 +5,7 @@ import { Set } from 'immutable';
 import { TimecardComputationResult } from '../../../../application/csv-generation/export-csv';
 import { Bench } from '../../../models/leave-recording/bench-recording/bench';
 
-export const removeExtraBenches = (result: readonly TimecardComputationResult[]) => {
+export const removeExtraBenchesService = (result: readonly TimecardComputationResult[]) => {
   return pipe(
     result,
     TE.traverseArray(computationResult => {

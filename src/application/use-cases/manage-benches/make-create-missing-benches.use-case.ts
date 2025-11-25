@@ -4,7 +4,7 @@ import { List, Set } from 'immutable';
 import { Employee } from '../../../domain/models/employee-registration/employee/employee';
 import { LeavePeriod } from '../../../domain/models/leave-recording/leave/leave-period';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
-import { manageBenchAffectationService } from '../../../domain/services/bench-management/bench-management.service';
+import { manageBenchesService } from '../../../domain/services/bench-management/bench-management.service';
 import { BenchGenerationProcessResult } from '../../../domain/services/bench-management/bench-generation/types';
 import { generateRequestId, logger } from '../../../~shared/logging/logger';
 import { CareDataParserClient } from '../../ports/services/care-data-parser-client';
@@ -33,15 +33,6 @@ export const makeCreateMissingBenchesUseCase = (
       TE.bind('employeesWithBenchGeneration', () =>
         careDataParserClient.getEmployeesWithBenchGeneration(period)
       ),
-      TE.chainFirst(({ employeesWithBenchGeneration }) =>
-        TE.fromTask(async () => {
-          log.info('Employees fetched', {
-            count: employeesWithBenchGeneration.length,
-            employeesData: employeesWithBenchGeneration,
-          });
-          return undefined;
-        })
-      ),
       TE.bind(`timecardComputationResultForPeriod`, ({ employeesWithBenchGeneration }) =>
         pipe(
           employeesWithBenchGeneration,
@@ -49,9 +40,7 @@ export const makeCreateMissingBenchesUseCase = (
         )
       ),
       TE.bind('missingBenches', ({ timecardComputationResultForPeriod }) =>
-        manageBenchAffectationService.generateMissingBenches({ period })(
-          timecardComputationResultForPeriod
-        )
+        manageBenchesService.generateMissingBenches({ period })(timecardComputationResultForPeriod)
       ),
       TE.bind('benchAffectations', ({ missingBenches }) =>
         pipe(missingBenches, TE.traverseArray(careDataParserClient.generateBenchAffectation))
