@@ -24,11 +24,9 @@ export const makeGenerateBenchManagementListUseCase =
     execute: ({ period }) =>
       pipe(
         TE.Do,
-        TE.tapIO(() => () => console.log('1/ Generate bench management list use case started')),
         TE.bind('benchedEmployees', () =>
           careDataParserClient.getEmployeesWithBenchGeneration(period)
         ),
-        TE.tapIO(() => () => console.log('2/Benched employees fetched')),
         TE.bind('benchedTimecards', ({ benchedEmployees }) =>
           pipe(
             benchedEmployees ?? [],
@@ -41,7 +39,6 @@ export const makeGenerateBenchManagementListUseCase =
             )
           )
         ),
-        TE.tapIO(() => () => console.log('3/ Benched employees timecards fetched')),
         TE.bind('activeEmployees', ({ benchedEmployees }) =>
           pipe(
             careDataParserClient.getAllActiveEmployeesData(period),
@@ -51,17 +48,14 @@ export const makeGenerateBenchManagementListUseCase =
             })
           )
         ),
-        TE.tapIO(() => () => console.log('4/ Active employees fetched')),
         TE.bind('activeTimecards', ({ activeEmployees }) =>
           pipe(
             activeEmployees,
             TE.traverseArray(flow(computeTimecardForEmployee(period), TE.fromEither))
           )
         ),
-        TE.tapIO(() => () => console.log('5/ Active employees timecards fetched')),
         TE.bind('weeks', () => TE.of(period.divideIntoCalendarWeeks())),
-        TE.tapIO(() => () => console.log('6/ Weeks computed')),
-        TE.bind('csvContent', ({ weeks, benchedTimecards, activeTimecards }) =>
+        TE.bind('csvContent', ({ weeks, benchedTimecards }) =>
           TE.of(
             manageBenchesService.generateBenchManagementList({
               period,
@@ -89,7 +83,6 @@ export const makeGenerateBenchManagementListUseCase =
           ];
 
           return pipe(uploads, TE.sequenceArray);
-        }),
-        TE.tapIO(res => () => console.log('Upload file result:', res))
+        })
       ),
   });

@@ -2,7 +2,6 @@ import { DayOfWeek, Duration } from '@js-joda/core';
 import { pipe } from 'fp-ts/function';
 import { List, Map, OrderedMap, Set } from 'immutable';
 import { TimecardComputationResult } from '../../../../application/csv-generation/export-csv';
-import { logger } from '../../../../~shared/logging/logger';
 import { formatDurationAs100 } from '../../../../~shared/util/joda-helper';
 import { Employee } from '../../../models/employee-registration/employee/employee';
 import { Bench } from '../../../models/leave-recording/bench-recording/bench';
@@ -10,13 +9,10 @@ import { LocalDateRange } from '../../../models/local-date-range';
 import { LocalTimeSlot } from '../../../models/local-time-slot';
 import { arrayToObject } from './helper';
 import {
-  BenchManagementListHeaders,
-  BenchManagementListRow,
   dailyFieldAvailability,
   DailyFieldAvailability,
   dailyFieldIc,
   DailyFieldIc,
-  dailyFields,
   ICWeek,
   icWeeks,
 } from './types';
@@ -32,9 +28,6 @@ const generateBenchManagementListService = ({
 }) => {
   return benchedEmployeesTimecard
     .map((tcr, employee) => {
-      console.log('Generating bench management list for employee', employee.silaeId);
-      console.log('timecards : ', tcr.timecards.map(tc => tc.debug()).join('\n'));
-
       const IcPlusSection: Record<ICWeek, string> = arrayToObject(icWeeks, (_, i) =>
         formatDurationAs100(
           tcr.weeklyRecaps
@@ -128,9 +121,9 @@ const generateBenchManagementListService = ({
         ...dailyFieldAvailabilitySection,
       });
 
-      console.log(employeeRow.join(';'));
       return employeeRow.join(';');
     })
     .join('\n');
 };
+
 export default generateBenchManagementListService;

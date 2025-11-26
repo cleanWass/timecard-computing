@@ -1,15 +1,19 @@
+import { DateTimeFormatter, LocalDateTime } from '@js-joda/core';
 import { flow, pipe } from 'fp-ts/function';
 import * as TE from 'fp-ts/TaskEither';
 import { Set } from 'immutable';
 import { EnvService } from '../../../config/env';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
 import { manageBenchesService } from '../../../domain/services/bench-management/bench-management.service';
+import { IllegalArgumentError } from '../../../domain/~shared/error/illegal-argument-error';
 import { CareDataParserClient } from '../../ports/services/care-data-parser-client';
 import { FileStoragePort, UploadFileResult } from '../../ports/services/file-storage-port';
 import { computeTimecardForEmployee } from '../../timecard-computation/compute-timecard-for-employee';
 
 export type MakeGenerateMatchingBenchesListUseCase = {
-  execute: (params: { period: LocalDateRange }) => TE.TaskEither<Error, UploadFileResult>;
+  execute: (params: {
+    period: LocalDateRange;
+  }) => TE.TaskEither<Error | IllegalArgumentError, ReadonlyArray<UploadFileResult>>;
 };
 
 export const makeGenerateMatchingBenchesListUseCase =
@@ -18,18 +22,15 @@ export const makeGenerateMatchingBenchesListUseCase =
     execute: ({ period }) =>
       pipe(
         TE.Do,
-        TE.tapIO(() => () => console.log('1/ Generate matching benches list use case started')),
         TE.bind('benchedEmployees', () =>
           careDataParserClient.getEmployeesWithBenchGeneration(period)
         ),
-        TE.tapIO(() => () => console.log('2/Benched employees fetched')),
         TE.bind('benchedTimecards', ({ benchedEmployees }) =>
           pipe(
             benchedEmployees ?? [],
             TE.traverseArray(flow(computeTimecardForEmployee(period), TE.fromEither))
           )
         ),
-        TE.tapIO(() => () => console.log('3/ Benched employees timecards fetched')),
         TE.bind('activeEmployees', ({ benchedEmployees }) =>
           pipe(
             careDataParserClient.getAllActiveEmployeesData(period),
@@ -39,16 +40,13 @@ export const makeGenerateMatchingBenchesListUseCase =
             })
           )
         ),
-        TE.tapIO(() => () => console.log('4/ Active employees fetched')),
         TE.bind('activeTimecards', ({ activeEmployees }) =>
           pipe(
             activeEmployees,
             TE.traverseArray(flow(computeTimecardForEmployee(period), TE.fromEither))
           )
         ),
-        TE.tapIO(() => () => console.log('5/ Active employees timecards fetched')),
         TE.bind('weeks', () => TE.of(period.divideIntoCalendarWeeks())),
-        TE.tapIO(() => () => console.log('6/ Weeks computed')),
         TE.bind('csvContent', ({ weeks, benchedTimecards, activeTimecards }) =>
           TE.of(
             manageBenchesService.computeMatchingAffectationsList({
@@ -58,17 +56,25 @@ export const makeGenerateMatchingBenchesListUseCase =
             })
           )
         ),
-        TE.bind(`fileName`, () =>
-          TE.of(`matching-benches-list-${period.toFormattedString({ connector: '-' })}.csv`)
-        ),
-        TE.chain(({ csvContent, fileName }) =>
-          fileStoragePort.uploadFile({
-            bucketName: EnvService.get('AWS_S3_BUCKET_NAME'),
-            fileName,
-            content: csvContent,
+        TE.bind(`versioningFileName`, () => {
+          const timestamp = LocalDateTime.now().format(
+            DateTimeFormatter.ofPattern('yyyy/yyMMddHHmm')
+          );
+          return TE.of(`matching-benches-list/records/${timestamp}.csv`);
+        }),
+        TE.bind('mainFileName', () => TE.of('matching-benches-list/matching-benches-list.csv')),
+        TE.chainW(({ csvContent, versioningFileName, mainFileName }) => {
+          const uploadOptions = {
+            bucketName: EnvService.get('AWS_S3_BENCH_MANAGEMENT_BUCKET_NAME'),
             contentType: 'text/csv',
-          })
-        ),
-        TE.tapIO(res => () => console.log('Upload file result:', res))
+            content: csvContent,
+          };
+          const uploads = [
+            fileStoragePort.uploadFile({ fileName: versioningFileName, ...uploadOptions }),
+            fileStoragePort.uploadFile({ fileName: mainFileName, ...uploadOptions }),
+          ];
+
+          return pipe(uploads, TE.sequenceArray);
+        })
       ),
   });

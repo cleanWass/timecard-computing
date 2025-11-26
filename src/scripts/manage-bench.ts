@@ -1,4 +1,4 @@
-import { DateTimeFormatter, LocalDate, LocalTime } from '@js-joda/core';
+import { DateTimeFormatter, LocalDate } from '@js-joda/core';
 import { pipe } from 'fp-ts/function';
 import * as T from 'fp-ts/Task';
 import * as TE from 'fp-ts/TaskEither';
@@ -6,11 +6,9 @@ import { benchManagementUseCases } from '../application/use-cases/manage-benches
 import { createS3Client } from '../config/aws.config';
 import { EnvService } from '../config/env';
 import { LocalDateRange } from '../domain/models/local-date-range';
-import { LocalTimeSlot } from '../domain/models/local-time-slot';
 import makeCareDataParserClient from '../infrastructure/http/care-data-parser/care-cata-parser.client';
 import { makeS3Service } from '../infrastructure/storage/s3/s3.service';
 import { getFirstDayOfWeek } from '../~shared/util/joda-helper';
-import { Set } from 'immutable';
 
 const DATE_FORMAT = 'dd/MM/yy';
 const REQUIRED_ARGS_COUNT = 3;
@@ -47,15 +45,6 @@ async function main() {
   } = benchManagementUseCases(careDataCareClient);
 
   const period = parseCommandLineArgs();
-
-  const ts1 = new LocalTimeSlot(LocalTime.of(12, 0), LocalTime.of(13, 0));
-  const ts2 = new LocalTimeSlot(LocalTime.of(12, 0), LocalTime.of(13, 0));
-  console.log(ts1.equals(ts2));
-  console.log(
-    Set([ts1, ts2])
-      .map(ts => ts.toString())
-      .toArray()
-  );
 
   return pipe(
     TE.Do,
