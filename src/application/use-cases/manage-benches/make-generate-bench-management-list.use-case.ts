@@ -5,6 +5,7 @@ import { Map, Set } from 'immutable';
 import { EnvService } from '../../../config/env';
 import { Employee } from '../../../domain/models/employee-registration/employee/employee';
 import { LocalDateRange } from '../../../domain/models/local-date-range';
+import { benchManagementListHeaders } from '../../../domain/services/bench-management/bench-management-list/types';
 import { manageBenchesService } from '../../../domain/services/bench-management/bench-management.service';
 import { IllegalArgumentError } from '../../../domain/~shared/error/illegal-argument-error';
 import { TimecardComputationResult } from '../../csv-generation/export-csv';
@@ -55,6 +56,7 @@ export const makeGenerateBenchManagementListUseCase =
           )
         ),
         TE.bind('weeks', () => TE.of(period.divideIntoCalendarWeeks())),
+        TE.bind('csvHeaders', () => TE.of(benchManagementListHeaders.join(';'))),
         TE.bind('csvContent', ({ weeks, benchedTimecards }) =>
           TE.of(
             manageBenchesService.generateBenchManagementList({
@@ -71,11 +73,11 @@ export const makeGenerateBenchManagementListUseCase =
           return TE.of(`bench-management-list/records/${timestamp}.csv`);
         }),
         TE.bind('mainFileName', () => TE.of('bench-management-list/bench-management-list.csv')),
-        TE.chainW(({ csvContent, versioningFileName, mainFileName }) => {
+        TE.chainW(({ csvHeaders, csvContent, versioningFileName, mainFileName }) => {
           const uploadOptions = {
             bucketName: EnvService.get('AWS_S3_BENCH_MANAGEMENT_BUCKET_NAME'),
             contentType: 'text/csv',
-            content: csvContent,
+            content: `${csvHeaders}\n${csvContent}`,
           };
           const uploads = [
             fileStoragePort.uploadFile({ fileName: versioningFileName, ...uploadOptions }),

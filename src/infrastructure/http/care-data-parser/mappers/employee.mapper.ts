@@ -6,7 +6,6 @@ import { Employee } from '../../../../domain/models/employee-registration/employ
 import { LocalTimeSlot } from '../../../../domain/models/local-time-slot';
 import { ParseError } from '../../../../domain/~shared/error/parse-error';
 import { ValidationError } from '../../../../~shared/error/validation-error';
-import { generateRequestId, logger } from '../../../../~shared/logging/logger';
 import { apiEmployeeSchema } from '../validation/schemas';
 import { validateWithZod } from '../validation/validators';
 import { dayShortcuts } from './helper';

@@ -158,12 +158,9 @@ export const mergeContinuousTimeSlots = (slots: Set<SlotToCreate>): Set<SlotToCr
 
     if (isSameDate && areContiguous) {
       const mergedSlot: SlotToCreate = {
-        employee: last.employee,
-        contract: last.contract,
-        date: last.date,
+        ...last,
         slot: new LocalTimeSlot(last.slot.startTime, current.slot.endTime),
         duration: last.duration.plus(current.duration),
-        isDuringLeavePeriod: last.isDuringLeavePeriod,
       };
       return acc.pop().push(mergedSlot);
     }

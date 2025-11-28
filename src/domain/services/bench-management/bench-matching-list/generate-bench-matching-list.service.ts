@@ -2,7 +2,7 @@ import { List } from 'immutable';
 import { TimecardComputationResult } from '../../../../application/csv-generation/export-csv';
 import { compact } from '../../../../~shared/util/collections-helper';
 import { LocalDateRange } from '../../../models/local-date-range';
-import { categorizeMatches, findBestMatches, generateCsvLine } from './helper';
+import { findBestMatches, generateCsvLine } from './helper';
 
 export const computeMatchingAffectationsListService = ({
   weeks,
@@ -52,9 +52,9 @@ export const computeMatchingAffectationsListService = ({
 
           const matches = findBestMatches(benchSchedule, activeRecaps);
 
-          const categorizedMatches = categorizeMatches(matches);
+          // const categorizedMatches = categorizeMatches(matches);
 
-          return generateCsvLine(benchedRecap.employee, benchSchedule, categorizedMatches);
+          return generateCsvLine(benchedRecap.employee, benchSchedule, matches);
         })
         .join('\n');
     })

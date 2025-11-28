@@ -109,7 +109,9 @@ const generateBenchManagementListService = ({
             (res, wr) =>
               res.plus(
                 Bench.totalBenchesDuration(
-                  wr.workingPeriodTimecards.flatMap(tc => tc.benches).toSet()
+                  wr.workingPeriodTimecards
+                    .flatMap(tc => tc.benches.filter(b => b.isExtraService()))
+                    .toSet()
                 )
               ),
             Duration.ZERO

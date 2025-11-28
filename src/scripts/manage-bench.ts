@@ -23,7 +23,7 @@ const parseCommandLineArgs = (): LocalDateRange => {
 
   const start = getFirstDayOfWeek(LocalDate.parse(startArg, formatter));
 
-  return new LocalDateRange(start, start.plusWeeks(8).plusDays(1));
+  return new LocalDateRange(start, start.plusWeeks(9).plusDays(1));
 };
 
 async function main() {
@@ -50,9 +50,9 @@ async function main() {
     TE.Do,
     TE.bind('removedBenches', () => removeExtraBenches.execute({ period })),
     TE.bind('generatedBenches', () => generateMissingBenches.execute({ period })),
-    TE.bind('benchesMatchingShifts', () =>
-      computeBenchesMatchingShiftsList(s3Service).execute({ period })
-    ),
+    // TE.bind('benchesMatchingShifts', () =>
+    //   computeBenchesMatchingShiftsList(s3Service).execute({ period })
+    // ),
     TE.bind('benchManagementList', () =>
       makeGenerateBenchManagementListUseCase(s3Service).execute({ period })
     ),
@@ -63,10 +63,11 @@ async function main() {
       },
       data => {
         console.log(
-          `Bench management completed successfully: ${data.benchesMatchingShifts}
+          `Bench management completed successfully: 
           ${data.removedBenches.flatMap(({ benches }) => benches.toArray()).length} removed benches
           ${data.generatedBenches.totalAffectationsCreated} generated benches
           `
+          // ${data.benchesMatchingShifts}
         );
         return T.of(data);
       }

@@ -16,7 +16,3 @@ export type EmployeeMatch = {
   score: MatchScore;
   percentage: number;
 };
-
-export type MatchCategory = 'match100' | 'match80' | 'match60' | 'match40' | 'match20';
-
-export type CategorizedMatches = Map<MatchCategory, List<EmployeeMatch>>;
