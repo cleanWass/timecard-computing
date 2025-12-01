@@ -25,23 +25,19 @@ const generateBenchManagementListService = ({
   period: LocalDateRange;
   weeks: List<LocalDateRange>;
   benchedEmployeesTimecard: Map<Employee, TimecardComputationResult>;
-}) => {
-  return benchedEmployeesTimecard
+}) =>
+  benchedEmployeesTimecard
     .map((tcr, employee) => {
       const IcPlusSection: Record<ICWeek, string> = arrayToObject(icWeeks, (_, i) =>
         formatDurationAs100(
-          tcr.weeklyRecaps
-            .get(
-              weeks
-                .sortBy(
-                  w => w.start,
-                  (a, b) => a.compareTo(b)
-                )
-                .toArray()[i]
-            )
-            ?.getTotalWorkedHours().TotalIntercontract || Duration.ZERO
+          Bench.totalBenchesDuration(
+            Set(tcr.timecards)
+              .filter(tc => tc.workingPeriod.period.equals(weeks.get(i)))
+              .flatMap(tc => tc.benches)
+          )
         )
       );
+
       const benches = tcr.weeklyRecaps
         .valueSeq()
         .flatMap(wr => wr.workingPeriodTimecards.flatMap(tc => tc.benches))
@@ -131,6 +127,5 @@ const generateBenchManagementListService = ({
       return employeeRow.join(';');
     })
     .join('\n');
-};
 
 export default generateBenchManagementListService;

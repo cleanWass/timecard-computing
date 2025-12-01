@@ -29,7 +29,7 @@ export const makeCreateMissingBenchesScheduler = ({
     const today = LocalDate.now();
     const period = new LocalDateRange(
       getFirstDayOfWeek(today),
-      getFirstDayOfWeek(today).plusWeeks(8).plusDays(1)
+      getFirstDayOfWeek(today).plusWeeks(9)
     );
 
     log.info(

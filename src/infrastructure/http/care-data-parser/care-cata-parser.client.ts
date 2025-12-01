@@ -120,7 +120,6 @@ const makeCareDataParserClient = (config: {
           () => {
             return client.post(`/generate-bench-affectation`, {
               payload: mapBenchToBenchPayloadDto(bench),
-              // .map(mapBenchAffectationToApiPayload),
             });
           },
           error => {
@@ -139,7 +138,6 @@ const makeCareDataParserClient = (config: {
             client.post(`/delete-bench-affectations`, {
               silaeId,
               affectationsIds,
-              // .map(mapBenchAffectationToApiPayload),
             }),
           error =>
             new FetchError(`API Care-data-parser:

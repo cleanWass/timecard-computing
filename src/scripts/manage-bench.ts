@@ -23,7 +23,7 @@ const parseCommandLineArgs = (): LocalDateRange => {
 
   const start = getFirstDayOfWeek(LocalDate.parse(startArg, formatter));
 
-  return new LocalDateRange(start, start.plusWeeks(9).plusDays(1));
+  return new LocalDateRange(start, start.plusWeeks(9));
 };
 
 async function main() {
@@ -52,14 +52,18 @@ async function main() {
     TE.bind('benchesDuringLeavePeriods', () =>
       makeRemoveBenchesDuringLeavePeriodsUseCase.execute({ period })
     ),
+    TE.tapIO(() => () => console.log('Removed benches during leave periods')),
     TE.bind('removedBenches', () => removeExtraBenches.execute({ period })),
+    TE.tapIO(() => () => console.log('Removed exceeding benches')),
     TE.bind('generatedBenches', () => generateMissingBenches.execute({ period })),
-    // TE.bind('benchesMatchingShifts', () =>
-    //   computeBenchesMatchingShiftsList(s3Service).execute({ period })
-    // ),
+    TE.tapIO(() => () => console.log('Generated missing benches')),
+    TE.bind('benchesMatchingShifts', () =>
+      computeBenchesMatchingShiftsList(s3Service).execute({ period })
+    ),
     TE.bind('benchManagementList', () =>
       makeGenerateBenchManagementListUseCase(s3Service).execute({ period })
     ),
+    TE.tapIO(() => () => console.log('Generated bench management list')),
     TE.foldW(
       e => {
         console.log('Error in bench generation', e);
@@ -70,6 +74,7 @@ async function main() {
           `Bench management completed successfully: 
           ${data.removedBenches.flatMap(({ benches }) => benches.toArray()).length} removed benches
           ${data.generatedBenches.totalAffectationsCreated} generated benches
+          ${data.benchManagementList.map(u => u.location).join('\n')}
           `
           // ${data.benchesMatchingShifts}
         );

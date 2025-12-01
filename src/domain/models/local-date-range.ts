@@ -119,19 +119,17 @@ export class LocalDateRange implements ValueObject {
   }
 
   divideIntoCalendarWeeks() {
-    const numberOfWeeks = ChronoUnit.WEEKS.between(
-      this.start.atStartOfDay(),
-      this.end.atStartOfDay()
-    );
-
     let weeks = List<LocalDateRange>();
     const firstMonday = this.start.with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY));
     if (this.start.dayOfWeek() !== DayOfWeek.MONDAY) {
       weeks = weeks.push(new LocalDateRange(this.start, firstMonday));
     }
-    return weeks.concat(
-      new LocalDateRange(firstMonday, this.end).divideIntoLocalDateRange(ChronoUnit.WEEKS)
-    );
+    return weeks
+      .concat(new LocalDateRange(firstMonday, this.end).divideIntoLocalDateRange(ChronoUnit.WEEKS))
+      .sortBy(
+        week => week.start,
+        (a, b) => a.compareTo(b)
+      );
   }
 
   divideIntoCalendarMonths() {
