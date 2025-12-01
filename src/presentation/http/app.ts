@@ -22,10 +22,11 @@ export const makeApp = (dependencies: AppDependencies): Express => {
     baseUrl: EnvService.get('CARE_DATA_PARSER_URL', 'http://localhost:3000'),
     apiKey: EnvService.get('CARE_DATA_PARSER_API_KEY', ''),
   });
-  const benchManagementScheduler = makeCreateMissingBenchesScheduler(
-    benchManagementUseCases(careDataParserClient),
-    schedulerConfig.benchManagement
-  );
+  const benchManagementScheduler = makeCreateMissingBenchesScheduler({
+    dependencies,
+    benchManagementUseCases: benchManagementUseCases(careDataParserClient),
+    config: schedulerConfig.benchManagement,
+  });
 
   app.use(cors(corsConfig));
   app.use(bodyParser.json());

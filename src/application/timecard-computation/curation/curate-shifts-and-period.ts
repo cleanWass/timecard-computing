@@ -69,25 +69,25 @@ export const filterBenchingShifts = (timecard: WorkingPeriodTimecard) => {
       )
   );
 
-  const leaves = timecard.leaves.filterNot(leave => leave.isBench());
-  benches = benches.concat(
-    timecard.leaves
-      .filter(leave => leave.isBench())
-      .map(leave =>
-        Bench.build({
-          id: leave.id,
-          employeeId: leave.employeeId,
-          date: leave.date,
-          timeslot: leave.getTimeSlot(),
-          client: { name: leave.clientName, id: leave.clientId },
-          affectationId: leave.id,
-        })
-      )
-  );
+  // const leaves = timecard.leaves.filterNot(leave => leave.isBench());
+  // benches = benches.concat(
+  //   timecard.leaves
+  //     .filter(leave => leave.isBench())
+  //     .map(leave =>
+  //       Bench.build({
+  //         id: leave.id,
+  //         employeeId: leave.employeeId,
+  //         date: leave.date,
+  //         timeslot: leave.getTimeSlot(),
+  //         client: { name: leave.clientName, id: leave.clientId },
+  //         affectationId: leave.id,
+  //       })
+  //     )
+  // );
   return timecard.with({
     shifts,
     benches,
-    leaves,
+    leaves: timecard.leaves,
   });
 };
 

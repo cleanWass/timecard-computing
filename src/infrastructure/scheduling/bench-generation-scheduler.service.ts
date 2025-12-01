@@ -4,16 +4,22 @@ import * as TE from 'fp-ts/TaskEither';
 import cron from 'node-cron';
 import { BenchManagementUseCases } from '../../application/use-cases/manage-benches/manage-benches.use-case';
 import { LocalDateRange } from '../../domain/models/local-date-range';
+import { AppDependencies } from '../../presentation/http/app';
 import { generateRequestId, logger } from '../../~shared/logging/logger';
 import { getFirstDayOfWeek } from '../../~shared/util/joda-helper';
 
-export const makeCreateMissingBenchesScheduler = (
-  benchManagementUseCases: BenchManagementUseCases,
+export const makeCreateMissingBenchesScheduler = ({
+  benchManagementUseCases,
+  config,
+  dependencies: { s3Service },
+}: {
+  dependencies: AppDependencies;
+  benchManagementUseCases: BenchManagementUseCases;
   config: {
     enabled: boolean;
     schedule: string;
-  }
-) => {
+  };
+}) => {
   const log = logger.child({
     request_id: generateRequestId(),
     scheduler: 'Bench Management Scheduler',
@@ -35,19 +41,33 @@ export const makeCreateMissingBenchesScheduler = (
 
     await pipe(
       TE.Do,
+      TE.bind('benchesDuringLeavePeriods', () =>
+        benchManagementUseCases.makeRemoveBenchesDuringLeavePeriodsUseCase.execute({ period })
+      ),
       TE.bind('suppressedBenches', () =>
         benchManagementUseCases.removeExtraBenches.execute({ period })
       ),
       TE.bind('generatedBenches', () =>
         benchManagementUseCases.generateMissingBenches.execute({ period })
       ),
+      TE.bind('benchManagementList', () =>
+        benchManagementUseCases
+          .makeGenerateBenchManagementListUseCase(s3Service)
+          .execute({ period })
+      ),
       TE.fold(
         error => {
           log.error('[Bench Management Scheduler] Error:', { error });
           return TE.of(undefined);
         },
-        ({ generatedBenches, suppressedBenches }) => {
+        ({ generatedBenches, suppressedBenches, benchesDuringLeavePeriods }) => {
           log.info('[Bench Management Scheduler] Success:', {
+            benchesDuringLeavePeriods: benchesDuringLeavePeriods
+              .map(
+                benchesRemovedForEmployee =>
+                  `${benchesRemovedForEmployee.employee.silaeId} ${benchesRemovedForEmployee.employee.firstName} ${benchesRemovedForEmployee.employee.lastName} ${benchesRemovedForEmployee.benches.size}`
+              )
+              .join(', '),
             suppressedBenches: suppressedBenches.flatMap(employee => employee.benches.toArray())
               .length,
             processedEmployees: generatedBenches.processedEmployees,

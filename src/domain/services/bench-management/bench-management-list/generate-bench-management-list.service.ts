@@ -99,7 +99,12 @@ const generateBenchManagementListService = ({
         'Code Postal': employee.address?.postalCode || '',
         'Total 8W': pipe(
           tcr.weeklyRecaps.reduce(
-            (acc, weeklyRecap) => acc.plus(weeklyRecap.getTotalWorkedHours().TotalIntercontract),
+            (res, wr) =>
+              res.plus(
+                Bench.totalBenchesDuration(
+                  wr.workingPeriodTimecards.flatMap(tc => tc.benches).toSet()
+                )
+              ),
             Duration.ZERO
           ),
           formatDurationAs100

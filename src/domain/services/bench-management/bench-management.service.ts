@@ -6,13 +6,15 @@ import { generateMissingBenchesService } from './bench-generation/generate-bench
 import { BenchAffectation, SlotToCreate } from './bench-generation/types';
 import generateBenchManagementListService from './bench-management-list/generate-bench-management-list.service';
 import { computeMatchingAffectationsListService } from './bench-matching-list/generate-bench-matching-list.service';
-import { removeExtraBenchesService } from './bench-suppression/remove-extra-bench.service.';
+import { removeBenchesDuringLeavePeriodsService } from './bench-suppression/remove-benches-during-leave-periods.service';
+import { removeExtraBenchesService } from './bench-suppression/remove-extra-benches.service.';
 
 export const manageBenchesService = {
   generateMissingBenches: generateMissingBenchesService,
   removeExtraBenches: removeExtraBenchesService,
   computeMatchingAffectationsList: computeMatchingAffectationsListService,
   generateBenchManagementList: generateBenchManagementListService,
+  removeBenchesDuringLeavePeriods: removeBenchesDuringLeavePeriodsService,
 
   filterNewAffectations: (
     affectations: Set<SlotToCreate>,

@@ -52,27 +52,13 @@ async function main() {
     TE.bind('benchesDuringLeavePeriods', () =>
       makeRemoveBenchesDuringLeavePeriodsUseCase.execute({ period })
     ),
-    TE.bind('removedBenches', () => removeExtraBenches.execute({ period })),
-    TE.bind('generatedBenches', () => generateMissingBenches.execute({ period })),
-    // TE.bind('benchesMatchingShifts', () =>
-    //   computeBenchesMatchingShiftsList(s3Service).execute({ period })
-    // ),
-    TE.bind('benchManagementList', () =>
-      makeGenerateBenchManagementListUseCase(s3Service).execute({ period })
-    ),
     TE.foldW(
       e => {
         console.log('Error in bench generation', e);
         return T.of(e);
       },
       data => {
-        console.log(
-          `Bench management completed successfully: 
-          ${data.removedBenches.flatMap(({ benches }) => benches.toArray()).length} removed benches
-          ${data.generatedBenches.totalAffectationsCreated} generated benches
-          `
-          // ${data.benchesMatchingShifts}
-        );
+        console.log(`------------------------------\n${data}\n-------------------------------`);
         return T.of(data);
       }
     )

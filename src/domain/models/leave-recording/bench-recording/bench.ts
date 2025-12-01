@@ -16,6 +16,7 @@ export type IBench = {
   timeslot: LocalTimeSlot;
   client: Client;
   affectationId: string;
+  isDuringLeave?: boolean;
 };
 
 export class Bench implements ValueObject, IBench {
@@ -35,7 +36,8 @@ export class Bench implements ValueObject, IBench {
     public readonly date: LocalDate,
     public readonly timeslot: LocalTimeSlot,
     public readonly client: Client,
-    public readonly affectationId: string
+    public readonly affectationId: string,
+    public readonly isDuringLeave?: boolean
   ) {
     this._vo = Map<string, TypeProps<IBench>>()
       .set('id', this.id)
@@ -43,7 +45,8 @@ export class Bench implements ValueObject, IBench {
       .set('date', this.date)
       .set('timeslot', this.timeslot)
       .set('client', this.client)
-      .set('affectationId', this.affectationId);
+      .set('affectationId', this.affectationId)
+      .set('isDuringLeave', this.isDuringLeave);
   }
 
   equals(other: unknown): boolean {
