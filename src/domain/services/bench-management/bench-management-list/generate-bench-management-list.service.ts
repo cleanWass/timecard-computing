@@ -27,6 +27,29 @@ const generateBenchManagementListService = ({
   benchedEmployeesTimecard: Map<Employee, TimecardComputationResult>;
 }) =>
   benchedEmployeesTimecard
+    .sort((a, b) =>
+      b.weeklyRecaps
+        .reduce(
+          (res, wr) =>
+            res.plus(
+              Bench.totalBenchesDuration(
+                wr.workingPeriodTimecards.flatMap(tc => tc.benches).toSet()
+              )
+            ),
+          Duration.ZERO
+        )
+        .compareTo(
+          a.weeklyRecaps.reduce(
+            (res, wr) =>
+              res.plus(
+                Bench.totalBenchesDuration(
+                  wr.workingPeriodTimecards.flatMap(tc => tc.benches).toSet()
+                )
+              ),
+            Duration.ZERO
+          )
+        )
+    )
     .map((tcr, employee) => {
       const IcPlusSection: Record<ICWeek, string> = arrayToObject(icWeeks, (_, i) =>
         formatDurationAs100(
@@ -88,6 +111,7 @@ const generateBenchManagementListService = ({
 
       const employeeRow = OrderedMap({
         Manager: employee.managerName || '',
+        'Lien BO': `https://bo.cleany.fr/#/cleaner/${employee.id}/show`,
         'Silae id': employee.silaeId,
         Prénom: employee.firstName,
         Nom: employee.lastName,

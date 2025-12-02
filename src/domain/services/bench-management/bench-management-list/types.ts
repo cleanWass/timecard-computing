@@ -11,6 +11,7 @@ function makeDailyFields<const T extends readonly string[]>(
 
 export const baseFields = [
   'Manager',
+  'Lien BO',
   'Silae id',
   'Prénom',
   'Nom',
