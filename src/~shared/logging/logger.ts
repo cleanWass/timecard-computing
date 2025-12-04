@@ -32,7 +32,7 @@ export const logger = winston.createLogger({
   },
   transports: [
     new winston.transports.Console({
-      format: EnvService.get('NODE_ENV', 'info') === 'production' ? jsonFormat : consoleFormat,
+      format: EnvService.get('NODE_ENV', 'info') === 'production' ? consoleFormat : consoleFormat,
     }),
 
     new winston.transports.File({

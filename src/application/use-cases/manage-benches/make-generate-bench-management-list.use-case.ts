@@ -70,7 +70,9 @@ export const makeGenerateBenchManagementListUseCase =
           const timestamp = LocalDateTime.now().format(
             DateTimeFormatter.ofPattern('yyyy/yyMMddHHmm')
           );
-          return TE.of(`bench-management-list/records/${timestamp}.csv`);
+          return TE.of(
+            `bench-management-list/records/${timestamp}${EnvService.get('NODE_ENV')}.csv`
+          );
         }),
         TE.bind('mainFileName', () => TE.of('bench-management-list/bench-management-list.csv')),
         TE.chainW(({ csvHeaders, csvContent, versioningFileName, mainFileName }) => {

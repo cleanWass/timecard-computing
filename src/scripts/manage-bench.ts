@@ -49,17 +49,17 @@ async function main() {
 
   return pipe(
     TE.Do,
-    TE.bind('benchesDuringLeavePeriods', () =>
-      makeRemoveBenchesDuringLeavePeriodsUseCase.execute({ period })
-    ),
-    TE.tapIO(() => () => console.log('Removed benches during leave periods')),
-    TE.bind('removedBenches', () => removeExtraBenches.execute({ period })),
-    TE.tapIO(() => () => console.log('Removed exceeding benches')),
-    TE.bind('generatedBenches', () => generateMissingBenches.execute({ period })),
-    TE.tapIO(() => () => console.log('Generated missing benches')),
-    TE.bind('benchesMatchingShifts', () =>
-      computeBenchesMatchingShiftsList(s3Service).execute({ period })
-    ),
+    // TE.bind('benchesDuringLeavePeriods', () =>
+    //   makeRemoveBenchesDuringLeavePeriodsUseCase.execute({ period })
+    // ),
+    // TE.tapIO(() => () => console.log('Removed benches during leave periods')),
+    // TE.bind('removedBenches', () => removeExtraBenches.execute({ period })),
+    // TE.tapIO(() => () => console.log('Removed exceeding benches')),
+    // TE.bind('generatedBenches', () => generateMissingBenches.execute({ period })),
+    // TE.tapIO(() => () => console.log('Generated missing benches')),
+    // TE.bind('benchesMatchingShifts', () =>
+    //   computeBenchesMatchingShiftsList(s3Service).execute({ period })
+    // ),
     TE.bind('benchManagementList', () =>
       makeGenerateBenchManagementListUseCase(s3Service).execute({ period })
     ),
@@ -72,10 +72,10 @@ async function main() {
       data => {
         console.log(
           `Bench management completed successfully: 
-          ${data.removedBenches.flatMap(({ benches }) => benches.toArray()).length} removed benches
-          ${data.generatedBenches.totalAffectationsCreated} generated benches
           ${data.benchManagementList.map(u => u.location).join('\n')}
           `
+          // ${data.removedBenches.flatMap(({ benches }) => benches.toArray()).length} removed benches
+          // ${data.generatedBenches.totalAffectationsCreated} generated benches
           // ${data.benchesMatchingShifts}
         );
         return T.of(data);
